@@ -1,0 +1,12 @@
+{
+  "modelProviders": {
+    "openai": [
+      {
+        "id": "nim-deepseek-v3.1-terminus-tools",
+        "name": "NVIDIA NIM DeepSeek V3.1 Terminus (LiteLLM)",
+        "baseUrl": "http://127.0.0.1:4000/v1",
+        "envKey": "NVIDIA_NIM_API_KEY"
+      }
+    ]
+  }
+}

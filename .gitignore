@@ -1,0 +1,45 @@
+# Logs
+*.log
+logs/
+
+# State files (local only)
+*-launcher-state.json
+*.backup
+
+# Session data — only keep .qwen/settings.json templates
+qwen-sessions/*/
+!qwen-sessions/*/.qwen/
+!qwen-sessions/*/.qwen/settings.json
+
+# LiteLLM
+.litellm/
+
+# Secrets
+.env
+.env.*
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node
+node_modules/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Claude mem
+.claude-mem/
+
+# free-claude-code (cloned separately)
+free-claude-code/

@@ -1,0 +1,184 @@
+[CmdletBinding()]
+param(
+  [switch]$Quick
+)
+
+$ErrorActionPreference = "Stop"
+
+. (Join-Path $PSScriptRoot "ensure-streaming-friendly-terminal.ps1")
+. (Join-Path $PSScriptRoot "launcher-tui.ps1")
+. (Join-Path $PSScriptRoot "launcher-provider-models.ps1")
+. (Join-Path $PSScriptRoot "launcher-custom-model-wizard.ps1")
+. (Join-Path $PSScriptRoot "launcher-api-keys.ps1")
+
+$StatePath = Join-Path $PSScriptRoot "qwen-code-launcher-state.json"
+
+$script:Profiles = @(
+  @{
+    Id          = "last"
+    Label       = "Запустить с последними настройками (быстрый старт)"
+    Description = "Пропуск меню: последний выбранный профиль"
+  }
+  @{
+    Id          = "nim-glm"
+    Label       = "NVIDIA NIM — GLM-4.7 (tool calling + thinking, модель …-tools)"
+    NimModel    = "nim-glm-4.7-tools"
+  }
+  @{
+    Id          = "nim-deepseek"
+    Label       = "NVIDIA NIM — DeepSeek V3.1 Terminus (tool calling + thinking, …-tools)"
+    NimModel    = "nim-deepseek-v3.1-terminus-tools"
+  }
+  @{
+    Id          = "zai-glm"
+    Label       = "Z.AI — GLM-4.7 (OpenAI Coding API: tool calling + thinking + агент)"
+  }
+  @{
+    Id          = "custom-model"
+    Label       = "Другая модель… → Z.AI или NIM, список с API (прокрутка)"
+  }
+  @{
+    Id          = "change-api-key"
+    Label       = "Сменить ключ API провайдера"
+  }
+)
+
+function Get-LauncherState {
+  if (-not (Test-Path -LiteralPath $StatePath)) { return $null }
+  try {
+    $raw = Get-Content -LiteralPath $StatePath -Raw -Encoding UTF8
+    return ($raw | ConvertFrom-Json)
+  } catch {
+    return $null
+  }
+}
+
+function Save-LauncherState {
+  param(
+    [Parameter(Mandatory = $true)][string]$ProfileId,
+    [hashtable]$Extra = @{}
+  )
+  $obj = [ordered]@{
+    profileId = $ProfileId
+    updatedAt = (Get-Date).ToString("o")
+  }
+  foreach ($k in $Extra.Keys) {
+    $obj[$k] = $Extra[$k]
+  }
+  ($obj | ConvertTo-Json -Compress) | Set-Content -LiteralPath $StatePath -Encoding UTF8
+}
+
+function Resolve-ProfileFromState($state) {
+  if (-not $state -or [string]::IsNullOrWhiteSpace($state.profileId)) { return $null }
+  $id = [string]$state.profileId
+  if ($id -in @("nim-glm", "nim-deepseek", "zai-glm", "custom-qwen-zai", "custom-qwen-nim")) { return $id }
+  return $null
+}
+
+function Invoke-QwenProfile {
+  param([string]$ProfileId)
+
+  switch ($ProfileId) {
+    "nim-glm" {
+      & (Join-Path $PSScriptRoot "run-qwen-code-nvidia-nim.ps1") -Model "nim-glm-4.7-tools"
+      return
+    }
+    "nim-deepseek" {
+      & (Join-Path $PSScriptRoot "run-qwen-code-nvidia-nim.ps1") -Model "nim-deepseek-v3.1-terminus-tools"
+      return
+    }
+    "zai-glm" {
+      & (Join-Path $PSScriptRoot "run-qwen-code-cloud-zai-glm47.ps1")
+      return
+    }
+    "custom-qwen-zai" {
+      $st = Get-LauncherState
+      $mid = [string]$st.customModelId
+      if ([string]::IsNullOrWhiteSpace($mid)) {
+        throw "В qwen-code-launcher-state.json нет customModelId для custom-qwen-zai. Выберите модель в пункте «Другая модель»."
+      }
+      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider zai -ModelId $mid.Trim()
+      return
+    }
+    "custom-qwen-nim" {
+      $st = Get-LauncherState
+      $mid = [string]$st.customModelId
+      if ([string]::IsNullOrWhiteSpace($mid)) {
+        throw "В qwen-code-launcher-state.json нет customModelId для custom-qwen-nim."
+      }
+      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider nim -ModelId $mid.Trim()
+      return
+    }
+    default {
+      throw "Неизвестный профиль: $ProfileId"
+    }
+  }
+}
+
+if ($Quick -or $env:QWEN_CODE_LAUNCHER_QUICK -eq "1") {
+  $st = Get-LauncherState
+  $resolvedId = Resolve-ProfileFromState $st
+  if (-not $resolvedId) {
+    Write-Host "Нет сохранённого профиля. Один раз выберите модель в меню или уберите -Quick." -ForegroundColor Yellow
+    Start-Sleep -Seconds 3
+    exit 2
+  }
+  Invoke-QwenProfile -ProfileId $resolvedId
+  exit $LASTEXITCODE
+}
+
+$state = Get-LauncherState
+$lastId = Resolve-ProfileFromState $state
+$items = $script:Profiles
+$startIdx = 0
+if ($lastId) {
+  for ($i = 0; $i -lt $items.Count; $i++) {
+    if ($items[$i].Id -eq $lastId) { $startIdx = $i; break }
+  }
+} else {
+  $startIdx = 1
+}
+
+while ($true) {
+  $choice = Show-TuiFramedMenu -AppBrand "Qwen" -Title "Qwen Code — выбор профиля" -Subtitle "OpenAI Coding (Z.AI / NIM) + пресеты" -Items $items -InitialIndex $startIdx -MaxVisible 14
+  if (-not $choice) {
+    Write-Host "Отменено." -ForegroundColor Yellow
+    exit 0
+  }
+
+  $profileId = [string]$choice.Id
+
+  if ($profileId -eq "custom-model") {
+    $w = Invoke-LauncherCustomModelWizard -App "Qwen"
+    if ($null -eq $w) {
+      Write-Host "Отменено." -ForegroundColor Yellow
+      exit 0
+    }
+    if ($true -eq $w.__menuBack) { continue }
+    $newId = if ($w.Provider -eq "zai") { "custom-qwen-zai" } else { "custom-qwen-nim" }
+    Save-LauncherState -ProfileId $newId -Extra @{ customModelId = [string]$w.ModelId }
+    Invoke-QwenProfile -ProfileId $newId
+    exit $LASTEXITCODE
+  }
+
+  if ($profileId -eq "change-api-key") {
+    Show-ApiKeyChangeMenu -AppBrand "Qwen"
+    continue
+  }
+
+  if ($profileId -eq "last") {
+    $st = Get-LauncherState
+    $profileId = Resolve-ProfileFromState $st
+    if (-not $profileId) {
+      Write-Host "Сохранённый профиль не найден. Выберите пресет или «Другая модель» один раз." -ForegroundColor Red
+      Write-Host "Нажмите любую клавишу..."
+      $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+      exit 2
+    }
+  } else {
+    Save-LauncherState -ProfileId $profileId
+  }
+
+  Invoke-QwenProfile -ProfileId $profileId
+  exit $LASTEXITCODE
+}
