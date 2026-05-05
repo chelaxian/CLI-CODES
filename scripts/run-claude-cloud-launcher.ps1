@@ -35,23 +35,35 @@ $script:Profiles = @(
   }
   @{
     Id    = "claude-zai"
-    Label = "Z.AI — GLM-4.7 (Anthropic api.z.ai; Claude Code — tool calling)"
+    Label = "Z.AI — GLM-4.7 (free, tool calling)"
   }
   @{
     Id    = "claude-zai-glm51"
-    Label = "Z.AI — GLM-5.1 (Anthropic api.z.ai; Claude Code — tool calling)"
+    Label = "Z.AI — GLM-5.1 (free, tool calling)"
   }
   @{
     Id    = "claude-nim"
-    Label = "NVIDIA NIM — GLM-4.7 (free-claude-code → NIM; tool calling)"
+    Label = "NVIDIA NIM — GLM-4.7 (free, tool calling)"
   }
   @{
     Id    = "claude-nim-qwen"
-    Label = "NVIDIA NIM — Qwen3.5-122B-A10B (free-claude-code → NIM; tool calling)"
+    Label = "NVIDIA NIM — Qwen3.5-122B-A10B (free, tool calling)"
+  }
+  @{
+    Id    = "claude-groq-llama"
+    Label = "Groq — Llama 3.3 70B (free, tool calling)"
+  }
+  @{
+    Id    = "claude-groq-qwen"
+    Label = "Groq — Qwen3 32B (free, tool calling)"
+  }
+  @{
+    Id    = "claude-openrouter-sonnet"
+    Label = "OpenRouter — Claude Sonnet 4 (paid, tool calling)"
   }
   @{
     Id    = "custom-model"
-    Label = "Другая модель… → Z.AI или NIM, список с API (прокрутка)"
+    Label = "Другая модель… → выбор провайдера и модели"
   }
   @{
     Id    = "change-api-key"
@@ -88,7 +100,8 @@ function Resolve-ProfileFromState($state) {
   $id = [string]$state.profileId
   if ($id -in @(
       "claude-zai", "claude-zai-glm51", "claude-nim", "claude-nim-qwen",
-      "custom-claude-zai", "custom-claude-nim"
+      "claude-groq-llama", "claude-groq-qwen", "claude-openrouter-sonnet",
+      "custom-claude-zai", "custom-claude-nim", "custom-claude-groq", "custom-claude-openrouter"
     )) { return $id }
   return $null
 }
@@ -126,6 +139,21 @@ function Invoke-ClaudeCloudProfile {
         -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
       return
     }
+    "claude-groq-llama" {
+      & $SessionScript -Provider groq -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools minimal `
+        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+      return
+    }
+    "claude-groq-qwen" {
+      & $SessionScript -Provider groq -ZaiAnthropicModelId "qwen/qwen3-32b" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools minimal `
+        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+      return
+    }
+    "claude-openrouter-sonnet" {
+      & $SessionScript -Provider openrouter -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
+        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+      return
+    }
     "custom-claude-zai" {
       $st = Get-LauncherState
       $mid = [string]$st.customModelId
@@ -149,6 +177,26 @@ function Invoke-ClaudeCloudProfile {
       $claudeTools = if (Test-NvidiaNimOpenAiNativeToolCalling $catalog) { "default" } else { "minimal" }
       $port = Get-LauncherFreeTcpPort
       & $SessionScript -Provider nim -NimModel $full.Trim() -ProxyPort $port -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools $claudeTools `
+        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+      return
+    }
+    "custom-claude-groq" {
+      $st = Get-LauncherState
+      $mid = [string]$st.customModelId
+      if ([string]::IsNullOrWhiteSpace($mid)) {
+        throw "Нет customModelId для custom-claude-groq. Выберите модель в «Другая модель»."
+      }
+      & $SessionScript -Provider groq -ZaiAnthropicModelId $mid.Trim() -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools minimal `
+        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+      return
+    }
+    "custom-claude-openrouter" {
+      $st = Get-LauncherState
+      $mid = [string]$st.customModelId
+      if ([string]::IsNullOrWhiteSpace($mid)) {
+        throw "Нет customModelId для custom-claude-openrouter. Выберите модель в «Другая модель»."
+      }
+      & $SessionScript -Provider openrouter -ZaiAnthropicModelId $mid.Trim() -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
         -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
       return
     }
@@ -183,7 +231,7 @@ if ($lastId) {
 }
 
 while ($true) {
-  $choice = Show-TuiFramedMenu -AppBrand "Claude" -Title "Claude Code (облако) — провайдер" -Subtitle "Z.AI Anthropic · NVIDIA NIM через free-claude-code" -Items $items -InitialIndex $startIdx -MaxVisible 14
+  $choice = Show-TuiFramedMenu -AppBrand "Claude" -Title "Claude Code (облако) — провайдер" -Subtitle "Z.AI · NIM · Groq · OpenRouter (через free-claude-code)" -Items $items -InitialIndex $startIdx -MaxVisible 14
   if (-not $choice) {
     Write-Host "Отменено." -ForegroundColor Yellow
     exit 0
@@ -198,12 +246,23 @@ while ($true) {
       exit 0
     }
     if ($true -eq $w.__menuBack) { continue }
-    if ($w.Provider -eq "zai") {
-      Save-LauncherState -ProfileId "custom-claude-zai" -Extra @{ customModelId = [string]$w.ModelId }
-      Invoke-ClaudeCloudProfile -ProfileId "custom-claude-zai"
-    } else {
-      Save-LauncherState -ProfileId "custom-claude-nim" -Extra @{ customNimModel = [string]$w.ClaudeNimModel }
-      Invoke-ClaudeCloudProfile -ProfileId "custom-claude-nim"
+    switch ($w.Provider) {
+      "zai" {
+        Save-LauncherState -ProfileId "custom-claude-zai" -Extra @{ customModelId = [string]$w.ModelId }
+        Invoke-ClaudeCloudProfile -ProfileId "custom-claude-zai"
+      }
+      "groq" {
+        Save-LauncherState -ProfileId "custom-claude-groq" -Extra @{ customModelId = [string]$w.ModelId }
+        Invoke-ClaudeCloudProfile -ProfileId "custom-claude-groq"
+      }
+      "openrouter" {
+        Save-LauncherState -ProfileId "custom-claude-openrouter" -Extra @{ customModelId = [string]$w.ModelId }
+        Invoke-ClaudeCloudProfile -ProfileId "custom-claude-openrouter"
+      }
+      default {
+        Save-LauncherState -ProfileId "custom-claude-nim" -Extra @{ customNimModel = [string]$w.ClaudeNimModel }
+        Invoke-ClaudeCloudProfile -ProfileId "custom-claude-nim"
+      }
     }
     exit $LASTEXITCODE
   }

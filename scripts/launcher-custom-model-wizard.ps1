@@ -28,6 +28,24 @@ function Resolve-NimKeyForWizard {
   return $k.Trim()
 }
 
+function Resolve-GroqKeyForWizard {
+  $k = [Environment]::GetEnvironmentVariable("GROQ_API_KEY", "User")
+  if ([string]::IsNullOrWhiteSpace($k)) { $k = $env:GROQ_API_KEY }
+  if ([string]::IsNullOrWhiteSpace($k)) {
+    $k = Read-SecretTextWizard "Groq API key (не сохраняется)"
+  }
+  return $k.Trim()
+}
+
+function Resolve-OpenRouterKeyForWizard {
+  $k = [Environment]::GetEnvironmentVariable("OPENROUTER_API_KEY", "User")
+  if ([string]::IsNullOrWhiteSpace($k)) { $k = $env:OPENROUTER_API_KEY }
+  if ([string]::IsNullOrWhiteSpace($k)) {
+    $k = Read-SecretTextWizard "OpenRouter API key (не сохраняется)"
+  }
+  return $k.Trim()
+}
+
 function Invoke-LauncherCustomModelWizard {
   param(
     [Parameter(Mandatory = $true)]
@@ -41,6 +59,8 @@ function Invoke-LauncherCustomModelWizard {
     [pscustomobject]@{ Id = "nim"; Label = "NVIDIA NIM — полный каталог (GET /v1/models, все ID)" }
     [pscustomobject]@{ Id = "nim-bundled"; Label = "NVIDIA NIM — только free/preview (API ∩ встроенный список ~50)" }
     [pscustomobject]@{ Id = "nim-free"; Label = "NVIDIA NIM — free/preview (только статический список, без API)" }
+    [pscustomobject]@{ Id = "groq"; Label = "Groq — каталог моделей (GET /v1/models)" }
+    [pscustomobject]@{ Id = "openrouter"; Label = "OpenRouter — каталог моделей (GET /v1/models)" }
   )
 
   while ($true) {
@@ -71,6 +91,16 @@ function Invoke-LauncherCustomModelWizard {
         $null = Resolve-NimKeyForWizard
         $ids = @(Get-NvidiaNimBundledFreeModelIds)
       }
+      elseif ($provSource -eq "groq") {
+        Show-TuiWaitFrame -AppBrand $brand -Message "Загрузка каталога Groq…"
+        $key = Resolve-GroqKeyForWizard
+        $ids = @(Get-GroqModelIdsFromApi -ApiKey $key)
+      }
+      elseif ($provSource -eq "openrouter") {
+        Show-TuiWaitFrame -AppBrand $brand -Message "Загрузка каталога OpenRouter…"
+        $key = Resolve-OpenRouterKeyForWizard
+        $ids = @(Get-OpenRouterModelIdsFromApi -ApiKey $key)
+      }
       else {
         throw ("Неизвестный провайдер: {0}" -f $provSource)
       }
@@ -98,6 +128,8 @@ function Invoke-LauncherCustomModelWizard {
       "nim" { "NIM (полный API)" }
       "nim-free" { "NIM free/preview (стат.)" }
       "nim-bundled" { "NIM (API ∩ free)" }
+      "groq" { "Groq" }
+      "openrouter" { "OpenRouter" }
       default { $provSource.ToUpper() }
     }
 

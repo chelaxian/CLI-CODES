@@ -182,3 +182,21 @@ function Resolve-NvidiaNimFreeClaudeModel {
   if ($m.StartsWith("nvidia_nim/", [StringComparison]::OrdinalIgnoreCase)) { return $m }
   return ("nvidia_nim/{0}" -f $m)
 }
+
+function Get-GroqModelIdsFromApi {
+  param([Parameter(Mandatory = $true)][string]$ApiKey)
+  $hdr = @{ "Authorization" = "Bearer $ApiKey"; "Content-Type" = "application/json" }
+  $resp = Invoke-LauncherJsonGet -Uri "https://api.groq.com/openai/v1/models" -Headers $hdr
+  if (-not $resp -or -not $resp.data) { return @() }
+  $ids = @($resp.data | Sort-Object -Property id | ForEach-Object { $_.id })
+  return $ids
+}
+
+function Get-OpenRouterModelIdsFromApi {
+  param([Parameter(Mandatory = $true)][string]$ApiKey)
+  $hdr = @{ "Authorization" = "Bearer $ApiKey"; "Content-Type" = "application/json" }
+  $resp = Invoke-LauncherJsonGet -Uri "https://openrouter.ai/api/v1/models" -Headers $hdr
+  if (-not $resp -or -not $resp.data) { return @() }
+  $ids = @($resp.data | Sort-Object -Property id | ForEach-Object { $_.id })
+  return $ids
+}

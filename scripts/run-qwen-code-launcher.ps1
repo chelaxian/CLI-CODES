@@ -21,37 +21,37 @@ $script:Profiles = @(
   }
   @{
     Id          = "nim-glm"
-    Label       = "NVIDIA NIM — GLM-4.7 (tool calling + thinking, модель …-tools)"
+    Label       = "NVIDIA NIM — GLM-4.7 (free, tool calling)"
     NimModel    = "nim-glm-4.7-tools"
   }
   @{
     Id          = "nim-qwen"
-    Label       = "NVIDIA NIM — Qwen3.5-122B-A10B (tool calling + thinking, …-tools)"
+    Label       = "NVIDIA NIM — Qwen3.5-122B-A10B (free, tool calling)"
     NimModel    = "nim-qwen3.5-122b-a10b-tools"
   }
   @{
     Id          = "zai-glm"
-    Label       = "Z.AI — GLM-4.7 (OpenAI Coding API: tool calling + thinking + агент)"
+    Label       = "Z.AI — GLM-4.7 (free, tool calling)"
   }
   @{
     Id          = "zai-glm51"
-    Label       = "Z.AI — GLM-5.1 (OpenAI Coding API: tool calling + thinking + агент)"
-  }
-  @{
-    Id          = "custom-model"
-    Label       = "Другая модель… → Z.AI или NIM, список с API (прокрутка)"
+    Label       = "Z.AI — GLM-5.1 (free, tool calling)"
   }
   @{
     Id          = "groq-llama"
-    Label       = "Groq — Llama 3.3 70B (бесплатно, ultra-fast, tool calling)"
+    Label       = "Groq — Llama 3.3 70B (free, tool calling)"
   }
   @{
     Id          = "groq-qwen"
-    Label       = "Groq — Qwen3 32B (бесплатно, ultra-fast, tool calling)"
+    Label       = "Groq — Qwen3 32B (free, tool calling)"
   }
   @{
     Id          = "openrouter-qwen-coder"
-    Label       = "OpenRouter — Qwen3 Coder (бесплатно, tool calling)"
+    Label       = "OpenRouter — Qwen3 Coder (free, tool calling)"
+  }
+  @{
+    Id          = "custom-model"
+    Label       = "Другая модель… → выбор провайдера и модели"
   }
   @{
     Id          = "change-api-key"
@@ -87,7 +87,7 @@ function Save-LauncherState {
 function Resolve-ProfileFromState($state) {
   if (-not $state -or [string]::IsNullOrWhiteSpace($state.profileId)) { return $null }
   $id = [string]$state.profileId
-  if ($id -in @("nim-glm", "nim-qwen", "zai-glm", "zai-glm51", "groq-llama", "groq-qwen", "openrouter-qwen-coder", "custom-qwen-zai", "custom-qwen-nim")) { return $id }
+  if ($id -in @("nim-glm", "nim-qwen", "zai-glm", "zai-glm51", "groq-llama", "groq-qwen", "openrouter-qwen-coder", "custom-qwen-zai", "custom-qwen-nim", "custom-qwen-groq", "custom-qwen-openrouter")) { return $id }
   return $null
 }
 
@@ -141,6 +141,24 @@ function Invoke-QwenProfile {
       & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider nim -ModelId $mid.Trim()
       return
     }
+    "custom-qwen-groq" {
+      $st = Get-LauncherState
+      $mid = [string]$st.customModelId
+      if ([string]::IsNullOrWhiteSpace($mid)) {
+        throw "Нет customModelId для custom-qwen-groq. Выберите модель в «Другая модель»."
+      }
+      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider groq -ModelId $mid.Trim()
+      return
+    }
+    "custom-qwen-openrouter" {
+      $st = Get-LauncherState
+      $mid = [string]$st.customModelId
+      if ([string]::IsNullOrWhiteSpace($mid)) {
+        throw "Нет customModelId для custom-qwen-openrouter. Выберите модель в «Другая модель»."
+      }
+      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider openrouter -ModelId $mid.Trim()
+      return
+    }
     default {
       throw "Неизвестный профиль: $ProfileId"
     }
@@ -187,7 +205,12 @@ while ($true) {
       exit 0
     }
     if ($true -eq $w.__menuBack) { continue }
-    $newId = if ($w.Provider -eq "zai") { "custom-qwen-zai" } else { "custom-qwen-nim" }
+    $newId = switch ($w.Provider) {
+      "zai" { "custom-qwen-zai" }
+      "groq" { "custom-qwen-groq" }
+      "openrouter" { "custom-qwen-openrouter" }
+      default { "custom-qwen-nim" }
+    }
     Save-LauncherState -ProfileId $newId -Extra @{ customModelId = [string]$w.ModelId }
     Invoke-QwenProfile -ProfileId $newId
     exit $LASTEXITCODE

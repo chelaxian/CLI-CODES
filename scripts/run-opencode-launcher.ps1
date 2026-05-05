@@ -20,35 +20,35 @@ $script:Profiles = @(
   }
   @{
     Id    = "zai-glm"
-    Label = "Z.AI — GLM-4.7 (OpenAI-compatible Coding API)"
+    Label = "Z.AI — GLM-4.7 (free, tool calling)"
   }
   @{
     Id    = "zai-glm51"
-    Label = "Z.AI — GLM-5.1 (OpenAI-compatible Coding API)"
+    Label = "Z.AI — GLM-5.1 (free, tool calling)"
   }
   @{
     Id    = "nim-glm"
-    Label = "NVIDIA NIM — GLM-4.7 (OpenAI-compatible, integrate API)"
+    Label = "NVIDIA NIM — GLM-4.7 (free, tool calling)"
   }
   @{
     Id    = "nim-qwen"
-    Label = "NVIDIA NIM — Qwen3.5-122B-A10B (OpenAI-compatible)"
-  }
-  @{
-    Id    = "custom-model"
-    Label = "Другая модель… → Z.AI или NIM, список с API (прокрутка)"
+    Label = "NVIDIA NIM — Qwen3.5-122B-A10B (free, tool calling)"
   }
   @{
     Id    = "groq-llama"
-    Label = "Groq — Llama 3.3 70B (бесплатно, ultra-fast, tool calling)"
+    Label = "Groq — Llama 3.3 70B (free, tool calling)"
   }
   @{
     Id    = "groq-qwen"
-    Label = "Groq — Qwen3 32B (бесплатно, ultra-fast, tool calling)"
+    Label = "Groq — Qwen3 32B (free, tool calling)"
   }
   @{
     Id    = "openrouter-qwen-coder"
-    Label = "OpenRouter — Qwen3 Coder (бесплатно, tool calling)"
+    Label = "OpenRouter — Qwen3 Coder (free, tool calling)"
+  }
+  @{
+    Id    = "custom-model"
+    Label = "Другая модель… → выбор провайдера и модели"
   }
   @{
     Id    = "change-api-key"
@@ -84,7 +84,7 @@ function Save-LauncherState {
 function Resolve-ProfileFromState($state) {
   if (-not $state -or [string]::IsNullOrWhiteSpace($state.profileId)) { return $null }
   $id = [string]$state.profileId
-  if ($id -in @("zai-glm", "zai-glm51", "nim-glm", "nim-qwen", "groq-llama", "groq-qwen", "openrouter-qwen-coder", "custom-opencode-zai", "custom-opencode-nim")) { return $id }
+  if ($id -in @("zai-glm", "zai-glm51", "nim-glm", "nim-qwen", "groq-llama", "groq-qwen", "openrouter-qwen-coder", "custom-opencode-zai", "custom-opencode-nim", "custom-opencode-groq", "custom-opencode-openrouter")) { return $id }
   return $null
 }
 
@@ -289,6 +289,40 @@ function Invoke-OpenCodeProfile {
       & $opencodeExe
       return
     }
+    "custom-opencode-groq" {
+      $st = Get-LauncherState
+      $mid = [string]$st.customModelId
+      if ([string]::IsNullOrWhiteSpace($mid)) {
+        throw "Нет customModelId. Выберите модель в пункте «Другая модель»."
+      }
+      $apiKey = [Environment]::GetEnvironmentVariable("GROQ_API_KEY", "User")
+      if ([string]::IsNullOrWhiteSpace($apiKey)) { $apiKey = $env:GROQ_API_KEY }
+      if ([string]::IsNullOrWhiteSpace($apiKey)) {
+        throw "Groq API ключ не задан. Задайте GROQ_API_KEY или выберите «Сменить ключ API провайдера»."
+      }
+      $configPath = Write-OpenCodeConfig -Provider "groq" -Model $mid.Trim() -BaseURL "https://api.groq.com/openai/v1" -ApiKey $apiKey
+      $env:OPENCODE_CONFIG = $configPath
+      Write-Host "Запуск OpenCode (Groq custom: $($mid.Trim()))…" -ForegroundColor Cyan
+      & $opencodeExe
+      return
+    }
+    "custom-opencode-openrouter" {
+      $st = Get-LauncherState
+      $mid = [string]$st.customModelId
+      if ([string]::IsNullOrWhiteSpace($mid)) {
+        throw "Нет customModelId. Выберите модель в пункте «Другая модель»."
+      }
+      $apiKey = [Environment]::GetEnvironmentVariable("OPENROUTER_API_KEY", "User")
+      if ([string]::IsNullOrWhiteSpace($apiKey)) { $apiKey = $env:OPENROUTER_API_KEY }
+      if ([string]::IsNullOrWhiteSpace($apiKey)) {
+        throw "OpenRouter API ключ не задан. Задайте OPENROUTER_API_KEY или выберите «Сменить ключ API провайдера»."
+      }
+      $configPath = Write-OpenCodeConfig -Provider "openrouter" -Model $mid.Trim() -BaseURL "https://openrouter.ai/api/v1" -ApiKey $apiKey
+      $env:OPENCODE_CONFIG = $configPath
+      Write-Host "Запуск OpenCode (OpenRouter custom: $($mid.Trim()))…" -ForegroundColor Cyan
+      & $opencodeExe
+      return
+    }
     "groq-llama" {
       $apiKey = [Environment]::GetEnvironmentVariable("GROQ_API_KEY", "User")
       if ([string]::IsNullOrWhiteSpace($apiKey)) { $apiKey = $env:GROQ_API_KEY }
@@ -375,7 +409,12 @@ while ($true) {
       exit 0
     }
     if ($true -eq $w.__menuBack) { continue }
-    $newId = if ($w.Provider -eq "zai") { "custom-opencode-zai" } else { "custom-opencode-nim" }
+    $newId = switch ($w.Provider) {
+      "zai" { "custom-opencode-zai" }
+      "groq" { "custom-opencode-groq" }
+      "openrouter" { "custom-opencode-openrouter" }
+      default { "custom-opencode-nim" }
+    }
     Save-LauncherState -ProfileId $newId -Extra @{ customModelId = [string]$w.ModelId }
     Invoke-OpenCodeProfile -ProfileId $newId
     exit $LASTEXITCODE

@@ -13,14 +13,14 @@ CONFIG_DIR="$SCRIPT_DIR/opencode-sessions"
 
 PROFILES=(
     "last|Запустить с последними настройками (быстрый старт)"
-    "zai-glm|Z.AI — GLM-4.7 (OpenAI-compatible Coding API)"
-    "zai-glm51|Z.AI — GLM-5.1 (OpenAI-compatible Coding API)"
-    "nim-glm|NVIDIA NIM — GLM-4.7 (OpenAI-compatible, integrate API)"
-    "nim-qwen|NVIDIA NIM — Qwen3.5-122B-A10B (OpenAI-compatible)"
-    "custom-model|Другая модель… → Z.AI или NIM, список с API (прокрутка)"
-    "groq-llama|Groq — Llama 3.3 70B (бесплатно, ultra-fast, tool calling)"
-    "groq-qwen|Groq — Qwen3 32B (бесплатно, ultra-fast, tool calling)"
-    "openrouter-qwen-coder|OpenRouter — Qwen3 Coder (бесплатно, tool calling)"
+    "zai-glm|Z.AI — GLM-4.7 (free, tool calling)"
+    "zai-glm51|Z.AI — GLM-5.1 (free, tool calling)"
+    "nim-glm|NVIDIA NIM — GLM-4.7 (free, tool calling)"
+    "nim-qwen|NVIDIA NIM — Qwen3.5-122B-A10B (free, tool calling)"
+    "groq-llama|Groq — Llama 3.3 70B (free, tool calling)"
+    "groq-qwen|Groq — Qwen3 32B (free, tool calling)"
+    "openrouter-qwen-coder|OpenRouter — Qwen3 Coder (free, tool calling)"
+    "custom-model|Другая модель… → выбор провайдера и модели"
     "change-api-key|Сменить ключ API провайдера"
 )
 
@@ -52,7 +52,7 @@ resolve_profile_from_state() {
     local profile_id=$(echo "$state" | grep -o '"profileId":"[^"]*"' | cut -d'"' -f4)
     
     case "$profile_id" in
-        "zai-glm"|"zai-glm51"|"nim-glm"|"nim-qwen"|"groq-llama"|"groq-qwen"|"openrouter-qwen-coder"|"custom-opencode-zai"|"custom-opencode-nim")
+        "zai-glm"|"zai-glm51"|"nim-glm"|"nim-qwen"|"groq-llama"|"groq-qwen"|"openrouter-qwen-coder"|"custom-opencode-zai"|"custom-opencode-nim"|"custom-opencode-groq"|"custom-opencode-openrouter")
             echo "$profile_id"
             return 0
             ;;
@@ -269,6 +269,44 @@ invoke_opencode_profile() {
             echo -e "${CYAN}Запуск OpenCode (NVIDIA NIM custom: $model_id)…${RESET}"
             "$opencode_exe"
             ;;
+        "custom-opencode-groq")
+            local state
+            state=$(get_launcher_state) || true
+            local model_id=$(echo "$state" | grep -o '"customModelId":"[^"]*"' | cut -d'"' -f4)
+            if [ -z "$model_id" ]; then
+                echo -e "${RED}Нет customModelId для Groq. Выберите модель в «Другая модель».${RESET}"
+                return 1
+            fi
+            local api_key="${GROQ_API_KEY:-}"
+            if [ -z "$api_key" ]; then
+                echo -e "${YELLOW}Groq API ключ не задан. Задайте GROQ_API_KEY.${RESET}" >&2
+                return 1
+            fi
+            local config_path
+            config_path=$(write_opencode_config "groq" "$model_id" "https://api.groq.com/openai/v1" "$api_key")
+            export OPENCODE_CONFIG="$config_path"
+            echo -e "${CYAN}Запуск OpenCode (Groq custom: $model_id)…${RESET}"
+            "$opencode_exe"
+            ;;
+        "custom-opencode-openrouter")
+            local state
+            state=$(get_launcher_state) || true
+            local model_id=$(echo "$state" | grep -o '"customModelId":"[^"]*"' | cut -d'"' -f4)
+            if [ -z "$model_id" ]; then
+                echo -e "${RED}Нет customModelId для OpenRouter. Выберите модель в «Другая модель».${RESET}"
+                return 1
+            fi
+            local api_key="${OPENROUTER_API_KEY:-}"
+            if [ -z "$api_key" ]; then
+                echo -e "${YELLOW}OpenRouter API ключ не задан. Задайте OPENROUTER_API_KEY.${RESET}" >&2
+                return 1
+            fi
+            local config_path
+            config_path=$(write_opencode_config "openrouter" "$model_id" "https://openrouter.ai/api/v1" "$api_key")
+            export OPENCODE_CONFIG="$config_path"
+            echo -e "${CYAN}Запуск OpenCode (OpenRouter custom: $model_id)…${RESET}"
+            "$opencode_exe"
+            ;;
         *)
             echo -e "${RED}Неизвестный профиль: $profile_id${RESET}"
             return 1
@@ -420,6 +458,10 @@ while true; do
             local new_id="custom-opencode-nim"
             if [ "$wiz_provider" = "zai" ]; then
                 new_id="custom-opencode-zai"
+            elif [ "$wiz_provider" = "groq" ]; then
+                new_id="custom-opencode-groq"
+            elif [ "$wiz_provider" = "openrouter" ]; then
+                new_id="custom-opencode-openrouter"
             fi
             
             save_launcher_state "$new_id" "\"customModelId\":\"$wiz_model\""

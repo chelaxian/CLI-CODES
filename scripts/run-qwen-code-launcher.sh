@@ -12,14 +12,14 @@ STATE_FILE="$SCRIPT_DIR/qwen-code-launcher-state.json"
 
 PROFILES=(
     "last|Запустить с последними настройками (быстрый старт)"
-    "nim-glm|NVIDIA NIM — GLM-4.7 (tool calling + thinking, модель …-tools)"
-    "nim-qwen|NVIDIA NIM — Qwen3.5-122B-A10B (tool calling + thinking, …-tools)"
-    "zai-glm|Z.AI — GLM-4.7 (OpenAI Coding API: tool calling + thinking + агент)"
-    "zai-glm51|Z.AI — GLM-5.1 (OpenAI Coding API: tool calling + thinking + агент)"
-    "groq-llama|Groq — Llama 3.3 70B (бесплатно, ultra-fast, tool calling)"
-    "groq-qwen|Groq — Qwen3 32B (бесплатно, ultra-fast, tool calling)"
-    "openrouter-qwen-coder|OpenRouter — Qwen3 Coder (бесплатно, tool calling)"
-    "custom-model|Другая модель… → Z.AI или NIM, список с API (прокрутка)"
+    "nim-glm|NVIDIA NIM — GLM-4.7 (free, tool calling)"
+    "nim-qwen|NVIDIA NIM — Qwen3.5-122B-A10B (free, tool calling)"
+    "zai-glm|Z.AI — GLM-4.7 (free, tool calling)"
+    "zai-glm51|Z.AI — GLM-5.1 (free, tool calling)"
+    "groq-llama|Groq — Llama 3.3 70B (free, tool calling)"
+    "groq-qwen|Groq — Qwen3 32B (free, tool calling)"
+    "openrouter-qwen-coder|OpenRouter — Qwen3 Coder (free, tool calling)"
+    "custom-model|Другая модель… → выбор провайдера и модели"
     "change-api-key|Сменить ключ API провайдера"
 )
 
@@ -51,7 +51,7 @@ resolve_profile_from_state() {
     local profile_id=$(echo "$state" | grep -o '"profileId":"[^"]*"' | cut -d'"' -f4)
     
     case "$profile_id" in
-        "nim-glm"|"nim-qwen"|"zai-glm"|"zai-glm51"|"groq-llama"|"groq-qwen"|"openrouter-qwen-coder"|"custom-qwen-zai"|"custom-qwen-nim")
+        "nim-glm"|"nim-qwen"|"zai-glm"|"zai-glm51"|"groq-llama"|"groq-qwen"|"openrouter-qwen-coder"|"custom-qwen-zai"|"custom-qwen-nim"|"custom-qwen-groq"|"custom-qwen-openrouter")
             echo "$profile_id"
             return 0
             ;;
@@ -108,6 +108,24 @@ invoke_qwen_profile() {
             fi
             
             bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider nim -ModelId "$model_id"
+            ;;
+        "custom-qwen-groq")
+            local state=$(get_launcher_state)
+            local model_id=$(echo "$state" | grep -o '"customModelId":"[^"]*"' | cut -d'"' -f4)
+            if [ -z "$model_id" ]; then
+                echo -e "${RED}Нет customModelId для custom-qwen-groq. Выберите модель в «Другая модель».${RESET}"
+                return 1
+            fi
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider groq -ModelId "$model_id"
+            ;;
+        "custom-qwen-openrouter")
+            local state=$(get_launcher_state)
+            local model_id=$(echo "$state" | grep -o '"customModelId":"[^"]*"' | cut -d'"' -f4)
+            if [ -z "$model_id" ]; then
+                echo -e "${RED}Нет customModelId для custom-qwen-openrouter. Выберите модель в «Другая модель».${RESET}"
+                return 1
+            fi
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider openrouter -ModelId "$model_id"
             ;;
         *)
             echo -e "${RED}Неизвестный профиль: $profile_id${RESET}"
