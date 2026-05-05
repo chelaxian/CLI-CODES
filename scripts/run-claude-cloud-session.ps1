@@ -1,7 +1,7 @@
 [CmdletBinding(DefaultParameterSetName = "Full")]
 param(
   [Parameter(ParameterSetName = "Full", Mandatory = $true)]
-  [ValidateSet("zai", "nim", "nim-deepseek")]
+  [ValidateSet("zai", "nim", "nim-qwen")]
   [string]$Provider,
 
   [Parameter(ParameterSetName = "Prepare")]
@@ -26,7 +26,7 @@ param(
   [string]$FreeClaudeCodeDir = "I:\qwen-local-setup\free-claude-code",
   [int]$ProxyPort = 8082,
   [string]$ProxyAuthToken = "freecc",
-  # Для -Provider nim-deepseek значение ниже не используется (жёстко nvidia_nim/deepseek-ai/deepseek-v3.1-terminus); порт по умолчанию 8083.
+  # Для -Provider nim-qwen значение ниже не используется (жёстко nvidia_nim/qwen/qwen3.5-122b-a10b); порт по умолчанию 8083.
   [string]$NimModel = "nvidia_nim/z-ai/glm4.7",
 
   # Claude Code knobs
@@ -381,12 +381,11 @@ if ($Provider -eq "zai") {
   }
 }
 
-if ($Provider -in @("nim", "nim-deepseek")) {
-  # Отдельный порт для DeepSeek: если прокси уже слушает 8082 с MODEL=GLM, повторный запуск с другой моделью не сменит MODEL.
+if ($Provider -in @("nim", "nim-qwen")) {
   $nimModelResolved = $NimModel
   $proxyPortResolved = $ProxyPort
-  if ($Provider -eq "nim-deepseek") {
-    $nimModelResolved = "nvidia_nim/deepseek-ai/deepseek-v3.1-terminus"
+  if ($Provider -eq "nim-qwen") {
+    $nimModelResolved = "nvidia_nim/qwen/qwen3.5-122b-a10b"
     if ($PSBoundParameters.ContainsKey("ProxyPort")) {
       $proxyPortResolved = $ProxyPort
     } else {

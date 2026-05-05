@@ -30,8 +30,8 @@ function Resolve-QwenExe {
 function Resolve-QwenNimSessionRoot([string]$ModelId) {
   switch ($ModelId) {
     "nim-glm-4.7-tools" { return Join-Path (Split-Path -Parent $PSScriptRoot) "qwen-sessions\nim-glm-47" }
-    "nim-deepseek-v3.1-terminus-tools" { return Join-Path (Split-Path -Parent $PSScriptRoot) "qwen-sessions\nim-deepseek-v31" }
-    default { throw "Unsupported NIM model for session profile: $ModelId (expected nim-glm-4.7-tools or nim-deepseek-v3.1-terminus-tools)" }
+    "nim-qwen3.5-122b-a10b-tools" { return Join-Path (Split-Path -Parent $PSScriptRoot) "qwen-sessions\nim-qwen35-122b" }
+    default { throw "Unsupported NIM model for session profile: $ModelId (expected nim-glm-4.7-tools or nim-qwen3.5-122b-a10b-tools)" }
   }
 }
 
