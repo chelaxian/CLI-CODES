@@ -20,6 +20,7 @@ PROFILES=(
     "groq-qwen|Groq — Qwen3 32B (free, tool calling)"
     "openrouter-qwen-coder|OpenRouter — Qwen3 Coder (free, tool calling)"
     "custom-model|Другая модель… → выбор провайдера и модели"
+    "native-login|Нативный логин (Qwen OAuth / Coding Plan)"
     "change-api-key|Сменить ключ API провайдера"
 )
 
@@ -333,6 +334,38 @@ while true; do
     local profile_id=$(echo "${PROFILES[$((choice-1))]}" | cut -d'|' -f1)
     
     case "$profile_id" in
+        "native-login")
+            local login_items=("qwen-oauth|Qwen OAuth (браузер, подписка Qwen)" "coding-plan|Alibaba Cloud Coding Plan (API-ключ)")
+            local login_menu=()
+            for item in "${login_items[@]}"; do
+                login_menu+=("${item##*|}")
+            done
+
+            show_tui_framed_menu "Qwen" "Нативный логин Qwen Code" "Выберите способ авторизации" "${login_menu[@]}"
+            local login_choice=$?
+
+            if [ $login_choice -eq 0 ]; then
+                continue
+            fi
+
+            local login_id=$(echo "${login_items[$((login_choice-1))]}" | cut -d'|' -f1)
+
+            case "$login_id" in
+                "qwen-oauth")
+                    echo -e "${CYAN}Запуск Qwen OAuth (откроется браузер)…${RESET}"
+                    qwen auth qwen-oauth
+                    echo -e "${GREEN}Готово. Нажмите Enter…${RESET}"
+                    read
+                    ;;
+                "coding-plan")
+                    echo -e "${CYAN}Запуск Alibaba Cloud Coding Plan авторизации…${RESET}"
+                    qwen auth coding-plan
+                    echo -e "${GREEN}Готово. Нажмите Enter…${RESET}"
+                    read
+                    ;;
+            esac
+            continue
+            ;;
         "change-api-key")
             show_api_key_change_menu "Qwen"
             continue

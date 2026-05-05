@@ -58,6 +58,10 @@ $script:Profiles = @(
     Label = "Другая модель… → выбор провайдера и модели"
   }
   @{
+    Id    = "native-login"
+    Label = "Нативный логин (Anthropic OAuth / Console)"
+  }
+  @{
     Id    = "change-api-key"
     Label = "Сменить ключ API провайдера"
   }
@@ -233,6 +237,30 @@ while ($true) {
       }
     }
     exit $LASTEXITCODE
+  }
+
+  if ($profileId -eq "native-login") {
+    $loginItems = @(
+      @{ Id = "claude-sub"; Label = "Claude подписка (OAuth, браузер)" }
+      @{ Id = "anthropic-console"; Label = "Anthropic Console (API-биллинг, браузер)" }
+    )
+    $loginChoice = Show-TuiFramedMenu -AppBrand "Claude" -Title "Нативный логин Claude Code" -Subtitle "Anthropic авторизация" -Items $loginItems -MaxVisible 10
+    if (-not $loginChoice) { continue }
+    switch ([string]$loginChoice.Id) {
+      "claude-sub" {
+        Write-Host "Запуск Claude OAuth (откроется браузер)…" -ForegroundColor Cyan
+        & claude auth login --claudeai
+        Write-Host "Готово. Нажмите любую клавишу…" -ForegroundColor Green
+        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+      }
+      "anthropic-console" {
+        Write-Host "Запуск Anthropic Console авторизации (откроется браузер)…" -ForegroundColor Cyan
+        & claude auth login --console
+        Write-Host "Готово. Нажмите любую клавишу…" -ForegroundColor Green
+        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+      }
+    }
+    continue
   }
 
   if ($profileId -eq "change-api-key") {

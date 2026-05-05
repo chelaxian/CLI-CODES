@@ -21,6 +21,7 @@ PROFILES=(
     "groq-qwen|Groq — Qwen3 32B (free, tool calling)"
     "openrouter-qwen-coder|OpenRouter — Qwen3 Coder (free, tool calling)"
     "custom-model|Другая модель… → выбор провайдера и модели"
+    "native-login|Нативный логин (OpenCode Providers)"
     "change-api-key|Сменить ключ API провайдера"
 )
 
@@ -490,6 +491,18 @@ while true; do
     local profile_id=$(echo "${PROFILES[$((choice-1))]}" | cut -d'|' -f1)
     
     case "$profile_id" in
+        "native-login")
+            echo -e "${CYAN}Запуск OpenCode providers login (интерактивный выбор)…${RESET}"
+            echo -e "${DARK_GRAY}Выберите провайдер и метод входа в интерактивном меню OpenCode.${RESET}"
+            if command -v opencode &>/dev/null; then
+                opencode providers login
+            else
+                echo -e "${RED}OpenCode CLI не найден. Установите: npm install -g opencode-ai@latest${RESET}"
+            fi
+            echo -e "${GREEN}Готово. Нажмите Enter…${RESET}"
+            read
+            continue
+            ;;
         "change-api-key")
             show_api_key_change_menu "OpenCode"
             continue

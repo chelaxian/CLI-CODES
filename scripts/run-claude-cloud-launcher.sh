@@ -23,6 +23,7 @@ PROFILES=(
     "claude-nim-qwen|NVIDIA NIM — Qwen3.5-122B-A10B (free, tool calling)"
     "claude-openrouter-sonnet|OpenRouter — Claude Sonnet 4 (paid, tool calling)"
     "custom-model|Другая модель… → выбор провайдера и модели"
+    "native-login|Нативный логин (Anthropic OAuth / Console)"
     "change-api-key|Сменить ключ API провайдера"
 )
 
@@ -336,6 +337,38 @@ while true; do
     local profile_id=$(echo "${PROFILES[$((choice-1))]}" | cut -d'|' -f1)
     
     case "$profile_id" in
+        "native-login")
+            local login_items=("claude-sub|Claude подписка (OAuth, браузер)" "anthropic-console|Anthropic Console (API-биллинг, браузер)")
+            local login_menu=()
+            for item in "${login_items[@]}"; do
+                login_menu+=("${item##*|}")
+            done
+
+            show_tui_framed_menu "Claude" "Нативный логин Claude Code" "Anthropic авторизация" "${login_menu[@]}"
+            local login_choice=$?
+
+            if [ $login_choice -eq 0 ]; then
+                continue
+            fi
+
+            local login_id=$(echo "${login_items[$((login_choice-1))]}" | cut -d'|' -f1)
+
+            case "$login_id" in
+                "claude-sub")
+                    echo -e "${CYAN}Запуск Claude OAuth (откроется браузер)…${RESET}"
+                    claude auth login --claudeai
+                    echo -e "${GREEN}Готово. Нажмите Enter…${RESET}"
+                    read
+                    ;;
+                "anthropic-console")
+                    echo -e "${CYAN}Запуск Anthropic Console авторизации (откроется браузер)…${RESET}"
+                    claude auth login --console
+                    echo -e "${GREEN}Готово. Нажмите Enter…${RESET}"
+                    read
+                    ;;
+            esac
+            continue
+            ;;
         "change-api-key")
             show_api_key_change_menu "Claude"
             continue

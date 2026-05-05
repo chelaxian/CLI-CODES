@@ -51,6 +51,10 @@ $script:Profiles = @(
     Label = "Другая модель… → выбор провайдера и модели"
   }
   @{
+    Id    = "native-login"
+    Label = "Нативный логин (OpenCode Providers)"
+  }
+  @{
     Id    = "change-api-key"
     Label = "Сменить ключ API провайдера"
   }
@@ -422,6 +426,22 @@ while ($true) {
     Save-LauncherState -ProfileId $newId -Extra @{ customModelId = [string]$w.ModelId }
     Invoke-OpenCodeProfile -ProfileId $newId
     exit $LASTEXITCODE
+  }
+
+  if ($profileId -eq "native-login") {
+    Write-Host "Запуск OpenCode providers login (интерактивный выбор)…" -ForegroundColor Cyan
+    Write-Host "Выберите провайдер и метод входа в интерактивном меню OpenCode." -ForegroundColor DarkGray
+    $opencodeExe = Resolve-OpenCodeExe
+    if (-not $opencodeExe) {
+      Write-Host "OpenCode CLI не найден. Установите: npm install -g opencode-ai@latest" -ForegroundColor Red
+      Write-Host "Нажмите любую клавишу…"
+      $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+      continue
+    }
+    & $opencodeExe providers login
+    Write-Host "Готово. Нажмите любую клавишу…" -ForegroundColor Green
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    continue
   }
 
   if ($profileId -eq "change-api-key") {

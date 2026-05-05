@@ -54,6 +54,10 @@ $script:Profiles = @(
     Label       = "Другая модель… → выбор провайдера и модели"
   }
   @{
+    Id          = "native-login"
+    Label       = "Нативный логин (Qwen OAuth / Coding Plan)"
+  }
+  @{
     Id          = "change-api-key"
     Label       = "Сменить ключ API провайдера"
   }
@@ -214,6 +218,30 @@ while ($true) {
     Save-LauncherState -ProfileId $newId -Extra @{ customModelId = [string]$w.ModelId }
     Invoke-QwenProfile -ProfileId $newId
     exit $LASTEXITCODE
+  }
+
+  if ($profileId -eq "native-login") {
+    $loginItems = @(
+      @{ Id = "qwen-oauth"; Label = "Qwen OAuth (браузер, подписка Qwen)" }
+      @{ Id = "coding-plan"; Label = "Alibaba Cloud Coding Plan (API-ключ)" }
+    )
+    $loginChoice = Show-TuiFramedMenu -AppBrand "Qwen" -Title "Нативный логин Qwen Code" -Subtitle "Выберите способ авторизации" -Items $loginItems -MaxVisible 10
+    if (-not $loginChoice) { continue }
+    switch ([string]$loginChoice.Id) {
+      "qwen-oauth" {
+        Write-Host "Запуск Qwen OAuth (откроется браузер)…" -ForegroundColor Cyan
+        & qwen auth qwen-oauth
+        Write-Host "Готово. Нажмите любую клавишу…" -ForegroundColor Green
+        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+      }
+      "coding-plan" {
+        Write-Host "Запуск Alibaba Cloud Coding Plan авторизации…" -ForegroundColor Cyan
+        & qwen auth coding-plan
+        Write-Host "Готово. Нажмите любую клавишу…" -ForegroundColor Green
+        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+      }
+    }
+    continue
   }
 
   if ($profileId -eq "change-api-key") {
