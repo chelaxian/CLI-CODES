@@ -238,77 +238,10 @@ fi
 if $INSTALL_QWEN; then
     step "НАСТРОЙКА СЕССИЙ QWEN CODE"
 
-    SESSIONS_DIR="$INSTALL_DIR/qwen-sessions"
-    mkdir -p "$SESSIONS_DIR"
-
-    # Z.AI GLM-4.7
-    mkdir -p "$SESSIONS_DIR/zai-glm47/.qwen"
-    ZAI_SETTINGS="$SESSIONS_DIR/zai-glm47/.qwen/settings.json"
-    if [ ! -f "$ZAI_SETTINGS" ]; then
-        cat > "$ZAI_SETTINGS" << 'SETTINGSJSON'
-{
-  "modelProviders": {
-    "openai": [
-      {
-        "id": "zai-glm-47",
-        "name": "Z.AI GLM-4.7",
-        "baseUrl": "https://api.z.ai/api/openai/v1",
-        "envKey": "ZAI_API_KEY"
-      }
-    ]
-  }
-}
-SETTINGSJSON
-        ok "zai-glm47/.qwen/settings.json"
-    else
-        skip "zai-glm47/.qwen/settings.json уже существует"
-    fi
-
-    # NIM GLM-4.7
-    mkdir -p "$SESSIONS_DIR/nim-glm-47/.qwen"
-    NIM_SETTINGS="$SESSIONS_DIR/nim-glm-47/.qwen/settings.json"
-    if [ ! -f "$NIM_SETTINGS" ]; then
-        cat > "$NIM_SETTINGS" << 'SETTINGSJSON'
-{
-  "modelProviders": {
-    "openai": [
-      {
-        "id": "nim-glm-47-tools",
-        "name": "NVIDIA NIM GLM-4.7 (LiteLLM)",
-        "baseUrl": "http://127.0.0.1:4000/v1",
-        "envKey": "NVIDIA_NIM_API_KEY"
-      }
-    ]
-  }
-}
-SETTINGSJSON
-        ok "nim-glm-47/.qwen/settings.json"
-    else
-        skip "nim-glm-47/.qwen/settings.json уже существует"
-    fi
-
-    # NIM DeepSeek
-    mkdir -p "$SESSIONS_DIR/nim-deepseek-v31/.qwen"
-    DS_SETTINGS="$SESSIONS_DIR/nim-deepseek-v31/.qwen/settings.json"
-    if [ ! -f "$DS_SETTINGS" ]; then
-        cat > "$DS_SETTINGS" << 'SETTINGSJSON'
-{
-  "modelProviders": {
-    "openai": [
-      {
-        "id": "nim-deepseek-v3.1-terminus-tools",
-        "name": "NVIDIA NIM DeepSeek V3.1 Terminus (LiteLLM)",
-        "baseUrl": "http://127.0.0.1:4000/v1",
-        "envKey": "NVIDIA_NIM_API_KEY"
-      }
-    ]
-  }
-}
-SETTINGSJSON
-        ok "nim-deepseek-v31/.qwen/settings.json"
-    else
-        skip "nim-deepseek-v31/.qwen/settings.json уже существует"
-    fi
+    # Единое пространство для /resume (все модели в одной директории)
+    SHARED_DIR="$INSTALL_DIR/qwen-sessions/_shared/.qwen"
+    mkdir -p "$SHARED_DIR"
+    ok "qwen-sessions/_shared/ — единое пространство /resume"
 fi
 
 # ─── Создание ярлыков ────────────────────────────────────────────────────────
@@ -385,6 +318,7 @@ echo ""
 echo -e "${YELLOW}ПРИМЕЧАНИЯ:${RESET}"
 echo -e "${GRAY}  - Выполните: source ~/.bashrc  (или перезапустите терминал)${RESET}"
 echo -e "${GRAY}  - В меню лаунчеров есть пункт 'Сменить ключ API провайдера'${RESET}"
+echo -e "${GRAY}  - Все сессии Qwen Code хранятся в едином пространстве (/resume)${RESET}"
 echo -e "${GRAY}  - Для NIM пресетов (Qwen) нужен LiteLLM — см. docs/${RESET}"
 echo ""
 echo -e "${CYAN}Приятного использования!${RESET}"

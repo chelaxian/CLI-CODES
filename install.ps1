@@ -247,70 +247,12 @@ if ($installQwen) {
     Write-Status "════════════════════════════════════════════════════════════════════════════════" "Cyan"
     Write-Host ""
 
-    $sessionsDir = Join-Path $InstallDir "qwen-sessions"
-    
-    # Z.AI GLM-4.7 сессия
-    $zaiSettings = Join-Path $sessionsDir "zai-glm47\.qwen\settings.json"
-    if (-not (Test-Path -LiteralPath $zaiSettings)) {
-        $settings = @{
-            modelProviders = @{
-                openai = @(
-                    @{
-                        id = "zai-glm-47"
-                        name = "Z.AI GLM-4.7"
-                        baseUrl = "https://api.z.ai/api/openai/v1"
-                        envKey = "ZAI_API_KEY"
-                    }
-                )
-            }
-        } | ConvertTo-Json -Depth 10
-        [System.IO.File]::WriteAllText($zaiSettings, $settings, (New-Object System.Text.UTF8Encoding($false)))
-        Write-Status "  [OK] zai-glm47/.qwen/settings.json" "Green"
-    } else {
-        Write-Status "  [SKIP] zai-glm47/.qwen/settings.json уже существует" "Yellow"
+    # Единое пространство для /resume (все модели в одной директории)
+    $sharedDir = Join-Path $InstallDir "qwen-sessions\_shared\.qwen"
+    if (-not (Test-Path -LiteralPath $sharedDir)) {
+        New-Item -ItemType Directory -Path $sharedDir -Force | Out-Null
     }
-    
-    # NIM GLM-4.7 сессия
-    $nimSettings = Join-Path $sessionsDir "nim-glm-47\.qwen\settings.json"
-    if (-not (Test-Path -LiteralPath $nimSettings)) {
-        $settings = @{
-            modelProviders = @{
-                openai = @(
-                    @{
-                        id = "nim-glm-47-tools"
-                        name = "NVIDIA NIM GLM-4.7 (LiteLLM)"
-                        baseUrl = "http://127.0.0.1:4000/v1"
-                        envKey = "NVIDIA_NIM_API_KEY"
-                    }
-                )
-            }
-        } | ConvertTo-Json -Depth 10
-        [System.IO.File]::WriteAllText($nimSettings, $settings, (New-Object System.Text.UTF8Encoding($false)))
-        Write-Status "  [OK] nim-glm-47/.qwen/settings.json" "Green"
-    } else {
-        Write-Status "  [SKIP] nim-glm-47/.qwen/settings.json уже существует" "Yellow"
-    }
-
-    # NIM DeepSeek сессия
-    $dsSettings = Join-Path $sessionsDir "nim-deepseek-v31\.qwen\settings.json"
-    if (-not (Test-Path -LiteralPath $dsSettings)) {
-        $settings = @{
-            modelProviders = @{
-                openai = @(
-                    @{
-                        id = "nim-deepseek-v3.1-terminus-tools"
-                        name = "NVIDIA NIM DeepSeek V3.1 Terminus (LiteLLM)"
-                        baseUrl = "http://127.0.0.1:4000/v1"
-                        envKey = "NVIDIA_NIM_API_KEY"
-                    }
-                )
-            }
-        } | ConvertTo-Json -Depth 10
-        [System.IO.File]::WriteAllText($dsSettings, $settings, (New-Object System.Text.UTF8Encoding($false)))
-        Write-Status "  [OK] nim-deepseek-v31/.qwen/settings.json" "Green"
-    } else {
-        Write-Status "  [SKIP] nim-deepseek-v31/.qwen/settings.json уже существует" "Yellow"
-    }
+    Write-Status "  [OK] qwen-sessions/_shared/ — единое пространство /resume" "Green"
 
     Write-Host ""
 }
@@ -382,6 +324,7 @@ Write-Host ""
 Write-Status "ПРИМЕЧАНИЯ:" "Yellow"
 Write-Status "  - Перезапустите терминал, чтобы переменные окружения вступили в силу" "Gray"
 Write-Status "  - В меню лаунчеров есть пункт 'Сменить ключ API провайдера'" "Gray"
+Write-Status "  - Все сессии Qwen Code хранятся в едином пространстве (/resume)" "Gray"
 Write-Status "  - Для NIM пресетов (Qwen) нужен LiteLLM — см. docs/" "Gray"
 Write-Host ""
 Read-Host "Нажмите Enter для выхода"
