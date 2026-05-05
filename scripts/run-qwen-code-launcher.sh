@@ -16,6 +16,9 @@ PROFILES=(
     "nim-qwen|NVIDIA NIM — Qwen3.5-122B-A10B (tool calling + thinking, …-tools)"
     "zai-glm|Z.AI — GLM-4.7 (OpenAI Coding API: tool calling + thinking + агент)"
     "zai-glm51|Z.AI — GLM-5.1 (OpenAI Coding API: tool calling + thinking + агент)"
+    "groq-llama|Groq — Llama 3.3 70B (бесплатно, ultra-fast, tool calling)"
+    "groq-qwen|Groq — Qwen3 32B (бесплатно, ultra-fast, tool calling)"
+    "openrouter-qwen-coder|OpenRouter — Qwen3 Coder (бесплатно, tool calling)"
     "custom-model|Другая модель… → Z.AI или NIM, список с API (прокрутка)"
     "change-api-key|Сменить ключ API провайдера"
 )
@@ -48,7 +51,7 @@ resolve_profile_from_state() {
     local profile_id=$(echo "$state" | grep -o '"profileId":"[^"]*"' | cut -d'"' -f4)
     
     case "$profile_id" in
-        "nim-glm"|"nim-qwen"|"zai-glm"|"zai-glm51"|"custom-qwen-zai"|"custom-qwen-nim")
+        "nim-glm"|"nim-qwen"|"zai-glm"|"zai-glm51"|"groq-llama"|"groq-qwen"|"openrouter-qwen-coder"|"custom-qwen-zai"|"custom-qwen-nim")
             echo "$profile_id"
             return 0
             ;;
@@ -73,6 +76,15 @@ invoke_qwen_profile() {
             ;;
         "zai-glm51")
             bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider zai -ModelId "glm-5.1"
+            ;;
+        "groq-llama")
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider groq -ModelId "llama-3.3-70b-versatile"
+            ;;
+        "groq-qwen")
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider groq -ModelId "qwen/qwen3-32b"
+            ;;
+        "openrouter-qwen-coder")
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider openrouter -ModelId "qwen/qwen3-coder:free"
             ;;
         "custom-qwen-zai")
             local state=$(get_launcher_state)

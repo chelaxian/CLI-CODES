@@ -1,6 +1,6 @@
 # Ручная установка: пошаговое руководство
 
-Полная инструкция для ручного развёртывания **Qwen Code**, **Claude Code** и **OpenCode** с облачными провайдерами **NVIDIA NIM** и **Z.AI** на **Windows** и **Linux**.
+Полная инструкция для ручного развёртывания **Qwen Code**, **Claude Code** и **OpenCode** с облачными провайдерами **NVIDIA NIM**, **Z.AI**, **Groq** и **OpenRouter** на **Windows** и **Linux**.
 
 ---
 
@@ -164,6 +164,8 @@ OpenCode использует `opencode.json` конфигурацию (пере
 |-----------|-------------|-----------|
 | **NVIDIA NIM** | [build.nvidia.com](https://build.nvidia.com/) | Да, с лимитами |
 | **Z.AI** | [open.bigmodel.cn](https://open.bigmodel.cn/) | Да, с лимитами |
+| **Groq** | [console.groq.com](https://console.groq.com/) | Да, 14400 запросов/день |
+| **OpenRouter** | [openrouter.ai](https://openrouter.ai/) | Да, бесплатные модели |
 
 ### Windows: переменные пользователя
 

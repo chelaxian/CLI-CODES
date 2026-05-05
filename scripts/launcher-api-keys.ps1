@@ -3,7 +3,7 @@
 function Get-CurrentApiKey {
   param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("NVIDIA_NIM", "ZAI")]
+    [ValidateSet("NVIDIA_NIM", "ZAI", "GROQ", "OPENROUTER")]
     [string]$Provider
   )
 
@@ -36,6 +36,16 @@ function Get-CurrentApiKey {
         return $key.Trim()
       }
     }
+    "GROQ" {
+      $key = [Environment]::GetEnvironmentVariable("GROQ_API_KEY", "User")
+      if ([string]::IsNullOrWhiteSpace($key)) { $key = $env:GROQ_API_KEY }
+      if ([string]::IsNullOrWhiteSpace($key)) { return "" } else { return $key.Trim() }
+    }
+    "OPENROUTER" {
+      $key = [Environment]::GetEnvironmentVariable("OPENROUTER_API_KEY", "User")
+      if ([string]::IsNullOrWhiteSpace($key)) { $key = $env:OPENROUTER_API_KEY }
+      if ([string]::IsNullOrWhiteSpace($key)) { return "" } else { return $key.Trim() }
+    }
     default { return "" }
   }
 }
@@ -50,7 +60,7 @@ function Read-SecretText {
 function Set-ProviderApiKey {
   param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("NVIDIA_NIM", "ZAI")]
+    [ValidateSet("NVIDIA_NIM", "ZAI", "GROQ", "OPENROUTER")]
     [string]$Provider,
     [Parameter(Mandatory = $true)]
     [string]$NewKey
@@ -68,6 +78,14 @@ function Set-ProviderApiKey {
     "ZAI" {
       [Environment]::SetEnvironmentVariable("ZAI_API_KEY", $NewKey.Trim(), "User")
       Write-Host "Z.AI API ключ обновлён в переменных пользователя." -ForegroundColor Green
+    }
+    "GROQ" {
+      [Environment]::SetEnvironmentVariable("GROQ_API_KEY", $NewKey.Trim(), "User")
+      Write-Host "Groq API ключ обновлён в переменных пользователя." -ForegroundColor Green
+    }
+    "OPENROUTER" {
+      [Environment]::SetEnvironmentVariable("OPENROUTER_API_KEY", $NewKey.Trim(), "User")
+      Write-Host "OpenRouter API ключ обновлён в переменных пользователя." -ForegroundColor Green
     }
   }
 }
@@ -89,6 +107,14 @@ function Show-ApiKeyChangeMenu {
       Id    = "zai"
       Label = "Z.AI API ключ"
     }
+    @{
+      Id    = "groq"
+      Label = "Groq API ключ"
+    }
+    @{
+      Id    = "openrouter"
+      Label = "OpenRouter API ключ"
+    }
   )
 
   while ($true) {
@@ -103,7 +129,13 @@ function Show-ApiKeyChangeMenu {
     }
 
     $providerId = [string]$choice.Id
-    $envVarName = if ($providerId -eq "nim") { "NVIDIA_NIM" } else { "ZAI" }
+    $envVarName = switch ($providerId) {
+      "nim" { "NVIDIA_NIM" }
+      "zai" { "ZAI" }
+      "groq" { "GROQ" }
+      "openrouter" { "OPENROUTER" }
+      default { $providerId.ToUpper() }
+    }
     $currentKey = Get-CurrentApiKey -Provider $envVarName
 
     Clear-Host

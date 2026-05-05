@@ -1,6 +1,6 @@
 # cloud-code-setup
 
-**1-click развёртывание Qwen Code, Claude Code и OpenCode с облачными моделями (NVIDIA NIM, Z.AI)**
+**1-click развёртывание Qwen Code, Claude Code и OpenCode с облачными моделями (NVIDIA NIM, Z.AI, Groq, OpenRouter)**
 
 Работает на Windows и Linux. Устанавливается одной командой в терминале.
 
@@ -39,6 +39,8 @@ cd cloud-code-setup
 4. **Запрашивает API ключи**:
    - NVIDIA NIM API ключ (можно пропустить)
    - Z.AI API ключ (можно пропустить)
+   - Groq API ключ (можно пропустить)
+   - OpenRouter API ключ (можно пропустить)
 5. **Создаёт ярлыки** на рабочем столе
 6. **Настраивает профили сессий** для Qwen Code
 
@@ -60,11 +62,15 @@ cd cloud-code-setup
 |-----------|--------|----------|
 | **NVIDIA NIM** | GLM-4.7, Qwen3.5-122B-A10B | Qwen Code, Claude Code, OpenCode |
 | **Z.AI** | GLM-4.7, GLM-5.1 | Qwen Code, Claude Code, OpenCode |
+| **Groq** | Llama 3.3 70B, Qwen3 32B | Qwen Code, OpenCode |
+| **OpenRouter** | Qwen3 Coder (free) | Qwen Code, OpenCode |
 
 ### Где взять API ключи
 
 - **NVIDIA NIM**: [https://build.nvidia.com/](https://build.nvidia.com/) — бесплатный ключ после регистрации
 - **Z.AI**: [https://open.bigmodel.cn/](https://open.bigmodel.cn/) — GLM API
+- **Groq**: [https://console.groq.com/](https://console.groq.com/) — бесплатный ключ, ультрабыстрая инференс
+- **OpenRouter**: [https://openrouter.ai/](https://openrouter.ai/) — шлюз к множеству моделей, есть бесплатные
 
 ---
 
@@ -82,7 +88,7 @@ cd cloud-code-setup
 
 В меню лаунчера выберите пункт **«Сменить ключ API провайдера»**:
 
-1. Выберите провайдера (NVIDIA NIM или Z.AI)
+1. Выберите провайдера (NVIDIA NIM, Z.AI, Groq или OpenRouter)
 2. Введите новый ключ
 3. Ключ сохраняется в переменных окружения
 
@@ -105,6 +111,8 @@ cloud-code-setup/
 │   ├── launcher-custom-model-wizard.ps1
 │   ├── run-qwen-code-launcher.ps1    # Qwen Code лаунчер (Windows)
 │   ├── run-qwen-code-launcher.sh     # Qwen Code лаунчер (Linux)
+│   ├── run-qwen-code-dynamic.ps1     # Qwen Code dynamic provider (Windows)
+│   ├── run-qwen-code-dynamic.sh      # Qwen Code dynamic provider (Linux)
 │   ├── run-claude-cloud-launcher.ps1  # Claude Code лаунчер (Windows)
 │   ├── run-claude-cloud-launcher.sh   # Claude Code лаунчер (Linux)
 │   ├── run-opencode-launcher.ps1      # OpenCode лаунчер (Windows)

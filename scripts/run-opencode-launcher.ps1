@@ -39,6 +39,18 @@ $script:Profiles = @(
     Label = "Другая модель… → Z.AI или NIM, список с API (прокрутка)"
   }
   @{
+    Id    = "groq-llama"
+    Label = "Groq — Llama 3.3 70B (бесплатно, ultra-fast, tool calling)"
+  }
+  @{
+    Id    = "groq-qwen"
+    Label = "Groq — Qwen3 32B (бесплатно, ultra-fast, tool calling)"
+  }
+  @{
+    Id    = "openrouter-qwen-coder"
+    Label = "OpenRouter — Qwen3 Coder (бесплатно, tool calling)"
+  }
+  @{
     Id    = "change-api-key"
     Label = "Сменить ключ API провайдера"
   }
@@ -72,7 +84,7 @@ function Save-LauncherState {
 function Resolve-ProfileFromState($state) {
   if (-not $state -or [string]::IsNullOrWhiteSpace($state.profileId)) { return $null }
   $id = [string]$state.profileId
-  if ($id -in @("zai-glm", "zai-glm51", "nim-glm", "nim-qwen", "custom-opencode-zai", "custom-opencode-nim")) { return $id }
+  if ($id -in @("zai-glm", "zai-glm51", "nim-glm", "nim-qwen", "groq-llama", "groq-qwen", "openrouter-qwen-coder", "custom-opencode-zai", "custom-opencode-nim")) { return $id }
   return $null
 }
 
@@ -277,6 +289,42 @@ function Invoke-OpenCodeProfile {
       & $opencodeExe
       return
     }
+    "groq-llama" {
+      $apiKey = [Environment]::GetEnvironmentVariable("GROQ_API_KEY", "User")
+      if ([string]::IsNullOrWhiteSpace($apiKey)) { $apiKey = $env:GROQ_API_KEY }
+      if ([string]::IsNullOrWhiteSpace($apiKey)) {
+        throw "Groq API ключ не задан. Задайте GROQ_API_KEY или выберите «Сменить ключ API провайдера»."
+      }
+      $configPath = Write-OpenCodeConfig -Provider "groq" -Model "llama-3.3-70b-versatile" -BaseURL "https://api.groq.com/openai/v1" -ApiKey $apiKey
+      $env:OPENCODE_CONFIG = $configPath
+      Write-Host "Запуск OpenCode (Groq Llama 3.3 70B)…" -ForegroundColor Cyan
+      & $opencodeExe
+      return
+    }
+    "groq-qwen" {
+      $apiKey = [Environment]::GetEnvironmentVariable("GROQ_API_KEY", "User")
+      if ([string]::IsNullOrWhiteSpace($apiKey)) { $apiKey = $env:GROQ_API_KEY }
+      if ([string]::IsNullOrWhiteSpace($apiKey)) {
+        throw "Groq API ключ не задан. Задайте GROQ_API_KEY или выберите «Сменить ключ API провайдера»."
+      }
+      $configPath = Write-OpenCodeConfig -Provider "groq" -Model "qwen/qwen3-32b" -BaseURL "https://api.groq.com/openai/v1" -ApiKey $apiKey
+      $env:OPENCODE_CONFIG = $configPath
+      Write-Host "Запуск OpenCode (Groq Qwen3 32B)…" -ForegroundColor Cyan
+      & $opencodeExe
+      return
+    }
+    "openrouter-qwen-coder" {
+      $apiKey = [Environment]::GetEnvironmentVariable("OPENROUTER_API_KEY", "User")
+      if ([string]::IsNullOrWhiteSpace($apiKey)) { $apiKey = $env:OPENROUTER_API_KEY }
+      if ([string]::IsNullOrWhiteSpace($apiKey)) {
+        throw "OpenRouter API ключ не задан. Задайте OPENROUTER_API_KEY или выберите «Сменить ключ API провайдера»."
+      }
+      $configPath = Write-OpenCodeConfig -Provider "openrouter" -Model "qwen/qwen3-coder:free" -BaseURL "https://openrouter.ai/api/v1" -ApiKey $apiKey
+      $env:OPENCODE_CONFIG = $configPath
+      Write-Host "Запуск OpenCode (OpenRouter Qwen3 Coder)…" -ForegroundColor Cyan
+      & $opencodeExe
+      return
+    }
     default {
       throw "Неизвестный профиль: $ProfileId"
     }
@@ -312,7 +360,7 @@ if ($lastId) {
 }
 
 while ($true) {
-  $choice = Show-TuiFramedMenu -AppBrand "OpenCode" -Title "OpenCode — выбор провайдера" -Subtitle "Z.AI · NVIDIA NIM (OpenAI-compatible)" -Items $items -InitialIndex $startIdx -MaxVisible 14
+  $choice = Show-TuiFramedMenu -AppBrand "OpenCode" -Title "OpenCode — выбор провайдера" -Subtitle "Z.AI · NIM · Groq · OpenRouter (OpenAI-compatible)" -Items $items -InitialIndex $startIdx -MaxVisible 14
   if (-not $choice) {
     Write-Host "Отменено." -ForegroundColor Yellow
     exit 0

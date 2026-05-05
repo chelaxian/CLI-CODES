@@ -44,6 +44,20 @@ get_current_api_key() {
                 echo "$key" | xargs
             fi
             ;;
+        "GROQ")
+            local key="${GROQ_API_KEY:-}"
+            if [ -z "$key" ]; then
+                key=$(grep "^export GROQ_API_KEY=" "$HOME/.bashrc" 2>/dev/null | cut -d'"' -f2)
+            fi
+            if [ -z "$key" ]; then echo "" ; else echo "$key" | xargs ; fi
+            ;;
+        "OPENROUTER")
+            local key="${OPENROUTER_API_KEY:-}"
+            if [ -z "$key" ]; then
+                key=$(grep "^export OPENROUTER_API_KEY=" "$HOME/.bashrc" 2>/dev/null | cut -d'"' -f2)
+            fi
+            if [ -z "$key" ]; then echo "" ; else echo "$key" | xargs ; fi
+            ;;
         *)
             echo ""
             ;;
@@ -78,6 +92,12 @@ set_provider_api_key() {
             ;;
         "ZAI")
             env_var="ZAI_API_KEY"
+            ;;
+        "GROQ")
+            env_var="GROQ_API_KEY"
+            ;;
+        "OPENROUTER")
+            env_var="OPENROUTER_API_KEY"
             ;;
         *)
             echo -e "${RED}Неизвестный провайдер: $provider${RESET}" >&2
@@ -152,6 +172,8 @@ show_api_key_change_menu() {
         echo -e "${banner_color}║                                                                        ║${RESET}"
         echo -e "${banner_color}║   [1] NVIDIA NIM API ключ                                              ║${RESET}"
         echo -e "${banner_color}║   [2] Z.AI API ключ                                                   ║${RESET}"
+        echo -e "${banner_color}║   [3] Groq API ключ                                                   ║${RESET}"
+        echo -e "${banner_color}║   [4] OpenRouter API ключ                                             ║${RESET}"
         echo -e "${banner_color}║   [0] Назад                                                           ║${RESET}"
         echo -e "${banner_color}║                                                                        ║${RESET}"
         echo -e "${banner_color}║                                                                        ║${RESET}"
@@ -170,6 +192,16 @@ show_api_key_change_menu() {
                 provider_id="zai"
                 provider_name="Z.AI"
                 env_var_name="ZAI"
+                ;;
+            3)
+                provider_id="groq"
+                provider_name="Groq"
+                env_var_name="GROQ"
+                ;;
+            4)
+                provider_id="openrouter"
+                provider_name="OpenRouter"
+                env_var_name="OPENROUTER"
                 ;;
             0|"")
                 return 0

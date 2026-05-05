@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
   [Parameter(Mandatory = $true)]
-  [ValidateSet("zai", "nim")]
+  [ValidateSet("zai", "nim", "groq", "openrouter")]
   [string]$Provider,
 
   [Parameter(Mandatory = $true)]
@@ -71,6 +71,34 @@ function Build-QwenSettingsZai([string]$Mid) {
               top_p         = 0.95
               max_tokens    = 81920
             }
+          }
+        }
+      )
+    }
+    security = @{
+      auth = @{ selectedType = "openai" }
+    }
+    model = @{ name = $Mid }
+  }
+}
+
+function Build-QwenSettingsOpenAI {
+  param(
+    [Parameter(Mandatory = $true)][string]$Mid,
+    [Parameter(Mandatory = $true)][string]$BaseUrl
+  )
+  return @{
+    modelProviders = @{
+      openai = @(
+        @{
+          id           = $Mid
+          name         = ("OpenAI-compat — {0}" -f $Mid)
+          envKey       = "OPENAI_API_KEY"
+          baseUrl      = $BaseUrl
+          generationConfig = @{
+            timeout            = 600000
+            maxRetries         = 4
+            contextWindowSize  = 131072
           }
         }
       )
@@ -271,6 +299,18 @@ if ($Provider -eq "zai") {
   if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") { $key = Read-SecretText "Z.AI API key" }
   $env:OPENAI_API_KEY = $key.Trim()
   $cfg = Build-QwenSettingsZai -Mid $ModelId.Trim()
+} elseif ($Provider -eq "groq") {
+  $key = [Environment]::GetEnvironmentVariable("GROQ_API_KEY", "User")
+  if ([string]::IsNullOrWhiteSpace($key)) { $key = $env:GROQ_API_KEY }
+  if ([string]::IsNullOrWhiteSpace($key)) { $key = Read-SecretText "Groq API key" }
+  $env:OPENAI_API_KEY = $key.Trim()
+  $cfg = Build-QwenSettingsOpenAI -Mid $ModelId.Trim() -BaseUrl "https://api.groq.com/openai/v1"
+} elseif ($Provider -eq "openrouter") {
+  $key = [Environment]::GetEnvironmentVariable("OPENROUTER_API_KEY", "User")
+  if ([string]::IsNullOrWhiteSpace($key)) { $key = $env:OPENROUTER_API_KEY }
+  if ([string]::IsNullOrWhiteSpace($key)) { $key = Read-SecretText "OpenRouter API key" }
+  $env:OPENAI_API_KEY = $key.Trim()
+  $cfg = Build-QwenSettingsOpenAI -Mid $ModelId.Trim() -BaseUrl "https://openrouter.ai/api/v1"
 } else {
   $key = [Environment]::GetEnvironmentVariable("NVIDIA_NIM_API_KEY", "User")
   if ([string]::IsNullOrWhiteSpace($key)) { $key = $env:NVIDIA_NIM_API_KEY }

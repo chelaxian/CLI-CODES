@@ -42,6 +42,18 @@ $script:Profiles = @(
     Label       = "Другая модель… → Z.AI или NIM, список с API (прокрутка)"
   }
   @{
+    Id          = "groq-llama"
+    Label       = "Groq — Llama 3.3 70B (бесплатно, ultra-fast, tool calling)"
+  }
+  @{
+    Id          = "groq-qwen"
+    Label       = "Groq — Qwen3 32B (бесплатно, ultra-fast, tool calling)"
+  }
+  @{
+    Id          = "openrouter-qwen-coder"
+    Label       = "OpenRouter — Qwen3 Coder (бесплатно, tool calling)"
+  }
+  @{
     Id          = "change-api-key"
     Label       = "Сменить ключ API провайдера"
   }
@@ -75,7 +87,7 @@ function Save-LauncherState {
 function Resolve-ProfileFromState($state) {
   if (-not $state -or [string]::IsNullOrWhiteSpace($state.profileId)) { return $null }
   $id = [string]$state.profileId
-  if ($id -in @("nim-glm", "nim-qwen", "zai-glm", "zai-glm51", "custom-qwen-zai", "custom-qwen-nim")) { return $id }
+  if ($id -in @("nim-glm", "nim-qwen", "zai-glm", "zai-glm51", "groq-llama", "groq-qwen", "openrouter-qwen-coder", "custom-qwen-zai", "custom-qwen-nim")) { return $id }
   return $null
 }
 
@@ -97,6 +109,18 @@ function Invoke-QwenProfile {
     }
     "zai-glm51" {
       & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider zai -ModelId "glm-5.1"
+      return
+    }
+    "groq-llama" {
+      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider groq -ModelId "llama-3.3-70b-versatile"
+      return
+    }
+    "groq-qwen" {
+      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider groq -ModelId "qwen/qwen3-32b"
+      return
+    }
+    "openrouter-qwen-coder" {
+      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider openrouter -ModelId "qwen/qwen3-coder:free"
       return
     }
     "custom-qwen-zai" {
