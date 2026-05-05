@@ -87,8 +87,13 @@ function Build-QwenSettingsOpenAI {
     [Parameter(Mandatory = $true)][string]$Mid,
     [Parameter(Mandatory = $true)][string]$BaseUrl,
     [int]$ContextWindowSize = 131072,
-    [int]$MaxTokens = 81920
+    [int]$MaxTokens = 81920,
+    [switch]$SkipStartupContext
   )
+  $modelBlock = [ordered]@{ name = $Mid }
+  if ($SkipStartupContext) {
+    $modelBlock["skipStartupContext"] = $true
+  }
   return @{
     modelProviders = @{
       openai = @(
@@ -113,7 +118,7 @@ function Build-QwenSettingsOpenAI {
     security = @{
       auth = @{ selectedType = "openai" }
     }
-    model = @{ name = $Mid }
+    model    = $modelBlock
   }
 }
 
@@ -311,44 +316,42 @@ if ($Provider -eq "zai") {
   if ([string]::IsNullOrWhiteSpace($key)) { $key = $env:GROQ_API_KEY }
   if ([string]::IsNullOrWhiteSpace($key)) { $key = Read-SecretText "Groq API key" }
   $env:OPENAI_API_KEY = $key.Trim()
-  $groqCtx = 131072
-  $groqMaxTok = 32768
-  $groqMaxOut = 32768
+  # Groq free tier: очень низкий TPM (6-12K). Урезаем контекст и пропускаем startup context.
+  $groqCtx = 8192
+  $groqMaxTok = 4096
+  $groqMaxOut = 4096
   $groqMid = $ModelId.Trim().ToLowerInvariant()
   if ($groqMid -match "qwen3-32b") {
-    $groqMaxTok = 40960
-    $groqMaxOut = 40960
+    $groqMaxTok = 4096
+    $groqMaxOut = 4096
+  } elseif ($groqMid -match "llama-3\.3-70b") {
+    $groqMaxTok = 4096
+    $groqMaxOut = 4096
   } elseif ($groqMid -match "llama-3\.1-8b") {
-    $groqMaxTok = 131072
-    $groqMaxOut = 32768
+    $groqMaxTok = 4096
+    $groqMaxOut = 4096
   } elseif ($groqMid -match "llama-4-scout") {
-    $groqCtx = 131072
-    $groqMaxTok = 8192
-    $groqMaxOut = 8192
+    $groqMaxTok = 4096
+    $groqMaxOut = 4096
   } elseif ($groqMid -match "gpt-oss-120b") {
-    $groqMaxTok = 65536
-    $groqMaxOut = 32768
+    $groqMaxTok = 4096
+    $groqMaxOut = 4096
   } elseif ($groqMid -match "gpt-oss-20b") {
-    $groqMaxTok = 65536
-    $groqMaxOut = 32768
+    $groqMaxTok = 4096
+    $groqMaxOut = 4096
   }
-  $cfg = Build-QwenSettingsOpenAI -Mid $ModelId.Trim() -BaseUrl "https://api.groq.com/openai/v1" -ContextWindowSize $groqCtx -MaxTokens $groqMaxTok
+  $cfg = Build-QwenSettingsOpenAI -Mid $ModelId.Trim() -BaseUrl "https://api.groq.com/openai/v1" -ContextWindowSize $groqCtx -MaxTokens $groqMaxTok -SkipStartupContext
   $script:GroqMaxOutput = $groqMaxOut
 } elseif ($Provider -eq "openrouter") {
   $key = [Environment]::GetEnvironmentVariable("OPENROUTER_API_KEY", "User")
   if ([string]::IsNullOrWhiteSpace($key)) { $key = $env:OPENROUTER_API_KEY }
   if ([string]::IsNullOrWhiteSpace($key)) { $key = Read-SecretText "OpenRouter API key" }
   $env:OPENAI_API_KEY = $key.Trim()
-  $orCtx = 131072
-  $orMaxTok = 32768
-  $orMaxOut = 32768
+  $orCtx = 16384
+  $orMaxTok = 8192
+  $orMaxOut = 8192
   $orMid = $ModelId.Trim().ToLowerInvariant()
-  if ($orMid -match ":free") {
-    $orCtx = 131072
-    $orMaxTok = 32768
-    $orMaxOut = 32768
-  }
-  $cfg = Build-QwenSettingsOpenAI -Mid $ModelId.Trim() -BaseUrl "https://openrouter.ai/api/v1" -ContextWindowSize $orCtx -MaxTokens $orMaxTok
+  $cfg = Build-QwenSettingsOpenAI -Mid $ModelId.Trim() -BaseUrl "https://openrouter.ai/api/v1" -ContextWindowSize $orCtx -MaxTokens $orMaxTok -SkipStartupContext
   $script:OpenRouterMaxOutput = $orMaxOut
 } else {
   $key = [Environment]::GetEnvironmentVariable("NVIDIA_NIM_API_KEY", "User")
@@ -380,10 +383,10 @@ if ($Provider -eq "nim" -and $script:NimDynamicCompat -and $script:NimCompatLimi
   $env:QWEN_CODE_EMIT_TOOL_USE_SUMMARIES = "0"
 } elseif ($Provider -eq "groq" -and $script:GroqMaxOutput) {
   $env:QWEN_CODE_MAX_OUTPUT_TOKENS = [string]$script:GroqMaxOutput
-  $env:QWEN_CODE_EMIT_TOOL_USE_SUMMARIES = "1"
+  $env:QWEN_CODE_EMIT_TOOL_USE_SUMMARIES = "0"
 } elseif ($Provider -eq "openrouter" -and $script:OpenRouterMaxOutput) {
   $env:QWEN_CODE_MAX_OUTPUT_TOKENS = [string]$script:OpenRouterMaxOutput
-  $env:QWEN_CODE_EMIT_TOOL_USE_SUMMARIES = "1"
+  $env:QWEN_CODE_EMIT_TOOL_USE_SUMMARIES = "0"
 } else {
   $env:QWEN_CODE_MAX_OUTPUT_TOKENS = "81920"
   $env:QWEN_CODE_EMIT_TOOL_USE_SUMMARIES = "1"

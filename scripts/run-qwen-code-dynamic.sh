@@ -126,23 +126,16 @@ SETTINGS_EOF
 else
   CONTEXT_SIZE=131072
   MAX_TOKENS=81920
-  # Ограничения для Groq/OpenRouter
+  SKIP_STARTUP=""
+  # Groq free tier: очень низкий TPM (6-12K). Урезаем контекст.
   if [ "$PROVIDER" = "groq" ]; then
-    MAX_TOKENS=32768
-    MID_LOWER=$(echo "$MODEL_ID" | tr '[:upper:]' '[:lower:]')
-    if echo "$MID_LOWER" | grep -q "qwen3-32b"; then
-      MAX_TOKENS=40960
-    elif echo "$MID_LOWER" | grep -q "llama-4-scout"; then
-      MAX_TOKENS=8192
-    elif echo "$MID_LOWER" | grep -q "gpt-oss-120b"; then
-      MAX_TOKENS=65536
-    elif echo "$MID_LOWER" | grep -q "gpt-oss-20b"; then
-      MAX_TOKENS=65536
-    elif echo "$MID_LOWER" | grep -q "llama-3\.1-8b"; then
-      MAX_TOKENS=131072
-    fi
+    CONTEXT_SIZE=8192
+    MAX_TOKENS=4096
+    SKIP_STARTUP=',"skipStartupContext":true'
   elif [ "$PROVIDER" = "openrouter" ]; then
-    MAX_TOKENS=32768
+    CONTEXT_SIZE=16384
+    MAX_TOKENS=8192
+    SKIP_STARTUP=',"skipStartupContext":true'
   fi
   cat > "$QWEN_DIR/settings.json" <<SETTINGS_EOF
 {
@@ -167,7 +160,7 @@ else
     ]
   },
   "security": { "auth": { "selectedType": "openai" } },
-  "model": { "name": "$MODEL_ID" }
+  "model": { "name": "$MODEL_ID"$SKIP_STARTUP }
 }
 SETTINGS_EOF
 fi
@@ -176,13 +169,15 @@ fi
 export OPENAI_API_KEY="$API_KEY"
 export API_TIMEOUT_MS="600000"
 if [ "$PROVIDER" = "groq" ]; then
-  export QWEN_CODE_MAX_OUTPUT_TOKENS="$MAX_TOKENS"
+  export QWEN_CODE_MAX_OUTPUT_TOKENS="4096"
+  export QWEN_CODE_EMIT_TOOL_USE_SUMMARIES="0"
 elif [ "$PROVIDER" = "openrouter" ]; then
-  export QWEN_CODE_MAX_OUTPUT_TOKENS="$MAX_TOKENS"
+  export QWEN_CODE_MAX_OUTPUT_TOKENS="8192"
+  export QWEN_CODE_EMIT_TOOL_USE_SUMMARIES="0"
 else
   export QWEN_CODE_MAX_OUTPUT_TOKENS="81920"
+  export QWEN_CODE_EMIT_TOOL_USE_SUMMARIES="1"
 fi
-export QWEN_CODE_EMIT_TOOL_USE_SUMMARIES="1"
 
 # ── Находим qwen-code ──
 QWEN_EXE=""
