@@ -16,8 +16,6 @@ PROFILES=(
     "nim-qwen|NVIDIA NIM — Qwen3.5-122B-A10B (free, tool calling)"
     "zai-glm|Z.AI — GLM-4.7 (free, tool calling)"
     "zai-glm51|Z.AI — GLM-5.1 (free, tool calling)"
-    "groq-llama|Groq — Llama 3.3 70B (free, chat only)"
-    "groq-qwen|Groq — Qwen3 32B (free, chat only)"
     "openrouter-qwen-coder|OpenRouter — Qwen3 Coder (free, tool calling)"
     "custom-model|Другая модель… → выбор провайдера и модели"
     "native-login|Нативный логин (Qwen OAuth / Coding Plan)"
@@ -52,7 +50,7 @@ resolve_profile_from_state() {
     local profile_id=$(echo "$state" | grep -o '"profileId":"[^"]*"' | cut -d'"' -f4)
     
     case "$profile_id" in
-        "nim-glm"|"nim-qwen"|"zai-glm"|"zai-glm51"|"groq-llama"|"groq-qwen"|"openrouter-qwen-coder"|"custom-qwen-zai"|"custom-qwen-nim"|"custom-qwen-groq"|"custom-qwen-openrouter")
+        "nim-glm"|"nim-qwen"|"zai-glm"|"zai-glm51"|"openrouter-qwen-coder"|"custom-qwen-zai"|"custom-qwen-nim"|"custom-qwen-groq"|"custom-qwen-openrouter")
             echo "$profile_id"
             return 0
             ;;
@@ -238,12 +236,6 @@ invoke_qwen_profile() {
             ;;
         "zai-glm51")
             bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider zai -ModelId "glm-5.1"
-            ;;
-        "groq-llama")
-            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider groq -ModelId "llama-3.3-70b-versatile"
-            ;;
-        "groq-qwen")
-            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider groq -ModelId "qwen/qwen3-32b"
             ;;
         "openrouter-qwen-coder")
             bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider openrouter -ModelId "qwen/qwen3-coder:free"

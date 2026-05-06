@@ -17,8 +17,6 @@ PROFILES=(
     "zai-glm51|Z.AI — GLM-5.1 (free, tool calling)"
     "nim-glm|NVIDIA NIM — GLM-4.7 (free, tool calling)"
     "nim-qwen|NVIDIA NIM — Qwen3.5-122B-A10B (free, tool calling)"
-    "groq-llama|Groq — Llama 3.3 70B (free, chat only)"
-    "groq-qwen|Groq — Qwen3 32B (free, chat only)"
     "openrouter-qwen-coder|OpenRouter — Qwen3 Coder (free, tool calling)"
     "custom-model|Другая модель… → выбор провайдера и модели"
     "native-login|Нативный логин (OpenCode Providers)"
@@ -53,7 +51,7 @@ resolve_profile_from_state() {
     local profile_id=$(echo "$state" | grep -o '"profileId":"[^"]*"' | cut -d'"' -f4)
     
     case "$profile_id" in
-        "zai-glm"|"zai-glm51"|"nim-glm"|"nim-qwen"|"groq-llama"|"groq-qwen"|"openrouter-qwen-coder"|"custom-opencode-zai"|"custom-opencode-nim"|"custom-opencode-groq"|"custom-opencode-openrouter")
+        "zai-glm"|"zai-glm51"|"nim-glm"|"nim-qwen"|"openrouter-qwen-coder"|"custom-opencode-zai"|"custom-opencode-nim"|"custom-opencode-groq"|"custom-opencode-openrouter")
             echo "$profile_id"
             return 0
             ;;
@@ -211,30 +209,6 @@ invoke_opencode_profile() {
             config_path=$(write_opencode_config "nvidia-nim" "qwen/qwen3.5-122b-a10b" "https://integrate.api.nvidia.com/v1" "$api_key")
             export OPENCODE_CONFIG="$config_path"
             echo -e "${CYAN}Запуск OpenCode (NVIDIA NIM Qwen3.5-122B-A10B)…${RESET}"
-            "$opencode_exe"
-            ;;
-        "groq-llama")
-            local api_key="${GROQ_API_KEY:-}"
-            if [ -z "$api_key" ]; then
-                echo -e "${YELLOW}Groq API ключ не задан. Задайте GROQ_API_KEY.${RESET}" >&2
-                return 1
-            fi
-            local config_path
-            config_path=$(write_opencode_config "groq" "llama-3.3-70b-versatile" "https://api.groq.com/openai/v1" "$api_key" 2048 4096)
-            export OPENCODE_CONFIG="$config_path"
-            echo -e "${CYAN}Запуск OpenCode (Groq Llama 3.3 70B)…${RESET}"
-            "$opencode_exe"
-            ;;
-        "groq-qwen")
-            local api_key="${GROQ_API_KEY:-}"
-            if [ -z "$api_key" ]; then
-                echo -e "${YELLOW}Groq API ключ не задан. Задайте GROQ_API_KEY.${RESET}" >&2
-                return 1
-            fi
-            local config_path
-            config_path=$(write_opencode_config "groq" "qwen/qwen3-32b" "https://api.groq.com/openai/v1" "$api_key" 2048 4096)
-            export OPENCODE_CONFIG="$config_path"
-            echo -e "${CYAN}Запуск OpenCode (Groq Qwen3 32B)…${RESET}"
             "$opencode_exe"
             ;;
         "openrouter-qwen-coder")
