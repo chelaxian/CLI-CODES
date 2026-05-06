@@ -13,8 +13,8 @@ CONFIG_DIR="$SCRIPT_DIR/opencode-sessions"
 
 PROFILES=(
     "last|Запустить с последними настройками (быстрый старт)"
-    "zai-glm|Z.AI — GLM-4.7 (free, tool calling)"
-    "zai-glm51|Z.AI — GLM-5.1 (free, tool calling)"
+    "zai-glm|Z.AI — GLM-4.7 (paid, tool calling)"
+    "zai-glm51|Z.AI — GLM-5.1 (paid, tool calling)"
     "zai-flash47|Z.AI — GLM-4.7-Flash (free, tool calling)"
     "zai-flash45|Z.AI — GLM-4.5-Flash (free, tool calling)"
     "nim-glm|NVIDIA NIM — GLM-4.7 (free, tool calling)"

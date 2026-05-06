@@ -177,7 +177,7 @@ $settingsJson = @{
   '$version' = 3
 } | ConvertTo-Json -Depth 10
 
-$settingsJson | Set-Content -LiteralPath (Join-Path $qwenDir "settings.json") -Encoding UTF8
+[System.IO.File]::WriteAllText((Join-Path $qwenDir "settings.json"), $settingsJson, (New-Object System.Text.UTF8Encoding($false)))
 
 $env:QWEN_CODE_MAX_OUTPUT_TOKENS = "81920"
 $env:QWEN_CODE_EMIT_TOOL_USE_SUMMARIES = "1"

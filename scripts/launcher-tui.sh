@@ -110,11 +110,11 @@ show_tui_framed_menu() {
     local items=("$@")
     
     local term_width=$(get_terminal_width)
-    local frame_width=$(( (term_width < 90 ? term_width : 90) ))
+    local frame_width=$(( (term_width < 100 ? term_width : 100) ))
     local inner_width=$((frame_width - 2))
     
     local num_items=${#items[@]}
-    local visible=$((num_items > 12 ? 12 : num_items))
+    local visible=$((num_items > 20 ? 20 : num_items))
     
     local banner_color="$CYAN"
     if [ "$app_brand" = "Claude" ]; then

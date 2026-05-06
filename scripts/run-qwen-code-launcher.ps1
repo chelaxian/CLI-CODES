@@ -31,11 +31,11 @@ $script:Profiles = @(
   }
   @{
     Id          = "zai-glm"
-    Label       = "Z.AI — GLM-4.7 (free, tool calling)"
+    Label       = "Z.AI — GLM-4.7 (paid, tool calling)"
   }
   @{
     Id          = "zai-glm51"
-    Label       = "Z.AI — GLM-5.1 (free, tool calling)"
+    Label       = "Z.AI — GLM-5.1 (paid, tool calling)"
   }
   @{
     Id          = "zai-flash47"
@@ -218,7 +218,7 @@ if ($lastId) {
 }
 
 while ($true) {
-  $choice = Show-TuiFramedMenu -AppBrand "Qwen" -Title "Qwen Code — выбор профиля" -Subtitle "OpenAI Coding (Z.AI / NIM) + пресеты" -Items $items -InitialIndex $startIdx -MaxVisible 14
+  $choice = Show-TuiFramedMenu -AppBrand "Qwen" -Title "Qwen Code — выбор профиля" -Subtitle "OpenAI Coding (Z.AI / NIM) + пресеты" -Items $items -InitialIndex $startIdx -MaxVisible 20
   if (-not $choice) {
     Write-Host "Отменено." -ForegroundColor Yellow
     exit 0

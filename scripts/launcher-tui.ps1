@@ -144,14 +144,14 @@ function Show-TuiFramedMenu {
   Set-LauncherTuiConsole
   $b = Get-LauncherTuiBox
   $win = $Host.UI.RawUI.WindowSize
-  $frameW = [Math]::Min(90, [Math]::Max(54, $win.Width - 2))
+  $frameW = [Math]::Min(100, [Math]::Max(60, $win.Width - 2))
   $inner = $frameW - 2
   $n = $Items.Count
   if ($n -lt 1) {
     throw "Show-TuiFramedMenu: список Items пуст."
   }
   $idx = [Math]::Max(0, [Math]::Min($InitialIndex, $n - 1))
-  $heightCap = [Math]::Max(6, $win.Height - 20)
+  $heightCap = [Math]::Max(6, $win.Height - 12)
   $visible = [Math]::Max(4, [Math]::Min($MaxVisible, [Math]::Min($n, $heightCap)))
   # При dot-source $script: — область вызывающего файла; скролл ломался. Hashtable — общий изменяемый объект.
   $scroll = @{ Top = 0 }
