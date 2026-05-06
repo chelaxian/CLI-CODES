@@ -128,6 +128,12 @@ show_api_key_change_menu() {
     clear
     
     while true; do
+        # Provider URLs for API key registration
+        local nim_url="https://build.nvidia.com/api-key"
+        local zai_url="https://console.z.ai/"
+        local groq_url="https://console.groq.com/keys"
+        local openrouter_url="https://openrouter.ai/settings/keys"
+
         # Заголовок меню
         local title="Сменить ключ API провайдера"
         local subtitle="Выберите провайдер"
@@ -171,9 +177,13 @@ show_api_key_change_menu() {
         echo -e "${banner_color}╠════════════════════════════════════════════════════════════════════════════╣${RESET}"
         echo -e "${banner_color}║                                                                        ║${RESET}"
         echo -e "${banner_color}║   [1] NVIDIA NIM API ключ                                              ║${RESET}"
+        echo -e "${banner_color}║       $nim_url                                   ║${RESET}"
         echo -e "${banner_color}║   [2] Z.AI API ключ                                                   ║${RESET}"
+        echo -e "${banner_color}║       $zai_url                                           ║${RESET}"
         echo -e "${banner_color}║   [3] Groq API ключ                                                   ║${RESET}"
+        echo -e "${banner_color}║       $groq_url                                     ║${RESET}"
         echo -e "${banner_color}║   [4] OpenRouter API ключ                                             ║${RESET}"
+        echo -e "${banner_color}║       $openrouter_url                           ║${RESET}"
         echo -e "${banner_color}║   [0] Назад                                                           ║${RESET}"
         echo -e "${banner_color}║                                                                        ║${RESET}"
         echo -e "${banner_color}║                                                                        ║${RESET}"
@@ -187,21 +197,25 @@ show_api_key_change_menu() {
                 provider_id="nim"
                 provider_name="NVIDIA NIM"
                 env_var_name="NVIDIA_NIM"
+                provider_url="$nim_url"
                 ;;
             2)
                 provider_id="zai"
                 provider_name="Z.AI"
                 env_var_name="ZAI"
+                provider_url="$zai_url"
                 ;;
             3)
                 provider_id="groq"
                 provider_name="Groq"
                 env_var_name="GROQ"
+                provider_url="$groq_url"
                 ;;
             4)
                 provider_id="openrouter"
                 provider_name="OpenRouter"
                 env_var_name="OPENROUTER"
+                provider_url="$openrouter_url"
                 ;;
             0|"")
                 return 0
@@ -227,6 +241,8 @@ show_api_key_change_menu() {
             fi
             echo -e "${GREEN}Текущий ключ: $masked${RESET}"
         fi
+        echo ""
+        echo -e "${CYAN}Получить ключ: $provider_url${RESET}"
         echo ""
         
         new_key=$(read_secret_text "Введите новый API ключ (или оставьте пустым для отмены): ")

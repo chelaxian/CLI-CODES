@@ -11,6 +11,20 @@ $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "launcher-custom-model-wizard.ps1")
 . (Join-Path $PSScriptRoot "launcher-api-keys.ps1")
 
+function Resolve-ApiKeyOrPrompt {
+  param(
+    [string]$CurrentKey,
+    [string]$ProviderName,
+    [string]$HelpUrl
+  )
+  if (-not [string]::IsNullOrWhiteSpace($CurrentKey) -and $CurrentKey -ne "__SET_ME__") {
+    return $CurrentKey
+  }
+  Write-Host "$ProviderName API ключ не задан." -ForegroundColor Yellow
+  Write-Host "Получить ключ: $HelpUrl" -ForegroundColor DarkCyan
+  return (Read-SecretText "Введите $ProviderName API key")
+}
+
 $StatePath = Join-Path $PSScriptRoot "opencode-launcher-state.json"
 
 $script:Profiles = @(
@@ -209,7 +223,7 @@ function Invoke-OpenCodeProfile {
         $apiKey = $env:OPENAI_API_KEY
       }
       if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") {
-        throw "Z.AI API ключ не задан. Задайте ZAI_API_KEY или выберите «Сменить ключ API провайдера»."
+        $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "Z.AI" -HelpUrl "https://console.z.ai/"
       }
 
       $configPath = Write-OpenCodeConfig -Provider "zai" -Model "glm-4.7" -BaseURL "https://api.z.ai/api/openai/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
@@ -231,7 +245,7 @@ function Invoke-OpenCodeProfile {
         $apiKey = $env:OPENAI_API_KEY
       }
       if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") {
-        throw "Z.AI API ключ не задан. Задайте ZAI_API_KEY или выберите «Сменить ключ API провайдера»."
+        $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "Z.AI" -HelpUrl "https://console.z.ai/"
       }
 
       $configPath = Write-OpenCodeConfig -Provider "zai" -Model "glm-5.1" -BaseURL "https://api.z.ai/api/openai/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
@@ -247,7 +261,7 @@ function Invoke-OpenCodeProfile {
       if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") { $apiKey = [Environment]::GetEnvironmentVariable("OPENAI_API_KEY", "User") }
       if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") { $apiKey = $env:OPENAI_API_KEY }
       if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") {
-        throw "Z.AI API ключ не задан. Задайте ZAI_API_KEY."
+        $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "Z.AI" -HelpUrl "https://console.z.ai/"
       }
       $configPath = Write-OpenCodeConfig -Provider "zai" -Model "glm-4.7-flash" -BaseURL "https://api.z.ai/api/openai/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
       $env:OPENCODE_CONFIG = $configPath
@@ -261,7 +275,7 @@ function Invoke-OpenCodeProfile {
       if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") { $apiKey = [Environment]::GetEnvironmentVariable("OPENAI_API_KEY", "User") }
       if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") { $apiKey = $env:OPENAI_API_KEY }
       if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") {
-        throw "Z.AI API ключ не задан. Задайте ZAI_API_KEY."
+        $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "Z.AI" -HelpUrl "https://console.z.ai/"
       }
       $configPath = Write-OpenCodeConfig -Provider "zai" -Model "glm-4.5-flash" -BaseURL "https://api.z.ai/api/openai/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
       $env:OPENCODE_CONFIG = $configPath
@@ -275,7 +289,7 @@ function Invoke-OpenCodeProfile {
         $apiKey = $env:NVIDIA_NIM_API_KEY
       }
       if ([string]::IsNullOrWhiteSpace($apiKey)) {
-        throw "NVIDIA NIM API ключ не задан. Задайте NVIDIA_NIM_API_KEY или выберите «Сменить ключ API провайдера»."
+        $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "NVIDIA NIM" -HelpUrl "https://build.nvidia.com/api-key"
       }
 
       $configPath = Write-OpenCodeConfig -Provider "nvidia-nim" -Model "z-ai/glm4.7" -BaseURL "https://integrate.api.nvidia.com/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
@@ -291,7 +305,7 @@ function Invoke-OpenCodeProfile {
         $apiKey = $env:NVIDIA_NIM_API_KEY
       }
       if ([string]::IsNullOrWhiteSpace($apiKey)) {
-        throw "NVIDIA NIM API ключ не задан. Задайте NVIDIA_NIM_API_KEY или выберите «Сменить ключ API провайдера»."
+        $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "NVIDIA NIM" -HelpUrl "https://build.nvidia.com/api-key"
       }
 
       $configPath = Write-OpenCodeConfig -Provider "nvidia-nim" -Model "qwen/qwen3.5-122b-a10b" -BaseURL "https://integrate.api.nvidia.com/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
@@ -312,7 +326,7 @@ function Invoke-OpenCodeProfile {
       if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") { $apiKey = [Environment]::GetEnvironmentVariable("OPENAI_API_KEY", "User") }
       if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") { $apiKey = $env:OPENAI_API_KEY }
       if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") {
-        throw "Z.AI API ключ не задан. Задайте ZAI_API_KEY или выберите «Сменить ключ API провайдера»."
+        $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "Z.AI" -HelpUrl "https://console.z.ai/"
       }
       $configPath = Write-OpenCodeConfig -Provider "zai" -Model $mid.Trim() -BaseURL "https://api.z.ai/api/openai/v1" -ApiKey $apiKey
       $env:OPENCODE_CONFIG = $configPath
@@ -329,7 +343,7 @@ function Invoke-OpenCodeProfile {
       $apiKey = [Environment]::GetEnvironmentVariable("NVIDIA_NIM_API_KEY", "User")
       if ([string]::IsNullOrWhiteSpace($apiKey)) { $apiKey = $env:NVIDIA_NIM_API_KEY }
       if ([string]::IsNullOrWhiteSpace($apiKey)) {
-        throw "NVIDIA NIM API ключ не задан. Задайте NVIDIA_NIM_API_KEY или выберите «Сменить ключ API провайдера»."
+        $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "NVIDIA NIM" -HelpUrl "https://build.nvidia.com/api-key"
       }
       $configPath = Write-OpenCodeConfig -Provider "nvidia-nim" -Model $mid.Trim() -BaseURL "https://integrate.api.nvidia.com/v1" -ApiKey $apiKey
       $env:OPENCODE_CONFIG = $configPath
@@ -346,7 +360,7 @@ function Invoke-OpenCodeProfile {
       $apiKey = [Environment]::GetEnvironmentVariable("GROQ_API_KEY", "User")
       if ([string]::IsNullOrWhiteSpace($apiKey)) { $apiKey = $env:GROQ_API_KEY }
       if ([string]::IsNullOrWhiteSpace($apiKey)) {
-        throw "Groq API ключ не задан. Задайте GROQ_API_KEY или выберите «Сменить ключ API провайдера»."
+        $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "Groq" -HelpUrl "https://console.groq.com/keys"
       }
       $configPath = Write-OpenCodeConfig -Provider "groq" -Model $mid.Trim() -BaseURL "https://api.groq.com/openai/v1" -ApiKey $apiKey -MaxTokens 4096 -ContextLength 8192
       $env:OPENCODE_CONFIG = $configPath
@@ -363,7 +377,7 @@ function Invoke-OpenCodeProfile {
       $apiKey = [Environment]::GetEnvironmentVariable("OPENROUTER_API_KEY", "User")
       if ([string]::IsNullOrWhiteSpace($apiKey)) { $apiKey = $env:OPENROUTER_API_KEY }
       if ([string]::IsNullOrWhiteSpace($apiKey)) {
-        throw "OpenRouter API ключ не задан. Задайте OPENROUTER_API_KEY или выберите «Сменить ключ API провайдера»."
+        $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "OpenRouter" -HelpUrl "https://openrouter.ai/settings/keys"
       }
       $configPath = Write-OpenCodeConfig -Provider "openrouter" -Model $mid.Trim() -BaseURL "https://openrouter.ai/api/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 16384
       $env:OPENCODE_CONFIG = $configPath
@@ -375,7 +389,7 @@ function Invoke-OpenCodeProfile {
       $apiKey = [Environment]::GetEnvironmentVariable("OPENROUTER_API_KEY", "User")
       if ([string]::IsNullOrWhiteSpace($apiKey)) { $apiKey = $env:OPENROUTER_API_KEY }
       if ([string]::IsNullOrWhiteSpace($apiKey)) {
-        throw "OpenRouter API ключ не задан. Задайте OPENROUTER_API_KEY или выберите «Сменить ключ API провайдера»."
+        $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "OpenRouter" -HelpUrl "https://openrouter.ai/settings/keys"
       }
       $configPath = Write-OpenCodeConfig -Provider "openrouter" -Model "qwen/qwen3-coder:free" -BaseURL "https://openrouter.ai/api/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 16384
       $env:OPENCODE_CONFIG = $configPath
@@ -386,7 +400,7 @@ function Invoke-OpenCodeProfile {
     "openrouter-hy3" {
       $apiKey = [Environment]::GetEnvironmentVariable("OPENROUTER_API_KEY", "User")
       if ([string]::IsNullOrWhiteSpace($apiKey)) { $apiKey = $env:OPENROUTER_API_KEY }
-      if ([string]::IsNullOrWhiteSpace($apiKey)) { throw "OpenRouter API ключ не задан." }
+      if ([string]::IsNullOrWhiteSpace($apiKey)) { $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "OpenRouter" -HelpUrl "https://openrouter.ai/settings/keys" }
       $configPath = Write-OpenCodeConfig -Provider "openrouter" -Model "tencent/hy3-preview:free" -BaseURL "https://openrouter.ai/api/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 262144
       $env:OPENCODE_CONFIG = $configPath
       Write-Host "Запуск OpenCode (OpenRouter Tencent Hy3)…" -ForegroundColor Cyan
@@ -396,7 +410,7 @@ function Invoke-OpenCodeProfile {
     "openrouter-nemotron" {
       $apiKey = [Environment]::GetEnvironmentVariable("OPENROUTER_API_KEY", "User")
       if ([string]::IsNullOrWhiteSpace($apiKey)) { $apiKey = $env:OPENROUTER_API_KEY }
-      if ([string]::IsNullOrWhiteSpace($apiKey)) { throw "OpenRouter API ключ не задан." }
+      if ([string]::IsNullOrWhiteSpace($apiKey)) { $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "OpenRouter" -HelpUrl "https://openrouter.ai/settings/keys" }
       $configPath = Write-OpenCodeConfig -Provider "openrouter" -Model "nvidia/nemotron-3-super-120b-a12b:free" -BaseURL "https://openrouter.ai/api/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 262144
       $env:OPENCODE_CONFIG = $configPath
       Write-Host "Запуск OpenCode (OpenRouter Nemotron 3 Super)…" -ForegroundColor Cyan
@@ -406,7 +420,7 @@ function Invoke-OpenCodeProfile {
     "openrouter-laguna" {
       $apiKey = [Environment]::GetEnvironmentVariable("OPENROUTER_API_KEY", "User")
       if ([string]::IsNullOrWhiteSpace($apiKey)) { $apiKey = $env:OPENROUTER_API_KEY }
-      if ([string]::IsNullOrWhiteSpace($apiKey)) { throw "OpenRouter API ключ не задан." }
+      if ([string]::IsNullOrWhiteSpace($apiKey)) { $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "OpenRouter" -HelpUrl "https://openrouter.ai/settings/keys" }
       $configPath = Write-OpenCodeConfig -Provider "openrouter" -Model "poolside/laguna-m.1:free" -BaseURL "https://openrouter.ai/api/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
       $env:OPENCODE_CONFIG = $configPath
       Write-Host "Запуск OpenCode (OpenRouter Poolside Laguna M.1)…" -ForegroundColor Cyan

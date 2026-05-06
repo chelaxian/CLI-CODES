@@ -1,5 +1,21 @@
 # Модуль для управления API ключами в лаунчерах Qwen/Claude
 
+function Get-ProviderHelpUrl {
+  param(
+    [Parameter(Mandatory = $true)]
+    [ValidateSet("NVIDIA_NIM", "ZAI", "GROQ", "OPENROUTER")]
+    [string]$Provider
+  )
+
+  switch ($Provider) {
+    "NVIDIA_NIM"  { return "https://build.nvidia.com/api-key" }
+    "ZAI"         { return "https://console.z.ai/" }
+    "GROQ"        { return "https://console.groq.com/keys" }
+    "OPENROUTER"  { return "https://openrouter.ai/settings/keys" }
+    default       { return "" }
+  }
+}
+
 function Get-CurrentApiKey {
   param(
     [Parameter(Mandatory = $true)]
@@ -102,18 +118,22 @@ function Show-ApiKeyChangeMenu {
     @{
       Id    = "nim"
       Label = "NVIDIA NIM API ключ"
+      HelpUrl = "https://build.nvidia.com/api-key"
     }
     @{
       Id    = "zai"
       Label = "Z.AI API ключ"
+      HelpUrl = "https://console.z.ai/"
     }
     @{
       Id    = "groq"
       Label = "Groq API ключ"
+      HelpUrl = "https://console.groq.com/keys"
     }
     @{
       Id    = "openrouter"
       Label = "OpenRouter API ключ"
+      HelpUrl = "https://openrouter.ai/settings/keys"
     }
   )
 
@@ -137,6 +157,7 @@ function Show-ApiKeyChangeMenu {
       default { $providerId.ToUpper() }
     }
     $currentKey = Get-CurrentApiKey -Provider $envVarName
+    $helpUrl = $choice.HelpUrl
 
     Clear-Host
     Write-Host ("Провайдер: {0}" -f $choice.Label) -ForegroundColor Cyan
@@ -150,6 +171,8 @@ function Show-ApiKeyChangeMenu {
       }
       Write-Host ("Текущий ключ: {0}" -f $masked) -ForegroundColor Green
     }
+    Write-Host ""
+    Write-Host ("Получить ключ: {0}" -f $helpUrl) -ForegroundColor DarkCyan
     Write-Host ""
     
     $newKey = Read-SecretText "Введите новый API ключ (или оставьте пустым для отмены): "

@@ -35,6 +35,17 @@ get_api_key_interactive() {
   echo "$key"
 }
 
+get_api_key_with_url() {
+  local prompt="$1"
+  local url="$2"
+  echo -e "\033[33mAPI ключ не задан.\033[0m"
+  echo -e "\033[36mПолучить ключ: $url\033[0m"
+  echo -n "$prompt"
+  read -s key
+  echo
+  echo "$key"
+}
+
 # ── Определяем API ключ и baseURL ──
 API_KEY=""
 BASE_URL=""
@@ -47,7 +58,7 @@ case "$PROVIDER" in
       API_KEY="${OPENAI_API_KEY:-}"
     fi
     if [ -z "$API_KEY" ] || [ "$API_KEY" = "__SET_ME__" ]; then
-      API_KEY=$(get_api_key_interactive "Z.AI API key: ")
+      API_KEY=$(get_api_key_with_url "Z.AI API key: " "https://console.z.ai/")
     fi
     BASE_URL="https://api.z.ai/api/coding/paas/v4"
     ;;
@@ -57,28 +68,28 @@ case "$PROVIDER" in
       API_KEY="${OPENAI_API_KEY:-}"
     fi
     if [ -z "$API_KEY" ] || [ "$API_KEY" = "__SET_ME__" ]; then
-      API_KEY=$(get_api_key_interactive "Z.AI API key: ")
+      API_KEY=$(get_api_key_with_url "Z.AI API key: " "https://console.z.ai/")
     fi
     BASE_URL="https://api.z.ai/api/paas/v4"
     ;;
   nim)
     API_KEY="${NVIDIA_NIM_API_KEY:-}"
     if [ -z "$API_KEY" ]; then
-      API_KEY=$(get_api_key_interactive "NVIDIA NIM API key: ")
+      API_KEY=$(get_api_key_with_url "NVIDIA NIM API key: " "https://build.nvidia.com/api-key")
     fi
     BASE_URL="https://integrate.api.nvidia.com/v1"
     ;;
   groq)
     API_KEY="${GROQ_API_KEY:-}"
     if [ -z "$API_KEY" ]; then
-      API_KEY=$(get_api_key_interactive "Groq API key: ")
+      API_KEY=$(get_api_key_with_url "Groq API key: " "https://console.groq.com/keys")
     fi
     BASE_URL="https://api.groq.com/openai/v1"
     ;;
   openrouter)
     API_KEY="${OPENROUTER_API_KEY:-}"
     if [ -z "$API_KEY" ]; then
-      API_KEY=$(get_api_key_interactive "OpenRouter API key: ")
+      API_KEY=$(get_api_key_with_url "OpenRouter API key: " "https://openrouter.ai/settings/keys")
     fi
     BASE_URL="https://openrouter.ai/api/v1"
     ;;

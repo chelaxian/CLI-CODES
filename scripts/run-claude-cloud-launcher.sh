@@ -53,7 +53,7 @@ save_launcher_state() {
 resolve_profile_from_state() {
     local state="$1"
     local profile_id=$(echo "$state" | grep -o '"profileId":"[^"]*"' | cut -d'"' -f4)
-    
+
     case "$profile_id" in
         "claude-zai"|"claude-zai-glm51"|"claude-nim"|"claude-nim-qwen"|"claude-openrouter-sonnet"|"custom-claude-zai"|"custom-claude-nim"|"custom-claude-openrouter")
             echo "$profile_id"
@@ -63,6 +63,23 @@ resolve_profile_from_state() {
             return 1
             ;;
     esac
+}
+
+resolve_api_key_or_prompt() {
+    local current_key="$1"
+    local provider_name="$2"
+    local help_url="$3"
+
+    if [ -z "$current_key" ]; then
+        echo -e "${YELLOW}$provider_name API ключ не задан.${RESET}"
+        echo -e "${CYAN}Получить ключ: $help_url${RESET}"
+    fi
+
+    if [ -z "$current_key" ]; then
+        read_secret_text "$provider_name API key: "
+    else
+        echo "$current_key"
+    fi
 }
 
 invoke_claude_cloud_profile() {
@@ -181,19 +198,29 @@ get_claude_zai_api_key() {
 get_claude_nim_api_key() {
     local key="${NVIDIA_NIM_API_KEY:-}"
     if [ -z "$key" ]; then
-        echo -e "${YELLOW}NVIDIA NIM API ключ не задан. Задайте NVIDIA_NIM_API_KEY.${RESET}" >&2
-        return 1
+        echo -e "${YELLOW}NVIDIA NIM API ключ не задан.${RESET}"
+        echo -e "${CYAN}Получить ключ: https://build.nvidia.com/api-key${RESET}"
     fi
-    echo "$key"
+
+    if [ -z "$key" ]; then
+        read_secret_text "NVIDIA NIM API key: "
+    else
+        echo "$key"
+    fi
 }
 
 get_claude_openrouter_api_key() {
     local key="${OPENROUTER_API_KEY:-}"
     if [ -z "$key" ]; then
-        echo -e "${YELLOW}OpenRouter API ключ не задан. Задайте OPENROUTER_API_KEY.${RESET}" >&2
-        return 1
+        echo -e "${YELLOW}OpenRouter API ключ не задан.${RESET}"
+        echo -e "${CYAN}Получить ключ: https://openrouter.ai/settings/keys${RESET}"
     fi
-    echo "$key"
+
+    if [ -z "$key" ]; then
+        read_secret_text "OpenRouter API key: "
+    else
+        echo "$key"
+    fi
 }
 
 # ── Мастер выбора модели ─────────────────────────────────────────────────────
@@ -228,7 +255,7 @@ invoke_claude_custom_model_wizard() {
 
         if [ "$prov_source" = "zai" ]; then
             show_tui_wait_frame "$app_brand" "Загрузка каталога моделей Z.AI…"
-            key=$(get_claude_zai_api_key) || { echo -e "${RED}Не удалось получить API ключ${RESET}"; read -p "Нажмите Enter..."; return 1; }
+            key=$(get_claude_zai_api_key) || true
 
             local response
             response=$(curl -s -H "Authorization: Bearer $key" "https://api.z.ai/api/coding/paas/v4/models" 2>/dev/null) || true
@@ -245,7 +272,7 @@ invoke_claude_custom_model_wizard() {
             fi
         elif [ "$prov_source" = "nim" ]; then
             show_tui_wait_frame "$app_brand" "Загрузка каталога NVIDIA NIM…"
-            key=$(get_claude_nim_api_key) || { echo -e "${RED}Не удалось получить API ключ${RESET}"; read -p "Нажмите Enter..."; return 1; }
+            key=$(get_claude_nim_api_key) || true
 
             local response
             response=$(curl -s -H "Authorization: Bearer $key" "https://integrate.api.nvidia.com/v1/models" 2>/dev/null) || true
@@ -255,7 +282,7 @@ invoke_claude_custom_model_wizard() {
             fi
         elif [ "$prov_source" = "openrouter" ]; then
             show_tui_wait_frame "$app_brand" "Загрузка каталога OpenRouter…"
-            key=$(get_claude_openrouter_api_key) || { echo -e "${RED}Не удалось получить API ключ${RESET}"; read -p "Нажмите Enter..."; return 1; }
+            key=$(get_claude_openrouter_api_key) || true
 
             local response
             response=$(curl -s -H "Authorization: Bearer $key" -H "Content-Type: application/json" "https://openrouter.ai/api/v1/models" 2>/dev/null) || true

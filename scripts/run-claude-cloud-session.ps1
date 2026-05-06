@@ -360,7 +360,9 @@ if ($Provider -eq "zai") {
     $ZaiApiKey = $env:ZAI_API_KEY
   }
   if (-not $ZaiApiKey -or $ZaiApiKey.Trim().Length -eq 0 -or $ZaiApiKey -eq "__SET_ME__") {
-    $ZaiApiKey = Read-SecretText "Enter Z.AI API key (will not be saved)"
+    Write-Host "Z.AI API ключ не задан." -ForegroundColor Yellow
+    Write-Host "Получить ключ: https://console.z.ai/" -ForegroundColor DarkCyan
+    $ZaiApiKey = Read-SecretText "Введите Z.AI API key"
   }
   $env:ANTHROPIC_AUTH_TOKEN = $ZaiApiKey
   $env:ANTHROPIC_BASE_URL = "https://api.z.ai/api/anthropic"
@@ -405,7 +407,9 @@ if ($Provider -in @("nim", "nim-qwen")) {
     $NvidiaNimApiKey = $env:NVIDIA_NIM_API_KEY
   }
   if (-not $NvidiaNimApiKey -or $NvidiaNimApiKey.Trim().Length -eq 0 -or $NvidiaNimApiKey -eq "__SET_ME__") {
-    $NvidiaNimApiKey = Read-SecretText "Enter NVIDIA NIM API key (will not be saved)"
+    Write-Host "NVIDIA NIM API ключ не задан." -ForegroundColor Yellow
+    Write-Host "Получить ключ: https://build.nvidia.com/api-key" -ForegroundColor DarkCyan
+    $NvidiaNimApiKey = Read-SecretText "Введите NVIDIA NIM API key"
   }
   Ensure-FreeClaudeCodeProxy -Dir $FreeClaudeCodeDir -Port $proxyPortResolved -NimKey $NvidiaNimApiKey -Model $nimModelResolved -AuthToken $ProxyAuthToken
   $env:ANTHROPIC_AUTH_TOKEN = $ProxyAuthToken
@@ -427,7 +431,11 @@ if ($Provider -in @("nim", "nim-qwen")) {
 if ($Provider -eq "openrouter") {
   $orKey = [Environment]::GetEnvironmentVariable("OPENROUTER_API_KEY","User")
   if ([string]::IsNullOrWhiteSpace($orKey)) { $orKey = $env:OPENROUTER_API_KEY }
-  if ([string]::IsNullOrWhiteSpace($orKey)) { $orKey = Read-SecretText "Enter OpenRouter API key (will not be saved)" }
+  if ([string]::IsNullOrWhiteSpace($orKey)) {
+    Write-Host "OpenRouter API ключ не задан." -ForegroundColor Yellow
+    Write-Host "Получить ключ: https://openrouter.ai/settings/keys" -ForegroundColor DarkCyan
+    $orKey = Read-SecretText "Введите OpenRouter API key"
+  }
 
   $orModel = "open_router/anthropic/claude-sonnet-4-20250514"
   if (-not [string]::IsNullOrWhiteSpace($ZaiAnthropicModelId)) {

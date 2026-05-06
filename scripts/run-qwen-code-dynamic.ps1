@@ -307,7 +307,11 @@ if ($Provider -eq "zai") {
   if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") { $key = $env:ZAI_API_KEY }
   if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") { $key = [Environment]::GetEnvironmentVariable("OPENAI_API_KEY", "User") }
   if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") { $key = $env:OPENAI_API_KEY }
-  if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") { $key = Read-SecretText "Z.AI API key" }
+  if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") {
+    Write-Host "Z.AI API ключ не задан." -ForegroundColor Yellow
+    Write-Host "Получить ключ: https://console.z.ai/" -ForegroundColor DarkCyan
+    $key = Read-SecretText "Введите Z.AI API key"
+  }
   $env:OPENAI_API_KEY = $key.Trim()
   $cfg = Build-QwenSettingsZai -Mid $ModelId.Trim()
 } elseif ($Provider -eq "zai-general") {
@@ -315,7 +319,11 @@ if ($Provider -eq "zai") {
   if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") { $key = $env:ZAI_API_KEY }
   if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") { $key = [Environment]::GetEnvironmentVariable("OPENAI_API_KEY", "User") }
   if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") { $key = $env:OPENAI_API_KEY }
-  if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") { $key = Read-SecretText "Z.AI API key" }
+  if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") {
+    Write-Host "Z.AI API ключ не задан." -ForegroundColor Yellow
+    Write-Host "Получить ключ: https://console.z.ai/" -ForegroundColor DarkCyan
+    $key = Read-SecretText "Введите Z.AI API key"
+  }
   $env:OPENAI_API_KEY = $key.Trim()
   $mid = $ModelId.Trim()
   $cfg = @{
@@ -346,7 +354,11 @@ if ($Provider -eq "zai") {
 } elseif ($Provider -eq "groq") {
   $key = [Environment]::GetEnvironmentVariable("GROQ_API_KEY", "User")
   if ([string]::IsNullOrWhiteSpace($key)) { $key = $env:GROQ_API_KEY }
-  if ([string]::IsNullOrWhiteSpace($key)) { $key = Read-SecretText "Groq API key" }
+  if ([string]::IsNullOrWhiteSpace($key)) {
+    Write-Host "Groq API ключ не задан." -ForegroundColor Yellow
+    Write-Host "Получить ключ: https://console.groq.com/keys" -ForegroundColor DarkCyan
+    $key = Read-SecretText "Введите Groq API key"
+  }
   $env:OPENAI_API_KEY = $key.Trim()
   # Groq free tier: очень низкий TPM (6-12K). Урезаем контекст и пропускаем startup context.
   $groqCtx = 4096
@@ -380,7 +392,11 @@ if ($Provider -eq "zai") {
 } elseif ($Provider -eq "openrouter") {
   $key = [Environment]::GetEnvironmentVariable("OPENROUTER_API_KEY", "User")
   if ([string]::IsNullOrWhiteSpace($key)) { $key = $env:OPENROUTER_API_KEY }
-  if ([string]::IsNullOrWhiteSpace($key)) { $key = Read-SecretText "OpenRouter API key" }
+  if ([string]::IsNullOrWhiteSpace($key)) {
+    Write-Host "OpenRouter API ключ не задан." -ForegroundColor Yellow
+    Write-Host "Получить ключ: https://openrouter.ai/settings/keys" -ForegroundColor DarkCyan
+    $key = Read-SecretText "Введите OpenRouter API key"
+  }
   $env:OPENAI_API_KEY = $key.Trim()
   $orCtx = 16384
   $orMaxTok = 8192
@@ -391,7 +407,11 @@ if ($Provider -eq "zai") {
 } else {
   $key = [Environment]::GetEnvironmentVariable("NVIDIA_NIM_API_KEY", "User")
   if ([string]::IsNullOrWhiteSpace($key)) { $key = $env:NVIDIA_NIM_API_KEY }
-  if ([string]::IsNullOrWhiteSpace($key)) { $key = Read-SecretText "NVIDIA NIM API key" }
+  if ([string]::IsNullOrWhiteSpace($key)) {
+    Write-Host "NVIDIA NIM API ключ не задан." -ForegroundColor Yellow
+    Write-Host "Получить ключ: https://build.nvidia.com/api-key" -ForegroundColor DarkCyan
+    $key = Read-SecretText "Введите NVIDIA NIM API key"
+  }
   $env:OPENAI_API_KEY = $key.Trim()
   $midTrim = $ModelId.Trim()
   $script:NimDynamicCompat = $false

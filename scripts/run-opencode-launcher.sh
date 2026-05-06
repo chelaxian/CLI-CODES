@@ -35,6 +35,23 @@ get_launcher_state() {
     cat "$STATE_FILE"
 }
 
+resolve_api_key_or_prompt() {
+    local current_key="$1"
+    local provider_name="$2"
+    local help_url="$3"
+
+    if [ -z "$current_key" ]; then
+        echo -e "${YELLOW}$provider_name API ключ не задан.${RESET}"
+        echo -e "${CYAN}Получить ключ: $help_url${RESET}"
+    fi
+
+    if [ -z "$current_key" ]; then
+        read_secret_text "$provider_name API key: "
+    else
+        echo "$current_key"
+    fi
+}
+
 save_launcher_state() {
     local profile_id="$1"
     local extra="$2"
@@ -136,37 +153,57 @@ get_zai_api_key() {
         key="${OPENAI_API_KEY:-}"
     fi
     if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then
-        echo -e "${YELLOW}Z.AI API ключ не задан. Задайте ZAI_API_KEY или выберите «Сменить ключ API провайдера».${RESET}" >&2
-        return 1
+        echo -e "${YELLOW}Z.AI API ключ не задан.${RESET}"
+        echo -e "${CYAN}Получить ключ: https://console.z.ai/${RESET}"
     fi
-    echo "$key"
+
+    if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then
+        read_secret_text "Z.AI API key: "
+    else
+        echo "$key"
+    fi
 }
 
 get_nim_api_key() {
     local key="${NVIDIA_NIM_API_KEY:-}"
     if [ -z "$key" ]; then
-        echo -e "${YELLOW}NVIDIA NIM API ключ не задан. Задайте NVIDIA_NIM_API_KEY или выберите «Сменить ключ API провайдера».${RESET}" >&2
-        return 1
+        echo -e "${YELLOW}NVIDIA NIM API ключ не задан.${RESET}"
+        echo -e "${CYAN}Получить ключ: https://build.nvidia.com/api-key${RESET}"
     fi
-    echo "$key"
+
+    if [ -z "$key" ]; then
+        read_secret_text "NVIDIA NIM API key: "
+    else
+        echo "$key"
+    fi
 }
 
 get_groq_api_key() {
     local key="${GROQ_API_KEY:-}"
     if [ -z "$key" ]; then
-        echo -e "${YELLOW}Groq API ключ не задан. Задайте GROQ_API_KEY или выберите «Сменить ключ API провайдера».${RESET}" >&2
-        return 1
+        echo -e "${YELLOW}Groq API ключ не задан.${RESET}"
+        echo -e "${CYAN}Получить ключ: https://console.groq.com/keys${RESET}"
     fi
-    echo "$key"
+
+    if [ -z "$key" ]; then
+        read_secret_text "Groq API key: "
+    else
+        echo "$key"
+    fi
 }
 
 get_openrouter_api_key() {
     local key="${OPENROUTER_API_KEY:-}"
     if [ -z "$key" ]; then
-        echo -e "${YELLOW}OpenRouter API ключ не задан. Задайте OPENROUTER_API_KEY или выберите «Сменить ключ API провайдера».${RESET}" >&2
-        return 1
+        echo -e "${YELLOW}OpenRouter API ключ не задан.${RESET}"
+        echo -e "${CYAN}Получить ключ: https://openrouter.ai/settings/keys${RESET}"
     fi
-    echo "$key"
+
+    if [ -z "$key" ]; then
+        read_secret_text "OpenRouter API key: "
+    else
+        echo "$key"
+    fi
 }
 
 invoke_opencode_profile() {
@@ -182,7 +219,7 @@ invoke_opencode_profile() {
     case "$profile_id" in
         "zai-glm")
             local api_key
-            api_key=$(get_zai_api_key) || return 1
+            api_key=$(get_zai_api_key) || true
             local config_path
             config_path=$(write_opencode_config "zai" "glm-4.7" "https://api.z.ai/api/openai/v1" "$api_key")
             export OPENCODE_CONFIG="$config_path"
@@ -191,7 +228,7 @@ invoke_opencode_profile() {
             ;;
         "zai-glm51")
             local api_key
-            api_key=$(get_zai_api_key) || return 1
+            api_key=$(get_zai_api_key) || true
             local config_path
             config_path=$(write_opencode_config "zai" "glm-5.1" "https://api.z.ai/api/openai/v1" "$api_key")
             export OPENCODE_CONFIG="$config_path"
@@ -200,7 +237,7 @@ invoke_opencode_profile() {
             ;;
         "zai-flash47")
             local api_key
-            api_key=$(get_zai_api_key) || return 1
+            api_key=$(get_zai_api_key) || true
             local config_path
             config_path=$(write_opencode_config "zai" "glm-4.7-flash" "https://api.z.ai/api/openai/v1" "$api_key")
             export OPENCODE_CONFIG="$config_path"
@@ -209,7 +246,7 @@ invoke_opencode_profile() {
             ;;
         "zai-flash45")
             local api_key
-            api_key=$(get_zai_api_key) || return 1
+            api_key=$(get_zai_api_key) || true
             local config_path
             config_path=$(write_opencode_config "zai" "glm-4.5-flash" "https://api.z.ai/api/openai/v1" "$api_key")
             export OPENCODE_CONFIG="$config_path"
@@ -218,7 +255,7 @@ invoke_opencode_profile() {
             ;;
         "nim-glm")
             local api_key
-            api_key=$(get_nim_api_key) || return 1
+            api_key=$(get_nim_api_key) || true
             local config_path
             config_path=$(write_opencode_config "nvidia-nim" "z-ai/glm4.7" "https://integrate.api.nvidia.com/v1" "$api_key")
             export OPENCODE_CONFIG="$config_path"
@@ -227,7 +264,7 @@ invoke_opencode_profile() {
             ;;
         "nim-qwen")
             local api_key
-            api_key=$(get_nim_api_key) || return 1
+            api_key=$(get_nim_api_key) || true
             local config_path
             config_path=$(write_opencode_config "nvidia-nim" "qwen/qwen3.5-122b-a10b" "https://integrate.api.nvidia.com/v1" "$api_key")
             export OPENCODE_CONFIG="$config_path"
@@ -235,10 +272,12 @@ invoke_opencode_profile() {
             "$opencode_exe"
             ;;
         "openrouter-qwen-coder")
-            local api_key="${OPENROUTER_API_KEY:-}"
+            local api_key
+            api_key=$(get_openrouter_api_key)
             if [ -z "$api_key" ]; then
-                echo -e "${YELLOW}OpenRouter API ключ не задан. Задайте OPENROUTER_API_KEY.${RESET}" >&2
-                return 1
+                echo -e "${YELLOW}OpenRouter API ключ не задан.${RESET}"
+                read -p "Нажмите Enter для продолжения..."
+                return 0
             fi
             local config_path
             config_path=$(write_opencode_config "openrouter" "qwen/qwen3-coder:free" "https://openrouter.ai/api/v1" "$api_key" 8192 16384)
@@ -247,8 +286,13 @@ invoke_opencode_profile() {
             "$opencode_exe"
             ;;
         "openrouter-hy3")
-            local api_key="${OPENROUTER_API_KEY:-}"
-            if [ -z "$api_key" ]; then echo -e "${YELLOW}OpenRouter API ключ не задан.${RESET}" >&2; return 1; fi
+            local api_key
+            api_key=$(get_openrouter_api_key)
+            if [ -z "$api_key" ]; then
+                echo -e "${YELLOW}OpenRouter API ключ не задан.${RESET}"
+                read -p "Нажмите Enter для продолжения..."
+                return 0
+            fi
             local config_path
             config_path=$(write_opencode_config "openrouter" "tencent/hy3-preview:free" "https://openrouter.ai/api/v1" "$api_key" 8192 262144)
             export OPENCODE_CONFIG="$config_path"
@@ -256,8 +300,13 @@ invoke_opencode_profile() {
             "$opencode_exe"
             ;;
         "openrouter-nemotron")
-            local api_key="${OPENROUTER_API_KEY:-}"
-            if [ -z "$api_key" ]; then echo -e "${YELLOW}OpenRouter API ключ не задан.${RESET}" >&2; return 1; fi
+            local api_key
+            api_key=$(get_openrouter_api_key)
+            if [ -z "$api_key" ]; then
+                echo -e "${YELLOW}OpenRouter API ключ не задан.${RESET}"
+                read -p "Нажмите Enter для продолжения..."
+                return 0
+            fi
             local config_path
             config_path=$(write_opencode_config "openrouter" "nvidia/nemotron-3-super-120b-a12b:free" "https://openrouter.ai/api/v1" "$api_key" 8192 262144)
             export OPENCODE_CONFIG="$config_path"
@@ -265,8 +314,13 @@ invoke_opencode_profile() {
             "$opencode_exe"
             ;;
         "openrouter-laguna")
-            local api_key="${OPENROUTER_API_KEY:-}"
-            if [ -z "$api_key" ]; then echo -e "${YELLOW}OpenRouter API ключ не задан.${RESET}" >&2; return 1; fi
+            local api_key
+            api_key=$(get_openrouter_api_key)
+            if [ -z "$api_key" ]; then
+                echo -e "${YELLOW}OpenRouter API ключ не задан.${RESET}"
+                read -p "Нажмите Enter для продолжения..."
+                return 0
+            fi
             local config_path
             config_path=$(write_opencode_config "openrouter" "poolside/laguna-m.1:free" "https://openrouter.ai/api/v1" "$api_key" 8192 131072)
             export OPENCODE_CONFIG="$config_path"
@@ -284,7 +338,7 @@ invoke_opencode_profile() {
             fi
             
             local api_key
-            api_key=$(get_zai_api_key) || return 1
+            api_key=$(get_zai_api_key) || true
             local config_path
             config_path=$(write_opencode_config "zai" "$model_id" "https://api.z.ai/api/openai/v1" "$api_key")
             export OPENCODE_CONFIG="$config_path"
@@ -302,7 +356,7 @@ invoke_opencode_profile() {
             fi
             
             local api_key
-            api_key=$(get_nim_api_key) || return 1
+            api_key=$(get_nim_api_key) || true
             local config_path
             config_path=$(write_opencode_config "nvidia-nim" "$model_id" "https://integrate.api.nvidia.com/v1" "$api_key")
             export OPENCODE_CONFIG="$config_path"
