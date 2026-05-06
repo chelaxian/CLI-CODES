@@ -295,22 +295,26 @@ function New-LauncherShortcut {
     param([string]$Name, [string]$ScriptFile)
     $launcher = Join-Path $scriptsDir $ScriptFile
     if (-not (Test-Path -LiteralPath $launcher)) { return }
+
+    # Всегда создаём .cmd файл для надёжности (кодировка UTF-8 + chcp 65001)
+    $cmdPath = Join-Path $desktop "$Name.cmd"
+    $cmdContent = "@echo off`r`nchcp 65001 >nul 2>`&1`r`npowershell -NoProfile -ExecutionPolicy Bypass -Command `"& '$launcher'`"`r`nif ($LASTEXITCODE -ne 0) pause"
+    [System.IO.File]::WriteAllText($cmdPath, $cmdContent, (New-Object System.Text.UTF8Encoding($false)))
+    Write-Status "  [OK] $Name.cmd → $cmdPath" "Green"
+
+    # Также пробуем создать .lnk ярлык
     $lnkPath = Join-Path $desktop "$Name.lnk"
     try {
         $shell = New-Object -ComObject WScript.Shell -ErrorAction Stop
         $lnk = $shell.CreateShortcut($lnkPath)
         $lnk.TargetPath = $psExe
-        $lnk.Arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$launcher`""
+        $lnk.Arguments = "-NoProfile -ExecutionPolicy Bypass -Command `"chcp 65001 | Out-Null; & '$launcher'`""
         $lnk.WorkingDirectory = $InstallDir
         $lnk.WindowStyle = 1
         $lnk.Save()
         Write-Status "  [OK] $Name.lnk → $lnkPath" "Green"
     } catch {
-        # Fallback: создаём .cmd файл вместо ярлыка
-        $cmdPath = Join-Path $desktop "$Name.cmd"
-        $cmdContent = "@echo off`r`nchcp 65001 >nul 2>`&1`r`npowershell -NoProfile -ExecutionPolicy Bypass -File `"$launcher`"`r`npause"
-        [System.IO.File]::WriteAllText($cmdPath, $cmdContent, (New-Object System.Text.UTF8Encoding($false)))
-        Write-Status "  [OK] $Name.cmd → $cmdPath" "Green"
+        # .lnk не создался, но .cmd уже есть
     }
 }
 

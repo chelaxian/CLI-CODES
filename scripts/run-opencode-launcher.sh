@@ -547,6 +547,7 @@ fi
 
 # ── Главное меню ─────────────────────────────────────────────────────────────
 
+main() {
 while true; do
     local state=$(get_launcher_state 2>/dev/null || true)
     local last_id=$(resolve_profile_from_state "$state" 2>/dev/null || true)
@@ -686,3 +687,5 @@ while true; do
     invoke_opencode_profile "$profile_id"
     exit $?
 done
+}
+main "$@"
