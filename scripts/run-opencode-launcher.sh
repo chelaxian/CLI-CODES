@@ -570,7 +570,15 @@ while true; do
     
     case "$profile_id" in
         "native-login")
-            local login_items=("howto|Показать команды для логина" "vanilla|Запуск OpenCode (ванильный запуск)")
+            local opencode_exe
+            opencode_exe=$(resolve_opencode_exe) || true
+            if [ -z "$opencode_exe" ]; then
+                echo -e "${RED}OpenCode CLI не найден. Установите: npm install -g opencode-ai@latest${RESET}"
+                echo -e "${GREEN}Нажмите Enter для возврата в меню…${RESET}"
+                read
+                continue
+            fi
+            local login_items=("providers-login|Вход через провайдера (opencode providers login)" "providers-list|Показать подключённых провайдеров" "vanilla|Запуск OpenCode (ванильный запуск)")
             local login_menu=()
             for item in "${login_items[@]}"; do
                 login_menu+=("${item##*|}")
@@ -586,35 +594,40 @@ while true; do
             local login_id=$(echo "${login_items[$((login_choice-1))]}" | cut -d'|' -f1)
 
             case "$login_id" in
-                "howto")
+                "providers-login")
                     clear
+                    echo -e "${CYAN}═══════════════════════════════════════════════════${RESET}"
+                    echo -e "${CYAN}  OpenCode — вход через провайдера${RESET}"
+                    echo -e "${CYAN}═══════════════════════════════════════════════════${RESET}"
                     echo ""
-                    echo -e "${CYAN}OpenCode: авторизация через провайдеров${RESET}"
+                    echo -e "${YELLOW}  Выберите провайдера и следуйте инструкциям.${RESET}"
                     echo ""
-                    echo -e "${YELLOW}Для нативного логина выполните в отдельном терминале:${RESET}"
-                    echo -e "  ${WHITE}opencode providers login${RESET}"
+                    echo -e "${CYAN}  Запуск...${RESET}"
+                    "$opencode_exe" providers login
                     echo ""
-                    echo -e "${YELLOW}Либо задайте API-ключи через переменные окружения:${RESET}"
-                    echo -e "  ${WHITE}OPENROUTER_API_KEY, GROQ_API_KEY, ZAI_API_KEY${RESET}"
+                    echo -e "${GREEN}Нажмите Enter для возврата в меню…${RESET}"
+                    read
+                    ;;
+                "providers-list")
+                    clear
+                    echo -e "${CYAN}═══════════════════════════════════════════════════${RESET}"
+                    echo -e "${CYAN}  OpenCode — подключённые провайдеры${RESET}"
+                    echo -e "${CYAN}═══════════════════════════════════════════════════${RESET}"
                     echo ""
-                    echo -e "${YELLOW}Для просмотра текущих подключений:${RESET}"
-                    echo -e "  ${WHITE}opencode providers list${RESET}"
+                    "$opencode_exe" providers list
                     echo ""
                     echo -e "${GREEN}Нажмите Enter для возврата в меню…${RESET}"
                     read
                     ;;
                 "vanilla")
-                    local opencode_exe
-                    opencode_exe=$(resolve_opencode_exe) || true
-                    if [ -z "$opencode_exe" ]; then
-                        echo -e "${RED}OpenCode CLI не найден. Установите: npm install -g opencode-ai@latest${RESET}"
-                        echo -e "${GREEN}Нажмите Enter для возврата в меню…${RESET}"
-                        read
-                        continue
-                    fi
                     unset OPENCODE_CONFIG
                     clear
-                    echo -e "${CYAN}Запуск OpenCode (ванильный запуск)…${RESET}"
+                    echo -e "${CYAN}═══════════════════════════════════════════════════${RESET}"
+                    echo -e "${CYAN}  Запуск OpenCode (ванильный запуск)${RESET}"
+                    echo -e "${CYAN}═══════════════════════════════════════════════════${RESET}"
+                    echo ""
+                    echo -e "${YELLOW}  Команда: opencode${RESET}"
+                    echo ""
                     "$opencode_exe"
                     echo ""
                     echo -e "${GREEN}Нажмите Enter для возврата в меню…${RESET}"

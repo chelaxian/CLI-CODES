@@ -213,18 +213,17 @@ source ~/.bashrc
 
 | Лаунчер | Пункт меню | Команда |
 |---------|-----------|---------|
-| **Qwen Code** | Нативный логин → Qwen OAuth | `qwen auth qwen-oauth` (браузер) — выполните в отдельном терминале |
-| **Qwen Code** | Нативный логин → Coding Plan | `qwen auth coding-plan` (API-ключ Alibaba Cloud) — выполните в отдельном терминале |
+| **Qwen Code** | Нативный логин → Qwen OAuth | `qwen auth qwen-oauth` (браузер, автоматически) |
+| **Qwen Code** | Нативный логин → Coding Plan | `qwen auth coding-plan` (API-ключ Alibaba Cloud, автоматически) |
 | **Qwen Code** | Нативный логин → Запуск Qwen Code | `qwen` |
 | **Claude Code** | Нативный логин → Claude подписка | `claude auth login --claudeai` (OAuth, браузер) |
 | **Claude Code** | Нативный логин → Anthropic Console | `claude auth login --console` (API-биллинг, браузер) |
 | **Claude Code** | Нативный логин → Запуск Claude Code | `claude` |
-| **OpenCode** | Нативный логин → Providers | `opencode providers login` (интерактивный выбор) |
+| **OpenCode** | Нативный логин → Вход через провайдера | `opencode providers login` (автоматически) |
+| **OpenCode** | Нативный логин → Показать провайдеров | `opencode providers list` (автоматически) |
 | **OpenCode** | Нативный логин → Запуск OpenCode | `opencode` |
 
 Для использования нативного логина требуется платная подписка на соответствующий сервис (Claude Pro/Max, Qwen Coding Plan и т.д.).
-
-> **Примечание для Qwen Code:** OAuth и Coding Plan требуют интерактивного терминала, который не работает из-под лаунчера. Поэтому лаунчер покажет команду (`qwen auth qwen-oauth` или `qwen auth coding-plan`) — выполните её в **отдельном** окне терминала, авторизуйтесь, а затем нажмите клавишу в лаунчере для запуска Qwen Code.
 
 ### Переменные окружения (справка)
 
@@ -570,7 +569,8 @@ chmod +x "$DESKTOP/OpenCode (cloud).desktop"
 Интерактивное меню `opencode providers login` с выбором провайдера и метода входа.
 
 Выберите в меню **«Нативный логин (OpenCode Providers)»** → нужное действие:
-- **Показать команды для логина**: подскажет `opencode providers login` и `opencode providers list`
+- **Вход через провайдера**: автоматически запускает `opencode providers login`
+- **Показать подключённых провайдеров**: автоматически запускает `opencode providers list`
 - **Запуск OpenCode (ванильный запуск)**: просто запускает `opencode` без пресетов
 
 ---

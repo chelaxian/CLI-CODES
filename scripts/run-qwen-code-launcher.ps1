@@ -38,6 +38,23 @@ function Resolve-QwenExe {
   return ""
 }
 
+function Invoke-CliCommand {
+  param(
+    [Parameter(Mandatory = $true)][string]$ExePath,
+    [string[]]$Arguments = @()
+  )
+  if ($ExePath -like "*.cmd" -or $ExePath -like "*.bat") {
+    $allArgs = @("/c", $ExePath) + $Arguments
+    & cmd.exe @allArgs
+  } else {
+    if ($Arguments.Count -gt 0) {
+      & $ExePath @Arguments
+    } else {
+      & $ExePath
+    }
+  }
+}
+
 $script:Profiles = @(
   @{
     Id          = "last"
@@ -301,19 +318,17 @@ while ($true) {
         Write-Host "  Qwen OAuth — авторизация через браузер" -ForegroundColor Cyan
         Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Cyan
         Write-Host ""
-        Write-Host "  Qwen OAuth требует интерактивный терминал," -ForegroundColor Yellow
-        Write-Host "  который не может работать из-под лаунчера." -ForegroundColor Yellow
+        Write-Host "  Откроется браузер. Завершите авторизацию в нём." -ForegroundColor Yellow
+        Write-Host "  Для этого нужна подписка Qwen (qwen.ai)." -ForegroundColor Yellow
         Write-Host ""
-        Write-Host "  Выполните команду в ОТДЕЛЬНОМ терминале:" -ForegroundColor Green
+        Write-Host "  Запуск..." -ForegroundColor Cyan
+        Invoke-CliCommand -ExePath $qwenExe -Arguments @("auth", "qwen-oauth")
         Write-Host ""
-        Write-Host "    qwen auth qwen-oauth" -ForegroundColor White
+        Write-Host "  Текущий статус:" -ForegroundColor Green
+        Invoke-CliCommand -ExePath $qwenExe -Arguments @("auth", "status")
         Write-Host ""
-        Write-Host "  После авторизации нажмите любую клавишу здесь," -ForegroundColor Green
-        Write-Host "  чтобы запустить Qwen Code с вашим аккаунтом." -ForegroundColor Green
-        Write-Host ""
-        Write-Host "Нажмите любую клавишу для запуска Qwen Code…" -ForegroundColor Green
+        Write-Host "Нажмите любую клавишу для возврата в меню…" -ForegroundColor Green
         $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-        & $qwenExe
       }
       "coding-plan" {
         Clear-Host
@@ -321,22 +336,17 @@ while ($true) {
         Write-Host "  Alibaba Cloud Coding Plan" -ForegroundColor Cyan
         Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Cyan
         Write-Host ""
-        Write-Host "  Coding Plan требует интерактивный ввод региона" -ForegroundColor Yellow
-        Write-Host "  и API-ключа, который не работает из-под лаунчера." -ForegroundColor Yellow
+        Write-Host "  Регион: china или global" -ForegroundColor Yellow
+        Write-Host "  Потребуется API-ключ от Alibaba Cloud." -ForegroundColor Yellow
         Write-Host ""
-        Write-Host "  Выполните команду в ОТДЕЛЬНОМ терминале:" -ForegroundColor Green
+        Write-Host "  Запуск..." -ForegroundColor Cyan
+        Invoke-CliCommand -ExePath $qwenExe -Arguments @("auth", "coding-plan")
         Write-Host ""
-        Write-Host "    qwen auth coding-plan" -ForegroundColor White
+        Write-Host "  Текущий статус:" -ForegroundColor Green
+        Invoke-CliCommand -ExePath $qwenExe -Arguments @("auth", "status")
         Write-Host ""
-        Write-Host "  Регион: china или global" -ForegroundColor DarkGray
-        Write-Host "  Потребуется API-ключ от Alibaba Cloud." -ForegroundColor DarkGray
-        Write-Host ""
-        Write-Host "  После авторизации нажмите любую клавишу здесь," -ForegroundColor Green
-        Write-Host "  чтобы запустить Qwen Code с вашим аккаунтом." -ForegroundColor Green
-        Write-Host ""
-        Write-Host "Нажмите любую клавишу для запуска Qwen Code…" -ForegroundColor Green
+        Write-Host "Нажмите любую клавишу для возврата в меню…" -ForegroundColor Green
         $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-        & $qwenExe
       }
       "vanilla" {
         Clear-Host
@@ -346,7 +356,7 @@ while ($true) {
         Write-Host ""
         Write-Host "  Команда: qwen" -ForegroundColor Yellow
         Write-Host ""
-        & $qwenExe
+        Invoke-CliCommand -ExePath $qwenExe
         Write-Host ""
         Write-Host "Нажмите любую клавишу для возврата в меню…" -ForegroundColor Green
         $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")

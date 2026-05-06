@@ -419,6 +419,12 @@ while true; do
     
     case "$profile_id" in
         "native-login")
+            if ! command -v claude &>/dev/null; then
+                echo -e "${RED}Claude Code CLI не найден (claude). Установите: npm install -g @anthropic-ai/claude-code@latest${RESET}"
+                echo -e "${GREEN}Нажмите Enter для возврата в меню…${RESET}"
+                read
+                continue
+            fi
             local login_items=("claude-sub|Claude подписка (OAuth, браузер)" "anthropic-console|Anthropic Console (API-биллинг, браузер)" "vanilla|Запуск Claude Code (ванильный запуск)")
             local login_menu=()
             for item in "${login_items[@]}"; do
@@ -444,6 +450,7 @@ while true; do
                     echo -e "${YELLOW}  Откроется браузер. Завершите авторизацию в нём.${RESET}"
                     echo -e "${YELLOW}  Нужна подписка Claude Pro / Max (claude.ai).${RESET}"
                     echo ""
+                    echo -e "${CYAN}  Запуск...${RESET}"
                     claude auth login --claudeai
                     echo ""
                     echo -e "${GREEN}  Текущий статус:${RESET}"
@@ -461,6 +468,7 @@ while true; do
                     echo -e "${YELLOW}  Откроется браузер. Завершите авторизацию.${RESET}"
                     echo -e "${YELLOW}  Нужен аккаунт на console.anthropic.com.${RESET}"
                     echo ""
+                    echo -e "${CYAN}  Запуск...${RESET}"
                     claude auth login --console
                     echo ""
                     echo -e "${GREEN}  Текущий статус:${RESET}"

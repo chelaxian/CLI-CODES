@@ -3600,7 +3600,7 @@ TUI-меню для OpenCode с выбором провайдера (Z.AI / NVID
 5. `uv sync` в `free-claude-code`.
 6. Запустить `.\scripts\create-desktop-shortcuts.ps1` и при необходимости `.\scripts\update-cloud-shortcuts.ps1` (§10, §11.12, §11.15).
 7. Проверить: ярлык Qwen → пресет NIM / Z.AI / Groq / OpenRouter → ответ модели; ярлык Claude → NIM / Z.AI / OpenRouter; ярлык OpenCode → любой провайдер; `claude-mem` на 37777.
-8. При наличии платной подписки: использовать пункт «Нативный логин» для OAuth-авторизации (Qwen OAuth, Claude подписка, OpenCode providers). Там же есть подпункт «Запуск … (ванильный запуск)» для старта `qwen` / `claude` / `opencode` без пресетов. **Примечание:** Qwen OAuth и Coding Plan нужно выполнять в отдельном терминале — лаунчер покажет нужную команду.
+8. При наличии платной подписки: использовать пункт «Нативный логин» для OAuth-авторизации (Qwen OAuth, Claude подписка, OpenCode providers). Там же есть подпункт «Запуск … (ванильный запуск)» для старта `qwen` / `claude` / `opencode` без пресетов. Все команды запускаются автоматически в той же консоли.
 
 ---
 

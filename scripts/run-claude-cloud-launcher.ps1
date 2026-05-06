@@ -17,6 +17,48 @@ $ObsidianExe = "C:\Users\chelaxian\AppData\Local\Programs\Obsidian\Obsidian.exe"
 $StatePath = Join-Path $PSScriptRoot "claude-cloud-launcher-state.json"
 $SessionScript = Join-Path $PSScriptRoot "run-claude-cloud-session.ps1"
 
+function Ensure-NpmBinInPath {
+  $npmBin = Join-Path $env:APPDATA "npm"
+  if ($npmBin -and (Test-Path -LiteralPath $npmBin)) {
+    $parts = @($env:PATH -split ';' | Where-Object { $_ -and $_.Trim().Length -gt 0 })
+    if (-not ($parts | Where-Object { $_.TrimEnd('\') -ieq $npmBin.TrimEnd('\') })) {
+      $env:PATH = $npmBin + ";" + $env:PATH
+    }
+  }
+}
+
+function Resolve-ClaudeExe {
+  Ensure-NpmBinInPath
+  $cmd = Get-Command claude.cmd -ErrorAction SilentlyContinue
+  if ($cmd) { return $cmd.Source }
+  $cmd = Get-Command claude -ErrorAction SilentlyContinue
+  if ($cmd) { return $cmd.Source }
+  foreach ($p in @(
+      (Join-Path $env:APPDATA "npm\claude.cmd"),
+      (Join-Path $env:APPDATA "npm\claude.ps1")
+    )) {
+    if (Test-Path -LiteralPath $p) { return $p }
+  }
+  return ""
+}
+
+function Invoke-CliCommand {
+  param(
+    [Parameter(Mandatory = $true)][string]$ExePath,
+    [string[]]$Arguments = @()
+  )
+  if ($ExePath -like "*.cmd" -or $ExePath -like "*.bat") {
+    $allArgs = @("/c", $ExePath) + $Arguments
+    & cmd.exe @allArgs
+  } else {
+    if ($Arguments.Count -gt 0) {
+      & $ExePath @Arguments
+    } else {
+      & $ExePath
+    }
+  }
+}
+
 if (-not (Test-Path -LiteralPath $SessionScript)) {
   throw "Не найден скрипт: $SessionScript"
 }
@@ -294,6 +336,13 @@ while ($true) {
   }
 
   if ($profileId -eq "native-login") {
+    $claudeExe = Resolve-ClaudeExe
+    if (-not $claudeExe) {
+      Write-Host "Claude Code CLI не найден (claude). Установите: npm install -g @anthropic-ai/claude-code@latest" -ForegroundColor Red
+      Write-Host "Нажмите любую клавишу для возврата в меню…" -ForegroundColor Green
+      $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+      continue
+    }
     $loginItems = @(
       @{ Id = "claude-sub"; Label = "Claude подписка (OAuth, браузер)" }
       @{ Id = "anthropic-console"; Label = "Anthropic Console (API-биллинг, браузер)" }
@@ -311,10 +360,11 @@ while ($true) {
         Write-Host "  Откроется браузер. Завершите авторизацию в нём." -ForegroundColor Yellow
         Write-Host "  Нужна подписка Claude Pro / Max (claude.ai)." -ForegroundColor Yellow
         Write-Host ""
-        & claude auth login --claudeai
+        Write-Host "  Запуск..." -ForegroundColor Cyan
+        Invoke-CliCommand -ExePath $claudeExe -Arguments @("auth", "login", "--claudeai")
         Write-Host ""
         Write-Host "  Текущий статус:" -ForegroundColor Green
-        & claude auth status
+        Invoke-CliCommand -ExePath $claudeExe -Arguments @("auth", "status")
         Write-Host ""
         Write-Host "Нажмите любую клавишу для возврата в меню…" -ForegroundColor Green
         $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
@@ -328,10 +378,11 @@ while ($true) {
         Write-Host "  Откроется браузер. Завершите авторизацию." -ForegroundColor Yellow
         Write-Host "  Нужен аккаунт на console.anthropic.com." -ForegroundColor Yellow
         Write-Host ""
-        & claude auth login --console
+        Write-Host "  Запуск..." -ForegroundColor Cyan
+        Invoke-CliCommand -ExePath $claudeExe -Arguments @("auth", "login", "--console")
         Write-Host ""
         Write-Host "  Текущий статус:" -ForegroundColor Green
-        & claude auth status
+        Invoke-CliCommand -ExePath $claudeExe -Arguments @("auth", "status")
         Write-Host ""
         Write-Host "Нажмите любую клавишу для возврата в меню…" -ForegroundColor Green
         $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
@@ -344,7 +395,7 @@ while ($true) {
         Write-Host ""
         Write-Host "  Команда: claude" -ForegroundColor Yellow
         Write-Host ""
-        & claude
+        Invoke-CliCommand -ExePath $claudeExe
         Write-Host ""
         Write-Host "Нажмите любую клавишу для возврата в меню…" -ForegroundColor Green
         $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")

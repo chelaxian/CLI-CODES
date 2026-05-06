@@ -146,6 +146,23 @@ function Resolve-OpenCodeExe {
   return ""
 }
 
+function Invoke-CliCommand {
+  param(
+    [Parameter(Mandatory = $true)][string]$ExePath,
+    [string[]]$Arguments = @()
+  )
+  if ($ExePath -like "*.cmd" -or $ExePath -like "*.bat") {
+    $allArgs = @("/c", $ExePath) + $Arguments
+    & cmd.exe @allArgs
+  } else {
+    if ($Arguments.Count -gt 0) {
+      & $ExePath @Arguments
+    } else {
+      & $ExePath
+    }
+  }
+}
+
 function Write-OpenCodeConfig {
   param(
     [Parameter(Mandatory = $true)][string]$Provider,
@@ -489,42 +506,56 @@ while ($true) {
   }
 
   if ($profileId -eq "native-login") {
+    $opencodeExe = Resolve-OpenCodeExe
+    if (-not $opencodeExe) {
+      Write-Host "OpenCode CLI не найден. Установите: npm install -g opencode-ai@latest" -ForegroundColor Red
+      Write-Host "Нажмите любую клавишу для возврата в меню…" -ForegroundColor Green
+      $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+      continue
+    }
     $loginItems = @(
-      @{ Id = "howto"; Label = "Показать команды для логина" }
+      @{ Id = "providers-login"; Label = "Вход через провайдера (opencode providers login)" }
+      @{ Id = "providers-list"; Label = "Показать подключённых провайдеров" }
       @{ Id = "vanilla"; Label = "Запуск OpenCode (ванильный запуск)" }
     )
     $loginChoice = Show-TuiFramedMenu -AppBrand "OpenCode" -Title "Нативный логин OpenCode" -Subtitle "Выберите действие" -Items $loginItems -MaxVisible 10
     if (-not $loginChoice) { continue }
     switch ([string]$loginChoice.Id) {
-      "howto" {
+      "providers-login" {
         Clear-Host
+        Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Cyan
+        Write-Host "  OpenCode — вход через провайдера" -ForegroundColor Cyan
+        Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Cyan
         Write-Host ""
-        Write-Host "OpenCode: авторизация через провайдеров" -ForegroundColor Cyan
+        Write-Host "  Выберите провайдера и следуйте инструкциям." -ForegroundColor Yellow
         Write-Host ""
-        Write-Host "Для нативного логина выполните в отдельном терминале:" -ForegroundColor Yellow
-        Write-Host "  opencode providers login" -ForegroundColor White
+        Write-Host "  Запуск..." -ForegroundColor Cyan
+        Invoke-CliCommand -ExePath $opencodeExe -Arguments @("providers", "login")
         Write-Host ""
-        Write-Host "Либо задайте API-ключи через переменные окружения:" -ForegroundColor Yellow
-        Write-Host "  OPENROUTER_API_KEY, GROQ_API_KEY, ZAI_API_KEY" -ForegroundColor White
+        Write-Host "Нажмите любую клавишу для возврата в меню…" -ForegroundColor Green
+        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+      }
+      "providers-list" {
+        Clear-Host
+        Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Cyan
+        Write-Host "  OpenCode — подключённые провайдеры" -ForegroundColor Cyan
+        Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Cyan
         Write-Host ""
-        Write-Host "Для просмотра текущих подключений:" -ForegroundColor Yellow
-        Write-Host "  opencode providers list" -ForegroundColor White
+        Invoke-CliCommand -ExePath $opencodeExe -Arguments @("providers", "list")
         Write-Host ""
         Write-Host "Нажмите любую клавишу для возврата в меню…" -ForegroundColor Green
         $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
       }
       "vanilla" {
-        $opencodeExe = Resolve-OpenCodeExe
-        if (-not $opencodeExe) {
-          Write-Host "OpenCode CLI не найден. Установите: npm install -g opencode-ai@latest" -ForegroundColor Red
-          Write-Host "Нажмите любую клавишу для возврата в меню…" -ForegroundColor Green
-          $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-          break
-        }
         Remove-Item -Path env:OPENCODE_CONFIG -ErrorAction SilentlyContinue
         Clear-Host
-        Write-Host "Запуск OpenCode (ванильный запуск)..." -ForegroundColor Cyan
-        & $opencodeExe
+        Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Cyan
+        Write-Host "  Запуск OpenCode (ванильный запуск)" -ForegroundColor Cyan
+        Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Cyan
+        Write-Host ""
+        Write-Host "  Команда: opencode" -ForegroundColor Yellow
+        Write-Host ""
+        Invoke-CliCommand -ExePath $opencodeExe
         Write-Host ""
         Write-Host "Нажмите любую клавишу для возврата в меню…" -ForegroundColor Green
         $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
