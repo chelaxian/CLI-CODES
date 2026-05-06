@@ -62,6 +62,22 @@ $script:Profiles = @(
     Label = "OpenRouter — Claude Sonnet 4 (paid, tool calling)"
   }
   @{
+    Id    = "claude-openrouter-qwen-coder"
+    Label = "OpenRouter — Qwen3 Coder (free, tool calling)"
+  }
+  @{
+    Id    = "claude-openrouter-hy3"
+    Label = "OpenRouter — Tencent Hy3 (free, tool calling)"
+  }
+  @{
+    Id    = "claude-openrouter-nemotron"
+    Label = "OpenRouter — Nemotron 3 Super 120B (free, tool calling)"
+  }
+  @{
+    Id    = "claude-openrouter-laguna"
+    Label = "OpenRouter — Poolside Laguna M.1 (free, tool calling, coding)"
+  }
+  @{
     Id    = "custom-model"
     Label = "Другая модель… → выбор провайдера и модели"
   }
@@ -104,7 +120,7 @@ function Resolve-ProfileFromState($state) {
   $id = [string]$state.profileId
   if ($id -in @(
       "claude-zai", "claude-zai-glm51", "claude-zai-flash47", "claude-zai-flash45", "claude-nim", "claude-nim-qwen",
-      "claude-openrouter-sonnet",
+      "claude-openrouter-sonnet", "claude-openrouter-qwen-coder", "claude-openrouter-hy3", "claude-openrouter-nemotron", "claude-openrouter-laguna",
       "custom-claude-zai", "custom-claude-nim", "custom-claude-openrouter"
     )) { return $id }
   return $null
@@ -155,6 +171,26 @@ function Invoke-ClaudeCloudProfile {
     }
     "claude-openrouter-sonnet" {
       & $SessionScript -Provider openrouter -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
+        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+      return
+    }
+    "claude-openrouter-qwen-coder" {
+      & $SessionScript -Provider openrouter -ZaiAnthropicModelId "qwen/qwen3-coder:free" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
+        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+      return
+    }
+    "claude-openrouter-hy3" {
+      & $SessionScript -Provider openrouter -ZaiAnthropicModelId "tencent/hy3-preview:free" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
+        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+      return
+    }
+    "claude-openrouter-nemotron" {
+      & $SessionScript -Provider openrouter -ZaiAnthropicModelId "nvidia/nemotron-3-super-120b-a12b:free" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
+        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+      return
+    }
+    "claude-openrouter-laguna" {
+      & $SessionScript -Provider openrouter -ZaiAnthropicModelId "poolside/laguna-m.1:free" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
         -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
       return
     }

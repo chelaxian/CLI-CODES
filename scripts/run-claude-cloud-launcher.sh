@@ -24,6 +24,10 @@ PROFILES=(
     "claude-nim|NVIDIA NIM — GLM-4.7 (free, tool calling)"
     "claude-nim-qwen|NVIDIA NIM — Qwen3.5-122B-A10B (free, tool calling)"
     "claude-openrouter-sonnet|OpenRouter — Claude Sonnet 4 (paid, tool calling)"
+    "claude-openrouter-qwen-coder|OpenRouter — Qwen3 Coder (free, tool calling)"
+    "claude-openrouter-hy3|OpenRouter — Tencent Hy3 (free, tool calling)"
+    "claude-openrouter-nemotron|OpenRouter — Nemotron 3 Super 120B (free, tool calling)"
+    "claude-openrouter-laguna|OpenRouter — Poolside Laguna M.1 (free, tool calling, coding)"
     "custom-model|Другая модель… → выбор провайдера и модели"
     "native-login|Нативный логин (Anthropic OAuth / Console)"
     "change-api-key|Сменить ключ API провайдера"
@@ -57,7 +61,7 @@ resolve_profile_from_state() {
     local profile_id=$(echo "$state" | grep -o '"profileId":"[^"]*"' | cut -d'"' -f4)
 
     case "$profile_id" in
-        "claude-zai"|"claude-zai-glm51"|"claude-zai-flash47"|"claude-zai-flash45"|"claude-nim"|"claude-nim-qwen"|"claude-openrouter-sonnet"|"custom-claude-zai"|"custom-claude-nim"|"custom-claude-openrouter")
+        "claude-zai"|"claude-zai-glm51"|"claude-zai-flash47"|"claude-zai-flash45"|"claude-nim"|"claude-nim-qwen"|"claude-openrouter-sonnet"|"claude-openrouter-qwen-coder"|"claude-openrouter-hy3"|"claude-openrouter-nemotron"|"claude-openrouter-laguna"|"custom-claude-zai"|"custom-claude-nim"|"custom-claude-openrouter")
             echo "$profile_id"
             return 0
             ;;
@@ -144,6 +148,38 @@ invoke_claude_cloud_profile() {
                 -ClaudeTools default \
                 -SkipCommonPreamble
             ;;
+        "claude-openrouter-qwen-coder")
+            bash "$SESSION_SCRIPT" -Provider openrouter \
+                -ZaiAnthropicModelId "qwen/qwen3-coder:free" \
+                -VaultPath "$VAULT_PATH" \
+                -ObsidianExe "$OBSIDIAN_EXE" \
+                -ClaudeTools default \
+                -SkipCommonPreamble
+            ;;
+        "claude-openrouter-hy3")
+            bash "$SESSION_SCRIPT" -Provider openrouter \
+                -ZaiAnthropicModelId "tencent/hy3-preview:free" \
+                -VaultPath "$VAULT_PATH" \
+                -ObsidianExe "$OBSIDIAN_EXE" \
+                -ClaudeTools default \
+                -SkipCommonPreamble
+            ;;
+        "claude-openrouter-nemotron")
+            bash "$SESSION_SCRIPT" -Provider openrouter \
+                -ZaiAnthropicModelId "nvidia/nemotron-3-super-120b-a12b:free" \
+                -VaultPath "$VAULT_PATH" \
+                -ObsidianExe "$OBSIDIAN_EXE" \
+                -ClaudeTools default \
+                -SkipCommonPreamble
+            ;;
+        "claude-openrouter-laguna")
+            bash "$SESSION_SCRIPT" -Provider openrouter \
+                -ZaiAnthropicModelId "poolside/laguna-m.1:free" \
+                -VaultPath "$VAULT_PATH" \
+                -ObsidianExe "$OBSIDIAN_EXE" \
+                -ClaudeTools default \
+                -SkipCommonPreamble
+            ;;
         "custom-claude-zai")
             local state=$(get_launcher_state)
             local model_id=$(echo "$state" | grep -o '"customModelId":"[^"]*"' | cut -d'"' -f4)
@@ -187,7 +223,7 @@ invoke_claude_cloud_profile() {
             fi
             
             bash "$SESSION_SCRIPT" -Provider openrouter \
-                -OpenRouterModel "$model_id" \
+                -ZaiAnthropicModelId "$model_id" \
                 -VaultPath "$VAULT_PATH" \
                 -ObsidianExe "$OBSIDIAN_EXE" \
                 -ClaudeTools default \

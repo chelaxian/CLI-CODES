@@ -399,16 +399,19 @@ while true; do
                     echo -e "${CYAN}  Qwen OAuth — авторизация через браузер${RESET}"
                     echo -e "${CYAN}═══════════════════════════════════════════════════${RESET}"
                     echo ""
-                    echo -e "${YELLOW}  Откроется браузер. Завершите авторизацию в нём.${RESET}"
-                    echo -e "${YELLOW}  Для этого нужна подписка Qwen (qwen.ai).${RESET}"
+                    echo -e "${YELLOW}  Qwen OAuth требует интерактивный терминал,${RESET}"
+                    echo -e "${YELLOW}  который не может работать из-под лаунчера.${RESET}"
                     echo ""
-                    "$qwen_exe" auth qwen-oauth
+                    echo -e "${GREEN}  Выполните команду в ОТДЕЛЬНОМ терминале:${RESET}"
                     echo ""
-                    echo -e "${GREEN}  Текущий статус:${RESET}"
-                    "$qwen_exe" auth status
+                    echo -e "    ${WHITE}qwen auth qwen-oauth${RESET}"
                     echo ""
-                    echo -e "${GREEN}Нажмите Enter для возврата в меню…${RESET}"
+                    echo -e "${GREEN}  После авторизации нажмите любую клавишу здесь,${RESET}"
+                    echo -e "${GREEN}  чтобы запустить Qwen Code с вашим аккаунтом.${RESET}"
+                    echo ""
+                    echo -e "${GREEN}Нажмите Enter для запуска Qwen Code…${RESET}"
                     read
+                    "$qwen_exe"
                     ;;
                 "coding-plan")
                     clear
@@ -416,16 +419,22 @@ while true; do
                     echo -e "${CYAN}  Alibaba Cloud Coding Plan${RESET}"
                     echo -e "${CYAN}═══════════════════════════════════════════════════${RESET}"
                     echo ""
-                    echo -e "${YELLOW}  Регион: china или global${RESET}"
-                    echo -e "${YELLOW}  Потребуется API-ключ от Alibaba Cloud.${RESET}"
+                    echo -e "${YELLOW}  Coding Plan требует интерактивный ввод региона${RESET}"
+                    echo -e "${YELLOW}  и API-ключа, который не работает из-под лаунчера.${RESET}"
                     echo ""
-                    "$qwen_exe" auth coding-plan
+                    echo -e "${GREEN}  Выполните команду в ОТДЕЛЬНОМ терминале:${RESET}"
                     echo ""
-                    echo -e "${GREEN}  Текущий статус:${RESET}"
-                    "$qwen_exe" auth status
+                    echo -e "    ${WHITE}qwen auth coding-plan${RESET}"
                     echo ""
-                    echo -e "${GREEN}Нажмите Enter для возврата в меню…${RESET}"
+                    echo -e "${DARK_GRAY}  Регион: china или global${RESET}"
+                    echo -e "${DARK_GRAY}  Потребуется API-ключ от Alibaba Cloud.${RESET}"
+                    echo ""
+                    echo -e "${GREEN}  После авторизации нажмите любую клавишу здесь,${RESET}"
+                    echo -e "${GREEN}  чтобы запустить Qwen Code с вашим аккаунтом.${RESET}"
+                    echo ""
+                    echo -e "${GREEN}Нажмите Enter для запуска Qwen Code…${RESET}"
                     read
+                    "$qwen_exe"
                     ;;
                 "vanilla")
                     clear

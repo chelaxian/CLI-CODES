@@ -301,20 +301,19 @@ while ($true) {
         Write-Host "  Qwen OAuth — авторизация через браузер" -ForegroundColor Cyan
         Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Cyan
         Write-Host ""
-        Write-Host "  Откроется браузер. Завершите авторизацию в нём." -ForegroundColor Yellow
-        Write-Host "  Для этого нужна подписка Qwen (qwen.ai)." -ForegroundColor Yellow
+        Write-Host "  Qwen OAuth требует интерактивный терминал," -ForegroundColor Yellow
+        Write-Host "  который не может работать из-под лаунчера." -ForegroundColor Yellow
         Write-Host ""
-        Write-Host "  Если браузер не открылся — проверьте что у вас" -ForegroundColor DarkGray
-        Write-Host "  есть аккаунт на qwen.ai и подписка." -ForegroundColor DarkGray
+        Write-Host "  Выполните команду в ОТДЕЛЬНОМ терминале:" -ForegroundColor Green
         Write-Host ""
-        Write-Host "  Запуск..." -ForegroundColor Cyan
-        & $qwenExe auth qwen-oauth
+        Write-Host "    qwen auth qwen-oauth" -ForegroundColor White
         Write-Host ""
-        Write-Host "  Авторизация завершена. Текущий статус:" -ForegroundColor Green
-        & $qwenExe auth status
+        Write-Host "  После авторизации нажмите любую клавишу здесь," -ForegroundColor Green
+        Write-Host "  чтобы запустить Qwen Code с вашим аккаунтом." -ForegroundColor Green
         Write-Host ""
-        Write-Host "Нажмите любую клавишу для возврата в меню…" -ForegroundColor Green
+        Write-Host "Нажмите любую клавишу для запуска Qwen Code…" -ForegroundColor Green
         $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+        & $qwenExe
       }
       "coding-plan" {
         Clear-Host
@@ -322,16 +321,22 @@ while ($true) {
         Write-Host "  Alibaba Cloud Coding Plan" -ForegroundColor Cyan
         Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Cyan
         Write-Host ""
-        Write-Host "  Регион: china или global" -ForegroundColor Yellow
-        Write-Host "  Потребуется API-ключ от Alibaba Cloud." -ForegroundColor Yellow
+        Write-Host "  Coding Plan требует интерактивный ввод региона" -ForegroundColor Yellow
+        Write-Host "  и API-ключа, который не работает из-под лаунчера." -ForegroundColor Yellow
         Write-Host ""
-        & $qwenExe auth coding-plan
+        Write-Host "  Выполните команду в ОТДЕЛЬНОМ терминале:" -ForegroundColor Green
         Write-Host ""
-        Write-Host "  Текущий статус:" -ForegroundColor Green
-        & $qwenExe auth status
+        Write-Host "    qwen auth coding-plan" -ForegroundColor White
         Write-Host ""
-        Write-Host "Нажмите любую клавишу для возврата в меню…" -ForegroundColor Green
+        Write-Host "  Регион: china или global" -ForegroundColor DarkGray
+        Write-Host "  Потребуется API-ключ от Alibaba Cloud." -ForegroundColor DarkGray
+        Write-Host ""
+        Write-Host "  После авторизации нажмите любую клавишу здесь," -ForegroundColor Green
+        Write-Host "  чтобы запустить Qwen Code с вашим аккаунтом." -ForegroundColor Green
+        Write-Host ""
+        Write-Host "Нажмите любую клавишу для запуска Qwen Code…" -ForegroundColor Green
         $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+        & $qwenExe
       }
       "vanilla" {
         Clear-Host
