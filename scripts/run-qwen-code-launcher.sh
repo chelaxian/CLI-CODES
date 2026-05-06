@@ -358,7 +358,7 @@ while true; do
     
     case "$profile_id" in
         "native-login")
-            local login_items=("qwen-oauth|Qwen OAuth (браузер, подписка Qwen)" "coding-plan|Alibaba Cloud Coding Plan (API-ключ)")
+            local login_items=("qwen-oauth|Qwen OAuth (браузер, подписка Qwen)" "coding-plan|Alibaba Cloud Coding Plan (API-ключ)" "vanilla|Запуск Qwen Code (ванильный запуск)")
             local login_menu=()
             for item in "${login_items[@]}"; do
                 login_menu+=("${item##*|}")
@@ -404,6 +404,19 @@ while true; do
                     echo ""
                     echo -e "${GREEN}  Текущий статус:${RESET}"
                     qwen auth status
+                    echo ""
+                    echo -e "${GREEN}Нажмите Enter для возврата в меню…${RESET}"
+                    read
+                    ;;
+                "vanilla")
+                    clear
+                    echo -e "${CYAN}═══════════════════════════════════════════════════${RESET}"
+                    echo -e "${CYAN}  Запуск Qwen Code (ванильный запуск)${RESET}"
+                    echo -e "${CYAN}═══════════════════════════════════════════════════${RESET}"
+                    echo ""
+                    echo -e "${YELLOW}  Команда: qwen${RESET}"
+                    echo ""
+                    qwen
                     echo ""
                     echo -e "${GREEN}Нажмите Enter для возврата в меню…${RESET}"
                     read

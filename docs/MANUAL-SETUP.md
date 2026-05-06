@@ -215,9 +215,12 @@ source ~/.bashrc
 |---------|-----------|---------|
 | **Qwen Code** | Нативный логин → Qwen OAuth | `qwen auth qwen-oauth` (браузер) |
 | **Qwen Code** | Нативный логин → Coding Plan | `qwen auth coding-plan` (API-ключ Alibaba Cloud) |
+| **Qwen Code** | Нативный логин → Запуск Qwen Code | `qwen` |
 | **Claude Code** | Нативный логин → Claude подписка | `claude auth login --claudeai` (OAuth, браузер) |
 | **Claude Code** | Нативный логин → Anthropic Console | `claude auth login --console` (API-биллинг, браузер) |
+| **Claude Code** | Нативный логин → Запуск Claude Code | `claude` |
 | **OpenCode** | Нативный логин → Providers | `opencode providers login` (интерактивный выбор) |
+| **OpenCode** | Нативный логин → Запуск OpenCode | `opencode` |
 
 Для использования нативного логина需要有 платная подписка на соответствующий сервис (Claude Pro/Max, Qwen Coding Plan и т.д.).
 
@@ -548,6 +551,7 @@ chmod +x "$DESKTOP/OpenCode (cloud).desktop"
 | **Coding Plan** | Alibaba Cloud Coding Plan (API-ключ, регионы china/global) |
 
 Выберите в меню **«Нативный логин (Qwen OAuth / Coding Plan)»** → нужный способ.
+Также там есть пункт **«Запуск Qwen Code (ванильный запуск)»**, который просто запускает `qwen` без пресетов.
 
 ### Claude Code
 
@@ -557,12 +561,15 @@ chmod +x "$DESKTOP/OpenCode (cloud).desktop"
 | **Anthropic Console** | API-биллинг через Anthropic Console |
 
 Выберите в меню **«Нативный логин (Anthropic OAuth / Console)»** → нужный способ.
+Также там есть пункт **«Запуск Claude Code (ванильный запуск)»**, который просто запускает `claude` без пресетов.
 
 ### OpenCode
 
 Интерактивное меню `opencode providers login` с выбором провайдера и метода входа.
 
-Выберите в меню **«Нативный логин (OpenCode Providers)»**.
+Выберите в меню **«Нативный логин (OpenCode Providers)»** → нужное действие:
+- **Показать команды для логина**: подскажет `opencode providers login` и `opencode providers list`
+- **Запуск OpenCode (ванильный запуск)**: просто запускает `opencode` без пресетов
 
 ---
 

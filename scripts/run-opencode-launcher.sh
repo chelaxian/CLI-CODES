@@ -570,20 +570,57 @@ while true; do
     
     case "$profile_id" in
         "native-login")
-            echo ""
-            echo -e "${CYAN}OpenCode: авторизация через провайдеров${RESET}"
-            echo ""
-            echo -e "${YELLOW}Для нативного логина выполните в отдельном терминале:${RESET}"
-            echo -e "  ${WHITE}opencode providers login${RESET}"
-            echo ""
-            echo -e "${YELLOW}Либо задайте API-ключи через переменные окружения:${RESET}"
-            echo -e "  ${WHITE}OPENROUTER_API_KEY, GROQ_API_KEY, ZAI_API_KEY${RESET}"
-            echo ""
-            echo -e "${YELLOW}Для просмотра текущих подключений:${RESET}"
-            echo -e "  ${WHITE}opencode providers list${RESET}"
-            echo ""
-            echo -e "${GREEN}Нажмите Enter для возврата в меню…${RESET}"
-            read
+            local login_items=("howto|Показать команды для логина" "vanilla|Запуск OpenCode (ванильный запуск)")
+            local login_menu=()
+            for item in "${login_items[@]}"; do
+                login_menu+=("${item##*|}")
+            done
+
+            show_tui_framed_menu "OpenCode" "Нативный логин OpenCode" "Выберите действие" "${login_menu[@]}"
+            local login_choice=$?
+
+            if [ $login_choice -eq 0 ]; then
+                continue
+            fi
+
+            local login_id=$(echo "${login_items[$((login_choice-1))]}" | cut -d'|' -f1)
+
+            case "$login_id" in
+                "howto")
+                    clear
+                    echo ""
+                    echo -e "${CYAN}OpenCode: авторизация через провайдеров${RESET}"
+                    echo ""
+                    echo -e "${YELLOW}Для нативного логина выполните в отдельном терминале:${RESET}"
+                    echo -e "  ${WHITE}opencode providers login${RESET}"
+                    echo ""
+                    echo -e "${YELLOW}Либо задайте API-ключи через переменные окружения:${RESET}"
+                    echo -e "  ${WHITE}OPENROUTER_API_KEY, GROQ_API_KEY, ZAI_API_KEY${RESET}"
+                    echo ""
+                    echo -e "${YELLOW}Для просмотра текущих подключений:${RESET}"
+                    echo -e "  ${WHITE}opencode providers list${RESET}"
+                    echo ""
+                    echo -e "${GREEN}Нажмите Enter для возврата в меню…${RESET}"
+                    read
+                    ;;
+                "vanilla")
+                    local opencode_exe
+                    opencode_exe=$(resolve_opencode_exe) || true
+                    if [ -z "$opencode_exe" ]; then
+                        echo -e "${RED}OpenCode CLI не найден. Установите: npm install -g opencode-ai@latest${RESET}"
+                        echo -e "${GREEN}Нажмите Enter для возврата в меню…${RESET}"
+                        read
+                        continue
+                    fi
+                    unset OPENCODE_CONFIG
+                    clear
+                    echo -e "${CYAN}Запуск OpenCode (ванильный запуск)…${RESET}"
+                    "$opencode_exe"
+                    echo ""
+                    echo -e "${GREEN}Нажмите Enter для возврата в меню…${RESET}"
+                    read
+                    ;;
+            esac
             continue
             ;;
         "change-api-key")

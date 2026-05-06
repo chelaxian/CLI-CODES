@@ -258,6 +258,7 @@ while ($true) {
     $loginItems = @(
       @{ Id = "qwen-oauth"; Label = "Qwen OAuth (браузер, подписка Qwen)" }
       @{ Id = "coding-plan"; Label = "Alibaba Cloud Coding Plan (API-ключ)" }
+      @{ Id = "vanilla"; Label = "Запуск Qwen Code (ванильный запуск)" }
     )
     $loginChoice = Show-TuiFramedMenu -AppBrand "Qwen" -Title "Нативный логин Qwen Code" -Subtitle "Выберите способ авторизации" -Items $loginItems -MaxVisible 10
     if (-not $loginChoice) { continue }
@@ -296,6 +297,19 @@ while ($true) {
         Write-Host ""
         Write-Host "  Текущий статус:" -ForegroundColor Green
         & qwen auth status
+        Write-Host ""
+        Write-Host "Нажмите любую клавишу для возврата в меню…" -ForegroundColor Green
+        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+      }
+      "vanilla" {
+        Clear-Host
+        Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Cyan
+        Write-Host "  Запуск Qwen Code (ванильный запуск)" -ForegroundColor Cyan
+        Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Cyan
+        Write-Host ""
+        Write-Host "  Команда: qwen" -ForegroundColor Yellow
+        Write-Host ""
+        & qwen
         Write-Host ""
         Write-Host "Нажмите любую клавишу для возврата в меню…" -ForegroundColor Green
         $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")

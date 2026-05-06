@@ -489,20 +489,47 @@ while ($true) {
   }
 
   if ($profileId -eq "native-login") {
-    Write-Host ""
-    Write-Host "OpenCode: авторизация через провайдеров" -ForegroundColor Cyan
-    Write-Host ""
-    Write-Host "Для нативного логина выполните в отдельном терминале:" -ForegroundColor Yellow
-    Write-Host "  opencode providers login" -ForegroundColor White
-    Write-Host ""
-    Write-Host "Либо задайте API-ключи через переменные окружения:" -ForegroundColor Yellow
-    Write-Host "  OPENROUTER_API_KEY, GROQ_API_KEY, ZAI_API_KEY" -ForegroundColor White
-    Write-Host ""
-    Write-Host "Для просмотра текущих подключений:" -ForegroundColor Yellow
-    Write-Host "  opencode providers list" -ForegroundColor White
-    Write-Host ""
-    Write-Host "Нажмите любую клавишу для возврата в меню…" -ForegroundColor Green
-    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    $loginItems = @(
+      @{ Id = "howto"; Label = "Показать команды для логина" }
+      @{ Id = "vanilla"; Label = "Запуск OpenCode (ванильный запуск)" }
+    )
+    $loginChoice = Show-TuiFramedMenu -AppBrand "OpenCode" -Title "Нативный логин OpenCode" -Subtitle "Выберите действие" -Items $loginItems -MaxVisible 10
+    if (-not $loginChoice) { continue }
+    switch ([string]$loginChoice.Id) {
+      "howto" {
+        Clear-Host
+        Write-Host ""
+        Write-Host "OpenCode: авторизация через провайдеров" -ForegroundColor Cyan
+        Write-Host ""
+        Write-Host "Для нативного логина выполните в отдельном терминале:" -ForegroundColor Yellow
+        Write-Host "  opencode providers login" -ForegroundColor White
+        Write-Host ""
+        Write-Host "Либо задайте API-ключи через переменные окружения:" -ForegroundColor Yellow
+        Write-Host "  OPENROUTER_API_KEY, GROQ_API_KEY, ZAI_API_KEY" -ForegroundColor White
+        Write-Host ""
+        Write-Host "Для просмотра текущих подключений:" -ForegroundColor Yellow
+        Write-Host "  opencode providers list" -ForegroundColor White
+        Write-Host ""
+        Write-Host "Нажмите любую клавишу для возврата в меню…" -ForegroundColor Green
+        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+      }
+      "vanilla" {
+        $opencodeExe = Resolve-OpenCodeExe
+        if (-not $opencodeExe) {
+          Write-Host "OpenCode CLI не найден. Установите: npm install -g opencode-ai@latest" -ForegroundColor Red
+          Write-Host "Нажмите любую клавишу для возврата в меню…" -ForegroundColor Green
+          $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+          break
+        }
+        Remove-Item -Path env:OPENCODE_CONFIG -ErrorAction SilentlyContinue
+        Clear-Host
+        Write-Host "Запуск OpenCode (ванильный запуск)..." -ForegroundColor Cyan
+        & $opencodeExe
+        Write-Host ""
+        Write-Host "Нажмите любую клавишу для возврата в меню…" -ForegroundColor Green
+        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+      }
+    }
     continue
   }
 

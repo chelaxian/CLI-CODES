@@ -35,11 +35,11 @@ $script:Profiles = @(
   }
   @{
     Id    = "claude-zai"
-    Label = "Z.AI — GLM-4.7 (free, tool calling)"
+    Label = "Z.AI — GLM-4.7 (paid, tool calling)"
   }
   @{
     Id    = "claude-zai-glm51"
-    Label = "Z.AI — GLM-5.1 (free, tool calling)"
+    Label = "Z.AI — GLM-5.1 (paid, tool calling)"
   }
   @{
     Id    = "claude-nim"
@@ -243,6 +243,7 @@ while ($true) {
     $loginItems = @(
       @{ Id = "claude-sub"; Label = "Claude подписка (OAuth, браузер)" }
       @{ Id = "anthropic-console"; Label = "Anthropic Console (API-биллинг, браузер)" }
+      @{ Id = "vanilla"; Label = "Запуск Claude Code (ванильный запуск)" }
     )
     $loginChoice = Show-TuiFramedMenu -AppBrand "Claude" -Title "Нативный логин Claude Code" -Subtitle "Anthropic авторизация" -Items $loginItems -MaxVisible 10
     if (-not $loginChoice) { continue }
@@ -277,6 +278,19 @@ while ($true) {
         Write-Host ""
         Write-Host "  Текущий статус:" -ForegroundColor Green
         & claude auth status
+        Write-Host ""
+        Write-Host "Нажмите любую клавишу для возврата в меню…" -ForegroundColor Green
+        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+      }
+      "vanilla" {
+        Clear-Host
+        Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Cyan
+        Write-Host "  Запуск Claude Code (ванильный запуск)" -ForegroundColor Cyan
+        Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Cyan
+        Write-Host ""
+        Write-Host "  Команда: claude" -ForegroundColor Yellow
+        Write-Host ""
+        & claude
         Write-Host ""
         Write-Host "Нажмите любую клавишу для возврата в меню…" -ForegroundColor Green
         $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")

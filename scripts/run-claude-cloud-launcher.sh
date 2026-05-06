@@ -17,8 +17,8 @@ OBSIDIAN_EXE="${OBSIDIAN_EXE:-/usr/bin/obsidian}"
 
 PROFILES=(
     "last|Запустить с последними настройками (быстрый старт)"
-    "claude-zai|Z.AI — GLM-4.7 (free, tool calling)"
-    "claude-zai-glm51|Z.AI — GLM-5.1 (free, tool calling)"
+    "claude-zai|Z.AI — GLM-4.7 (paid, tool calling)"
+    "claude-zai-glm51|Z.AI — GLM-5.1 (paid, tool calling)"
     "claude-nim|NVIDIA NIM — GLM-4.7 (free, tool calling)"
     "claude-nim-qwen|NVIDIA NIM — Qwen3.5-122B-A10B (free, tool calling)"
     "claude-openrouter-sonnet|OpenRouter — Claude Sonnet 4 (paid, tool calling)"
@@ -365,7 +365,7 @@ while true; do
     
     case "$profile_id" in
         "native-login")
-            local login_items=("claude-sub|Claude подписка (OAuth, браузер)" "anthropic-console|Anthropic Console (API-биллинг, браузер)")
+            local login_items=("claude-sub|Claude подписка (OAuth, браузер)" "anthropic-console|Anthropic Console (API-биллинг, браузер)" "vanilla|Запуск Claude Code (ванильный запуск)")
             local login_menu=()
             for item in "${login_items[@]}"; do
                 login_menu+=("${item##*|}")
@@ -411,6 +411,19 @@ while true; do
                     echo ""
                     echo -e "${GREEN}  Текущий статус:${RESET}"
                     claude auth status
+                    echo ""
+                    echo -e "${GREEN}Нажмите Enter для возврата в меню…${RESET}"
+                    read
+                    ;;
+                "vanilla")
+                    clear
+                    echo -e "${CYAN}═══════════════════════════════════════════════════${RESET}"
+                    echo -e "${CYAN}  Запуск Claude Code (ванильный запуск)${RESET}"
+                    echo -e "${CYAN}═══════════════════════════════════════════════════${RESET}"
+                    echo ""
+                    echo -e "${YELLOW}  Команда: claude${RESET}"
+                    echo ""
+                    claude
                     echo ""
                     echo -e "${GREEN}Нажмите Enter для возврата в меню…${RESET}"
                     read
