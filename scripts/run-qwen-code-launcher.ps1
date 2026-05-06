@@ -13,6 +13,31 @@ $ErrorActionPreference = "Stop"
 
 $StatePath = Join-Path $PSScriptRoot "qwen-code-launcher-state.json"
 
+function Ensure-NpmBinInPath {
+  $npmBin = Join-Path $env:APPDATA "npm"
+  if ($npmBin -and (Test-Path -LiteralPath $npmBin)) {
+    $parts = @($env:PATH -split ';' | Where-Object { $_ -and $_.Trim().Length -gt 0 })
+    if (-not ($parts | Where-Object { $_.TrimEnd('\') -ieq $npmBin.TrimEnd('\') })) {
+      $env:PATH = $npmBin + ";" + $env:PATH
+    }
+  }
+}
+
+function Resolve-QwenExe {
+  Ensure-NpmBinInPath
+  $cmd = Get-Command qwen.cmd -ErrorAction SilentlyContinue
+  if ($cmd) { return $cmd.Source }
+  $cmd = Get-Command qwen -ErrorAction SilentlyContinue
+  if ($cmd) { return $cmd.Source }
+  foreach ($p in @(
+      (Join-Path $env:APPDATA "npm\qwen.cmd"),
+      (Join-Path $env:APPDATA "npm\qwen.ps1")
+    )) {
+    if (Test-Path -LiteralPath $p) { return $p }
+  }
+  return ""
+}
+
 $script:Profiles = @(
   @{
     Id          = "last"
@@ -255,6 +280,13 @@ while ($true) {
   }
 
   if ($profileId -eq "native-login") {
+    $qwenExe = Resolve-QwenExe
+    if (-not $qwenExe) {
+      Write-Host "Qwen Code CLI не найден (qwen). Установите: npm install -g @qwen-code/qwen-code@latest" -ForegroundColor Red
+      Write-Host "Нажмите любую клавишу для возврата в меню…" -ForegroundColor Green
+      $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+      continue
+    }
     $loginItems = @(
       @{ Id = "qwen-oauth"; Label = "Qwen OAuth (браузер, подписка Qwen)" }
       @{ Id = "coding-plan"; Label = "Alibaba Cloud Coding Plan (API-ключ)" }
@@ -276,10 +308,10 @@ while ($true) {
         Write-Host "  есть аккаунт на qwen.ai и подписка." -ForegroundColor DarkGray
         Write-Host ""
         Write-Host "  Запуск..." -ForegroundColor Cyan
-        & qwen auth qwen-oauth
+        & $qwenExe auth qwen-oauth
         Write-Host ""
         Write-Host "  Авторизация завершена. Текущий статус:" -ForegroundColor Green
-        & qwen auth status
+        & $qwenExe auth status
         Write-Host ""
         Write-Host "Нажмите любую клавишу для возврата в меню…" -ForegroundColor Green
         $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
@@ -293,10 +325,10 @@ while ($true) {
         Write-Host "  Регион: china или global" -ForegroundColor Yellow
         Write-Host "  Потребуется API-ключ от Alibaba Cloud." -ForegroundColor Yellow
         Write-Host ""
-        & qwen auth coding-plan
+        & $qwenExe auth coding-plan
         Write-Host ""
         Write-Host "  Текущий статус:" -ForegroundColor Green
-        & qwen auth status
+        & $qwenExe auth status
         Write-Host ""
         Write-Host "Нажмите любую клавишу для возврата в меню…" -ForegroundColor Green
         $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
@@ -309,7 +341,7 @@ while ($true) {
         Write-Host ""
         Write-Host "  Команда: qwen" -ForegroundColor Yellow
         Write-Host ""
-        & qwen
+        & $qwenExe
         Write-Host ""
         Write-Host "Нажмите любую клавишу для возврата в меню…" -ForegroundColor Green
         $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")

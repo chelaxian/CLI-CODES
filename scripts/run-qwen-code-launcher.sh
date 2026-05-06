@@ -10,6 +10,18 @@ STATE_FILE="$SCRIPT_DIR/qwen-code-launcher-state.json"
 . "$SCRIPT_DIR/launcher-tui.sh"
 . "$SCRIPT_DIR/launcher-api-keys.sh"
 
+resolve_qwen_exe() {
+    if command -v qwen >/dev/null 2>&1; then
+        command -v qwen
+        return 0
+    fi
+    if [ -x "$HOME/.local/bin/qwen-code" ]; then
+        echo "$HOME/.local/bin/qwen-code"
+        return 0
+    fi
+    return 1
+}
+
 PROFILES=(
     "last|Запустить с последними настройками (быстрый старт)"
     "nim-glm|NVIDIA NIM — GLM-4.7 (free, tool calling)"
@@ -358,6 +370,13 @@ while true; do
     
     case "$profile_id" in
         "native-login")
+            qwen_exe=$(resolve_qwen_exe) || true
+            if [ -z "${qwen_exe:-}" ]; then
+                echo -e "${RED}Qwen Code CLI не найден (qwen). Установите: npm install -g @qwen-code/qwen-code@latest${RESET}"
+                echo -e "${GREEN}Нажмите Enter для возврата в меню…${RESET}"
+                read
+                continue
+            fi
             local login_items=("qwen-oauth|Qwen OAuth (браузер, подписка Qwen)" "coding-plan|Alibaba Cloud Coding Plan (API-ключ)" "vanilla|Запуск Qwen Code (ванильный запуск)")
             local login_menu=()
             for item in "${login_items[@]}"; do
@@ -383,10 +402,10 @@ while true; do
                     echo -e "${YELLOW}  Откроется браузер. Завершите авторизацию в нём.${RESET}"
                     echo -e "${YELLOW}  Для этого нужна подписка Qwen (qwen.ai).${RESET}"
                     echo ""
-                    qwen auth qwen-oauth
+                    "$qwen_exe" auth qwen-oauth
                     echo ""
                     echo -e "${GREEN}  Текущий статус:${RESET}"
-                    qwen auth status
+                    "$qwen_exe" auth status
                     echo ""
                     echo -e "${GREEN}Нажмите Enter для возврата в меню…${RESET}"
                     read
@@ -400,10 +419,10 @@ while true; do
                     echo -e "${YELLOW}  Регион: china или global${RESET}"
                     echo -e "${YELLOW}  Потребуется API-ключ от Alibaba Cloud.${RESET}"
                     echo ""
-                    qwen auth coding-plan
+                    "$qwen_exe" auth coding-plan
                     echo ""
                     echo -e "${GREEN}  Текущий статус:${RESET}"
-                    qwen auth status
+                    "$qwen_exe" auth status
                     echo ""
                     echo -e "${GREEN}Нажмите Enter для возврата в меню…${RESET}"
                     read
@@ -416,7 +435,7 @@ while true; do
                     echo ""
                     echo -e "${YELLOW}  Команда: qwen${RESET}"
                     echo ""
-                    qwen
+                    "$qwen_exe"
                     echo ""
                     echo -e "${GREEN}Нажмите Enter для возврата в меню…${RESET}"
                     read

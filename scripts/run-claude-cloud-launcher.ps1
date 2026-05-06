@@ -42,6 +42,14 @@ $script:Profiles = @(
     Label = "Z.AI — GLM-5.1 (paid, tool calling)"
   }
   @{
+    Id    = "claude-zai-flash47"
+    Label = "Z.AI — GLM-4.7-Flash (free, tool calling)"
+  }
+  @{
+    Id    = "claude-zai-flash45"
+    Label = "Z.AI — GLM-4.5-Flash (free, tool calling)"
+  }
+  @{
     Id    = "claude-nim"
     Label = "NVIDIA NIM — GLM-4.7 (free, tool calling)"
   }
@@ -95,7 +103,7 @@ function Resolve-ProfileFromState($state) {
   if (-not $state -or [string]::IsNullOrWhiteSpace($state.profileId)) { return $null }
   $id = [string]$state.profileId
   if ($id -in @(
-      "claude-zai", "claude-zai-glm51", "claude-nim", "claude-nim-qwen",
+      "claude-zai", "claude-zai-glm51", "claude-zai-flash47", "claude-zai-flash45", "claude-nim", "claude-nim-qwen",
       "claude-openrouter-sonnet",
       "custom-claude-zai", "custom-claude-nim", "custom-claude-openrouter"
     )) { return $id }
@@ -122,6 +130,16 @@ function Invoke-ClaudeCloudProfile {
     }
     "claude-zai-glm51" {
       & $SessionScript -Provider zai -ZaiAnthropicModelId "glm-5.1" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
+        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+      return
+    }
+    "claude-zai-flash47" {
+      & $SessionScript -Provider zai -ZaiAnthropicModelId "glm-4.7-flash" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
+        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+      return
+    }
+    "claude-zai-flash45" {
+      & $SessionScript -Provider zai -ZaiAnthropicModelId "glm-4.5-flash" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
         -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
       return
     }

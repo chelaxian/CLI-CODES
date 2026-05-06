@@ -19,6 +19,8 @@ PROFILES=(
     "last|Запустить с последними настройками (быстрый старт)"
     "claude-zai|Z.AI — GLM-4.7 (paid, tool calling)"
     "claude-zai-glm51|Z.AI — GLM-5.1 (paid, tool calling)"
+    "claude-zai-flash47|Z.AI — GLM-4.7-Flash (free, tool calling)"
+    "claude-zai-flash45|Z.AI — GLM-4.5-Flash (free, tool calling)"
     "claude-nim|NVIDIA NIM — GLM-4.7 (free, tool calling)"
     "claude-nim-qwen|NVIDIA NIM — Qwen3.5-122B-A10B (free, tool calling)"
     "claude-openrouter-sonnet|OpenRouter — Claude Sonnet 4 (paid, tool calling)"
@@ -55,7 +57,7 @@ resolve_profile_from_state() {
     local profile_id=$(echo "$state" | grep -o '"profileId":"[^"]*"' | cut -d'"' -f4)
 
     case "$profile_id" in
-        "claude-zai"|"claude-zai-glm51"|"claude-nim"|"claude-nim-qwen"|"claude-openrouter-sonnet"|"custom-claude-zai"|"custom-claude-nim"|"custom-claude-openrouter")
+        "claude-zai"|"claude-zai-glm51"|"claude-zai-flash47"|"claude-zai-flash45"|"claude-nim"|"claude-nim-qwen"|"claude-openrouter-sonnet"|"custom-claude-zai"|"custom-claude-nim"|"custom-claude-openrouter")
             echo "$profile_id"
             return 0
             ;;
@@ -100,6 +102,22 @@ invoke_claude_cloud_profile() {
         "claude-zai-glm51")
             bash "$SESSION_SCRIPT" -Provider zai \
                 -ZaiAnthropicModelId "glm-5.1" \
+                -VaultPath "$VAULT_PATH" \
+                -ObsidianExe "$OBSIDIAN_EXE" \
+                -ClaudeTools default \
+                -SkipCommonPreamble
+            ;;
+        "claude-zai-flash47")
+            bash "$SESSION_SCRIPT" -Provider zai \
+                -ZaiAnthropicModelId "glm-4.7-flash" \
+                -VaultPath "$VAULT_PATH" \
+                -ObsidianExe "$OBSIDIAN_EXE" \
+                -ClaudeTools default \
+                -SkipCommonPreamble
+            ;;
+        "claude-zai-flash45")
+            bash "$SESSION_SCRIPT" -Provider zai \
+                -ZaiAnthropicModelId "glm-4.5-flash" \
                 -VaultPath "$VAULT_PATH" \
                 -ObsidianExe "$OBSIDIAN_EXE" \
                 -ClaudeTools default \
