@@ -26,12 +26,13 @@ err()    { echo -e "${RED}  [ERR]  $1${RESET}" >&2; }
 
 clear
 echo -e "${CYAN}════════════════════════════════════════════════════════════════════════════════${RESET}"
-echo -e "${CYAN}  ██████╗ ██╗    ██╗███████╗███╗   ██╗           +   CLAUDE CODE             ${RESET}"
+echo -e "${CYAN}  ██████╗ ██╗    ██╗███████╗███╗   ██╗           +  CLI-CODE                  ${RESET}"
 echo -e "${CYAN} ██╔═══██╗██║    ██║██╔════╝████╗  ██║                                     ${RESET}"
 echo -e "${CYAN} ██║   ██║██║ █╗ ██║█████╗  ██╔██╗ ██║            CLOUD SETUP              ${RESET}"
 echo -e "${CYAN} ██║▄▄ ██║██║███╗██║██╔══╝  ██║╚██╗██║                                     ${RESET}"
 echo -e "${CYAN} ╚██████╔╝╚███╔███╔╝███████╗██║ ╚████║           1-click install           ${RESET}"
 echo -e "${CYAN}  ╚══▀▀═╝  ╚══╝╚══╝ ╚══════╝╚═╝  ╚═══╝                                     ${RESET}"
+echo -e "${YELLOW}  Qwen Code + Claude Code + OpenCode${RESET}"
 echo -e "${CYAN}════════════════════════════════════════════════════════════════════════════════${RESET}"
 echo ""
 

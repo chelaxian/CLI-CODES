@@ -25,12 +25,14 @@ if (-not $InstallDir) {
 Clear-Host
 Write-Status "════════════════════════════════════════════════════════════════════════════════" "Cyan"
 Write-Status "" "Cyan"
-Write-Status "  ██████╗ ██╗    ██╗███████╗███╗   ██╗           +   CLAUDE CODE" "Cyan"
+Write-Status "  ██████╗ ██╗    ██╗███████╗███╗   ██╗           +  CLI-CODE" "Cyan"
 Write-Status " ██╔═══██╗██║    ██║██╔════╝████╗  ██║" "Cyan"
 Write-Status " ██║   ██║██║ █╗ ██║█████╗  ██╔██╗ ██║            CLOUD SETUP" "Cyan"
 Write-Status " ██║▄▄ ██║██║███╗██║██╔══╝  ██║╚██╗██║" "Cyan"
 Write-Status " ╚██████╔╝╚███╔███╔╝███████╗██║ ╚████║           1-click install" "Cyan"
 Write-Status "  ╚══▀▀═╝  ╚══╝╚══╝ ╚══════╝╚═╝  ╚═══╝" "Cyan"
+Write-Status "" "Cyan"
+Write-Status "  Qwen Code + Claude Code + OpenCode" "Yellow"
 Write-Status "" "Cyan"
 Write-Status "════════════════════════════════════════════════════════════════════════════════" "Cyan"
 Write-Host ""
@@ -75,7 +77,7 @@ if (Test-Path -LiteralPath (Join-Path $InstallDir ".git")) {
     Write-Status "Обновление (git pull)…" "Cyan"
     Push-Location $InstallDir
     try {
-        git pull origin main 2>&1 | Out-Null
+        git pull origin main 2>$null
         Write-Status "  [OK] Репозиторий обновлён" "Green"
     } catch {
         Write-Status "  [WARN] Не удалось обновить: $_" "Yellow"
@@ -84,7 +86,10 @@ if (Test-Path -LiteralPath (Join-Path $InstallDir ".git")) {
     }
 } else {
     Write-Status "Клонирование репозитория…" "Cyan"
-    git clone $RepoUrl $InstallDir 2>&1 | Out-Null
+    $prevEAP = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    git clone $RepoUrl $InstallDir 2>$null
+    $ErrorActionPreference = $prevEAP
     if ($LASTEXITCODE -ne 0) {
         Write-Status "Ошибка клонирования. Проверьте доступ к $RepoUrl" "Red"
         exit 1
@@ -136,11 +141,12 @@ if ($installQwen) {
     Write-Status "Установка Qwen Code CLI…" "Cyan"
     $qwenCmd = Get-Command qwen -ErrorAction SilentlyContinue
     if (-not $qwenCmd) {
-        npm install -g @anthropic-ai/qwen-code@latest 2>&1 | Out-Null
+        $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+        npm install -g @anthropic-ai/qwen-code@latest 2>$null
         if ($LASTEXITCODE -ne 0) {
-            # Альтернативное имя пакета
-            npm install -g @qwen-code/qwen-code@latest 2>&1 | Out-Null
+            npm install -g @qwen-code/qwen-code@latest 2>$null
         }
+        $ErrorActionPreference = $prevEAP
         $qwenCmd = Get-Command qwen -ErrorAction SilentlyContinue
     }
     if ($qwenCmd) {
@@ -154,7 +160,9 @@ if ($installClaude) {
     Write-Status "Установка Claude Code CLI…" "Cyan"
     $claudeCmd = Get-Command claude -ErrorAction SilentlyContinue
     if (-not $claudeCmd) {
-        npm install -g @anthropic-ai/claude-code@latest 2>&1 | Out-Null
+        $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+        npm install -g @anthropic-ai/claude-code@latest 2>$null
+        $ErrorActionPreference = $prevEAP
         $claudeCmd = Get-Command claude -ErrorAction SilentlyContinue
     }
     if ($claudeCmd) {
@@ -168,7 +176,9 @@ if ($installOpenCode) {
     Write-Status "Установка OpenCode CLI…" "Cyan"
     $ocCmd = Get-Command opencode -ErrorAction SilentlyContinue
     if (-not $ocCmd) {
-        npm install -g opencode-ai@latest 2>&1 | Out-Null
+        $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+        npm install -g opencode-ai@latest 2>$null
+        $ErrorActionPreference = $prevEAP
         $ocCmd = Get-Command opencode -ErrorAction SilentlyContinue
     }
     if ($ocCmd) {

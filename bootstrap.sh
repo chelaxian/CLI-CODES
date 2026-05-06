@@ -77,4 +77,4 @@ $DL "$REPO_RAW/install.sh" > "$INSTALLER" 2>/dev/null || {
 chmod +x "$INSTALLER"
 echo -e "${GREEN}Запуск инсталлятора…${RESET}"
 echo ""
-exec bash "$INSTALLER" "$@"
+exec bash "$INSTALLER" "$@" < /dev/tty
