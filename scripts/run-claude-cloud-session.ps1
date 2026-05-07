@@ -285,10 +285,32 @@ function Ensure-FreeClaudeCodeProxy {
     $conn = Get-NetTCPConnection -LocalAddress 127.0.0.1 -LocalPort $Port -State Listen -ErrorAction Stop
     if ($conn) { return }
   } catch {}
-  if (-not (Test-Path -LiteralPath $Dir)) { throw "free-claude-code dir not found: $Dir" }
 
+  # Auto-install free-claude-code if missing
+  if (-not (Test-Path -LiteralPath $Dir)) {
+    Write-Host "free-claude-code не найден, клонирую..." -ForegroundColor Cyan
+    $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+    & git clone https://github.com/Alishahryar1/free-claude-code.git $Dir 2>$null
+    $ErrorActionPreference = $prevEAP
+    if (-not (Test-Path -LiteralPath $Dir)) { throw "free-claude-code: не удалось клонировать в $Dir" }
+    Write-Host "  [OK] free-claude-code клонирован" -ForegroundColor Green
+  }
+
+  # Auto-install uv if missing
   $uv = Join-Path $env:USERPROFILE ".local\bin\uv.exe"
-  if (-not (Test-Path -LiteralPath $uv)) { throw "uv.exe not found at $uv" }
+  if (-not (Test-Path -LiteralPath $uv)) {
+    Write-Host "uv не найден, устанавливаю..." -ForegroundColor Cyan
+    $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+    try {
+      $uvInstallScript = Join-Path $env:TEMP "uv-install.ps1"
+      Invoke-WebRequest -Uri "https://astral.sh/uv/install.ps1" -OutFile $uvInstallScript -UseBasicParsing
+      & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $uvInstallScript 2>$null
+      Remove-Item -LiteralPath $uvInstallScript -Force -ErrorAction SilentlyContinue
+    } catch {}
+    $ErrorActionPreference = $prevEAP
+    if (-not (Test-Path -LiteralPath $uv)) { throw "uv.exe не найден и не удалось установить автоматически" }
+    Write-Host "  [OK] uv установлен" -ForegroundColor Green
+  }
 
   Push-Location $Dir
   try {

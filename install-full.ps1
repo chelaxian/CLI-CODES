@@ -262,6 +262,25 @@ if ($installChoice -eq "5") {
         }
     }
 
+    # free-claude-code proxy update
+    $fccDir = Join-Path $env:USERPROFILE ".free-claude-code"
+    if (Test-Path -LiteralPath (Join-Path $fccDir ".git")) {
+        Write-Status "Обновление free-claude-code proxy..." "Cyan"
+        Push-Location $fccDir
+        try {
+            $prevEAP2 = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+            & git pull origin main 2>$null
+            $uvExePath = Join-Path $env:USERPROFILE ".local\bin\uv.exe"
+            if (Test-Path -LiteralPath $uvExePath) { & $uvExePath sync 2>$null }
+            $ErrorActionPreference = $prevEAP2
+            Write-Status "  [OK] free-claude-code обновлён" "Green"
+        } catch {
+            Write-Status "  [WARN] Не удалось обновить free-claude-code" "Yellow"
+        } finally {
+            Pop-Location
+        }
+    }
+
     $ErrorActionPreference = $prevEAP
 
     Write-Host ""
@@ -285,6 +304,8 @@ if ($installChoice -eq "6") {
     Write-Host "  - Session directories (qwen/claude/opencode-sessions)" -ForegroundColor Red
     Write-Host "  - CLI configs (~/.claude, ~/.qwen)" -ForegroundColor Red
     Write-Host "  - claude-mem (данные и npm пакет)" -ForegroundColor Red
+    Write-Host "  - free-claude-code proxy (~/.free-claude-code)" -ForegroundColor Red
+    Write-Host "  - uv (Python package manager, ~/.local/bin/uv)" -ForegroundColor Red
     Write-Host "  - Obsidian (если установлен через winget)" -ForegroundColor Red
     Write-Host "  - API keys (user environment variables)" -ForegroundColor Red
     Write-Host "  - Desktop shortcuts (.cmd, .lnk)" -ForegroundColor Red
@@ -361,6 +382,24 @@ if ($installChoice -eq "6") {
         Write-Status "  [OK] Obsidian uninstall requested" "Green"
     } else {
         Write-Status "  [SKIP] winget не найден, Obsidian не удалён" "Yellow"
+    }
+
+    Write-Status "Удаление free-claude-code proxy..." "Cyan"
+    $fccDir = Join-Path $env:USERPROFILE ".free-claude-code"
+    if (Test-Path -LiteralPath $fccDir) {
+        Remove-Item -LiteralPath $fccDir -Recurse -Force -ErrorAction SilentlyContinue
+        Write-Status "  [OK] Removed: $fccDir" "Green"
+    } else {
+        Write-Status "  [SKIP] $fccDir not found" "Yellow"
+    }
+
+    Write-Status "Удаление uv (Python package manager)..." "Cyan"
+    $uvDir = Join-Path $env:USERPROFILE ".local"
+    if (Test-Path -LiteralPath $uvDir) {
+        Remove-Item -LiteralPath $uvDir -Recurse -Force -ErrorAction SilentlyContinue
+        Write-Status "  [OK] Removed: $uvDir" "Green"
+    } else {
+        Write-Status "  [SKIP] $uvDir not found" "Yellow"
     }
 
     Write-Host ""
@@ -443,6 +482,58 @@ if ($installClaude) {
         } else {
             Write-Status "  [WARN] claude-mem не найден (будет подтягиваться через npx при первом запуске)" "Yellow"
         }
+    }
+
+    # uv (Python package manager for free-claude-code)
+    Write-Status "  Установка uv (Python package manager)..." "Cyan"
+    $uvExe = Join-Path $env:USERPROFILE ".local\bin\uv.exe"
+    if (-not (Test-Path -LiteralPath $uvExe)) {
+        $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+        try {
+            $uvInstallScript = Join-Path $env:TEMP "uv-install.ps1"
+            Invoke-WebRequest -Uri "https://astral.sh/uv/install.ps1" -OutFile $uvInstallScript -UseBasicParsing
+            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $uvInstallScript 2>$null
+            Remove-Item -LiteralPath $uvInstallScript -Force -ErrorAction SilentlyContinue
+        } catch {
+            # Fallback: try with curl
+            & curl.exe -LsSf https://astral.sh/uv/install.sh -o "$env:TEMP\uv-install.sh" 2>$null
+        }
+        $ErrorActionPreference = $prevEAP
+    }
+    if (Test-Path -LiteralPath $uvExe) {
+        Write-Status "  [OK] uv установлен: $uvExe" "Green"
+    } else {
+        # Check if it was installed to a different location
+        $uvCmd = Get-Command uv -ErrorAction SilentlyContinue
+        if ($uvCmd) {
+            Write-Status "  [OK] uv установлен: $($uvCmd.Source)" "Green"
+        } else {
+            Write-Status "  [WARN] uv не найден. NIM/OpenRouter для Claude будут недоступны." "Yellow"
+        }
+    }
+
+    # free-claude-code proxy (for NIM/OpenRouter with Claude Code)
+    $fccDir = Join-Path $env:USERPROFILE ".free-claude-code"
+    if (-not (Test-Path -LiteralPath $fccDir)) {
+        Write-Status "  Клонирование free-claude-code proxy..." "Cyan"
+        $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+        & git clone https://github.com/Alishahryar1/free-claude-code.git $fccDir 2>$null
+        $ErrorActionPreference = $prevEAP
+        if (Test-Path -LiteralPath $fccDir) {
+            # Pre-install deps
+            if (Test-Path -LiteralPath $uvExe) {
+                $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+                Push-Location $fccDir
+                try { & $uvExe sync 2>$null } catch {}
+                Pop-Location
+                $ErrorActionPreference = $prevEAP
+            }
+            Write-Status "  [OK] free-claude-code установлен: $fccDir" "Green"
+        } else {
+            Write-Status "  [WARN] Не удалось клонировать free-claude-code. NIM/OpenRouter для Claude будут недоступны." "Yellow"
+        }
+    } else {
+        Write-Status "  [OK] free-claude-code уже установлен" "Green"
     }
 
     # Obsidian (best-effort via winget)
