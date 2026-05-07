@@ -19,15 +19,15 @@ if (-not $InstallDir) {
 }
 
 # ─── Заголовок ───────────────────────────────────────────────────────────────
-
-Clear-Host
+try { Clear-Host } catch { }
 Write-Status "════════════════════════════════════════════════════════════════════════════════" "Cyan"
 Write-Status "" "Cyan"
-Write-Status "   ____ _     ____ _____ ____  ___  ____     ____ _   _ ____ _____ ____  " "Cyan"
-Write-Status "  / ___| |   / ___|_   _|  _ \|_ _| __ )   / ___| | | / ___|_   _|  _ \ " "Cyan"
-Write-Status " | |   | |   \___ \ | | | |_) || ||  _ \  | |   | | | \___ \ | | | | | |" "Cyan"
-Write-Status " | |___| |___ ___) || | |  _ < | || |_) | | |___| |_| |___) || | | |_| |" "Cyan"
-Write-Status "  \____|_____|____/ |_| |_| \_\___|____/   \____|\___/|____/ |_| |____/ " "Cyan"
+Write-Status "   ██████╗██╗     ██╗        ██████╗ ██████╗ ██████╗ ███████╗" "Cyan"
+Write-Status "  ██╔════╝██║     ██║        ██╔════╝██╔═══██╗██╔══██╗██╔════╝" "Cyan"
+Write-Status "  ██║     ██║     ██║ █████╗ ██║     ██║   ██║██║  ██║█████╗  " "Cyan"
+Write-Status "  ██║     ██║     ██║ ╚════╝ ██║     ██║   ██║██║  ██║██╔══╝  " "Cyan"
+Write-Status "  ╚██████╗███████╗██║        ╚██████╗╚██████╔╝██████╔╝███████╗" "Cyan"
+Write-Status "   ╚═════╝╚══════╝╚═╝         ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝" "Cyan"
 Write-Status "" "Cyan"
 Write-Status "              C L O U D   S E T U P  -  1-click install" "Yellow"
 Write-Status "" "Cyan"
@@ -76,23 +76,49 @@ if (Test-Path -LiteralPath (Join-Path $InstallDir ".git")) {
     Write-Status "Обновление (git pull)…" "Cyan"
     Push-Location $InstallDir
     try {
+        # Важно: не допускаем интерактивных prompt'ов git (иначе irm|iex выглядит как "висит")
+        $prevPrompt = $env:GIT_TERMINAL_PROMPT
+        $prevGcm = $env:GCM_INTERACTIVE
+        $env:GIT_TERMINAL_PROMPT = "0"
+        $env:GCM_INTERACTIVE = "Never"
+
         $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
-        git pull origin main 2>$null
+        $out = git pull origin main 2>&1
+        $code = $LASTEXITCODE
         $ErrorActionPreference = $prevEAP
-        Write-Status "  [OK] Репозиторий обновлён" "Green"
+
+        if ($code -eq 0) {
+            Write-Status "  [OK] Репозиторий обновлён" "Green"
+        } else {
+            Write-Status "  [WARN] git pull не выполнен (код $code). Продолжаю с текущими файлами." "Yellow"
+            if ($out) { Write-Host $out }
+        }
     } catch {
         Write-Status "  [WARN] Не удалось обновить" "Yellow"
     } finally {
+        $env:GIT_TERMINAL_PROMPT = $prevPrompt
+        $env:GCM_INTERACTIVE = $prevGcm
         Pop-Location
     }
 } else {
     Write-Status "Клонирование репозитория…" "Cyan"
+    # Аналогично: git clone без интерактива
+    $prevPrompt = $env:GIT_TERMINAL_PROMPT
+    $prevGcm = $env:GCM_INTERACTIVE
+    $env:GIT_TERMINAL_PROMPT = "0"
+    $env:GCM_INTERACTIVE = "Never"
+
     $prevEAP = $ErrorActionPreference
     $ErrorActionPreference = "Continue"
-    git clone $RepoUrl $InstallDir 2>$null
+    $out = git clone $RepoUrl $InstallDir 2>&1
+    $code = $LASTEXITCODE
     $ErrorActionPreference = $prevEAP
-    if ($LASTEXITCODE -ne 0) {
-        Write-Status "Ошибка клонирования. Проверьте доступ к $RepoUrl" "Red"
+
+    $env:GIT_TERMINAL_PROMPT = $prevPrompt
+    $env:GCM_INTERACTIVE = $prevGcm
+    if ($code -ne 0) {
+        Write-Status "Ошибка клонирования (код $code). Проверьте доступ к $RepoUrl" "Red"
+        if ($out) { Write-Host $out }
         exit 1
     }
     Write-Status "  [OK] Репозиторий клонирован: $InstallDir" "Green"
