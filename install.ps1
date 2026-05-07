@@ -8,6 +8,10 @@ $ErrorActionPreference = "Stop"
 if (-not $RepoUrl) { $RepoUrl = "https://github.com/chelaxian/cloud-code-setup.git" }
 if (-not $InstallDir) { $InstallDir = "" }
 
+# Важно: irm|iex сначала скачивает скрипт, потом выполняет. Этот вывод гарантирует,
+# что после выполнения пользователь сразу видит, что скрипт стартовал.
+Write-Host "cloud-code-setup :: starting..." -ForegroundColor Cyan
+
 function Write-Status($Text, $Color = "White") {
     Write-Host $Text -ForegroundColor $Color
 }

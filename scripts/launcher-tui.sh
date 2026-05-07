@@ -70,6 +70,8 @@ read_key() {
             fi
             echo "esc"; return
             ;;
+        # В bash `read -n1` по Enter часто возвращает пустую строку.
+        '') echo "enter"; return ;;
         $'\n'|$'\r') echo "enter"; return ;;
         $'\x7f') echo "backspace"; return ;;
         [0-9]) echo "num_$key"; return ;;
