@@ -100,7 +100,8 @@ echo -e "  ${GREEN}[1]${RESET} Qwen Code (cloud)"
 echo -e "  ${GREEN}[2]${RESET} Claude Code (cloud)"
 echo -e "  ${GREEN}[3]${RESET} OpenCode (cloud)"
 echo -e "  ${GREEN}[4]${RESET} Все три"
-echo -e "  ${RED}[5]${RESET} Полное удаление (uninstall)"
+echo -e "  ${CYAN}[5]${RESET} Обновление всех компонентов"
+echo -e "  ${RED}[6]${RESET} Полное удаление (uninstall)"
 echo -e "  ${GRAY}[0]${RESET} Выход"
 echo ""
 
@@ -111,16 +112,83 @@ INSTALL_QWEN=false
 INSTALL_CLAUDE=false
 INSTALL_OPENCODE=false
 DO_UNINSTALL=false
+DO_UPDATE=false
 
 case "$install_choice" in
     1) INSTALL_QWEN=true ;;
     2) INSTALL_CLAUDE=true ;;
     3) INSTALL_OPENCODE=true ;;
     4) INSTALL_QWEN=true; INSTALL_CLAUDE=true; INSTALL_OPENCODE=true ;;
-    5) DO_UNINSTALL=true ;;
+    5) DO_UPDATE=true ;;
+    6) DO_UNINSTALL=true ;;
     0) echo -e "${YELLOW}Выход.${RESET}"; exit 0 ;;
     *) warn "Неверный выбор. Устанавливаем все три."; INSTALL_QWEN=true; INSTALL_CLAUDE=true; INSTALL_OPENCODE=true ;;
 esac
+
+# --- Update ---
+if $DO_UPDATE; then
+    step "ОБНОВЛЕНИЕ ВСЕХ КОМПОНЕНТОВ"
+
+    # Pull latest code
+    if [ -d "$INSTALL_DIR/.git" ]; then
+        echo -e "${CYAN}Обновление репозитория…${RESET}"
+        (cd "$INSTALL_DIR" && git fetch origin main 2>/dev/null && git reset --hard origin/main 2>/dev/null) || warn "Не удалось обновить репозиторий"
+        ok "Репозиторий обновлён"
+    else
+        err "Репозиторий не найден: $INSTALL_DIR"
+        err "Сначала установите через пункт [4]"
+        read -p "Нажмите Enter для выхода…"
+        exit 1
+    fi
+
+    SCRIPTS_DIR="$INSTALL_DIR/scripts"
+    chmod +x "$SCRIPTS_DIR"/*.sh 2>/dev/null || true
+
+    # Show before versions and update npm packages
+    echo ""
+    echo -e "${CYAN}Версии ДО обновления:${RESET}"
+
+    pkg_updated=0
+    for pkg_info in "qwen-code:@qwen-code/qwen-code" "claude-code:@anthropic-ai/claude-code" "opencode-ai:opencode-ai"; do
+        pkg_name="${pkg_info%%:*}"
+        npm_name="${pkg_info##*:}"
+        before="не установлен"
+        if npm ls -g "$npm_name" &>/dev/null; then
+            before=$(npm ls -g "$npm_name" 2>/dev/null | grep "$npm_name" | head -1 | sed 's/.*@//' | tr -d ' ')
+        fi
+        echo -e "  ${GRAY}$pkg_name: $before${RESET}"
+
+        echo -e "${CYAN}  Обновление $pkg_name…${RESET}"
+        if npm install -g "${npm_name}@latest" 2>/dev/null; then
+            after=$(npm ls -g "$npm_name" 2>/dev/null | grep "$npm_name" | head -1 | sed 's/.*@//' | tr -d ' ')
+            ok "$pkg_name: $before → $after"
+            pkg_updated=$((pkg_updated + 1))
+        else
+            warn "Не удалось обновить $pkg_name"
+        fi
+    done
+
+    # Update free-claude-code proxy if exists
+    FCC_DIR="$HOME/.free-claude-code"
+    if [ -d "$FCC_DIR" ]; then
+        echo ""
+        echo -e "${CYAN}Обновление free-claude-code proxy…${RESET}"
+        (cd "$FCC_DIR" && git pull origin main 2>/dev/null) || true
+        if command -v uv &>/dev/null; then
+            (cd "$FCC_DIR" && uv sync &>/dev/null) || true
+        fi
+        ok "free-claude-code: обновлён"
+    fi
+
+    echo ""
+    echo -e "${CYAN}════════════════════════════════════════════════════════════════════════════════${RESET}"
+    echo -e "${GREEN}  ОБНОВЛЕНИЕ ЗАВЕРШЕНО!${RESET}"
+    echo -e "${GREEN}  Обновлено пакетов: $pkg_updated${RESET}"
+    echo -e "${CYAN}════════════════════════════════════════════════════════════════════════════════${RESET}"
+    echo ""
+    read -p "Нажмите Enter для выхода…"
+    exit 0
+fi
 
 # --- Uninstall ---
 if $DO_UNINSTALL; then

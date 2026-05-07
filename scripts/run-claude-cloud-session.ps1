@@ -10,8 +10,8 @@ param(
   [Parameter(ParameterSetName = "Full")]
   [switch]$SkipCommonPreamble,
 
-  [string]$VaultPath = "C:\Users\chelaxian\Documents\Obsidian Vault",
-  [string]$ObsidianExe = "C:\Users\chelaxian\AppData\Local\Programs\Obsidian\Obsidian.exe",
+  [string]$VaultPath = "",
+  [string]$ObsidianExe = "",
   # 0 = don't open browser tab, 1 = open viewer
   [int]$OpenClaudeMemObserver = 0,
   [int]$DryRun = 0,
@@ -23,7 +23,7 @@ param(
 
   # NVIDIA NIM via free-claude-code proxy
   [string]$NvidiaNimApiKey = "",
-  [string]$FreeClaudeCodeDir = "I:\qwen-local-setup\free-claude-code",
+  [string]$FreeClaudeCodeDir = "",
   [int]$ProxyPort = 8082,
   [string]$ProxyAuthToken = "freecc",
   # Для -Provider nim-qwen значение ниже не используется (жёстко nvidia_nim/qwen/qwen3.5-122b-a10b); порт по умолчанию 8083.
@@ -40,6 +40,10 @@ param(
 
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
+
+if ([string]::IsNullOrWhiteSpace($VaultPath)) { $VaultPath = Join-Path $env:USERPROFILE "Documents\Obsidian Vault" }
+if ([string]::IsNullOrWhiteSpace($ObsidianExe)) { $ObsidianExe = Join-Path $env:LOCALAPPDATA "Programs\Obsidian\Obsidian.exe" }
+if ([string]::IsNullOrWhiteSpace($FreeClaudeCodeDir)) { $FreeClaudeCodeDir = Join-Path $env:USERPROFILE ".free-claude-code" }
 
 . (Join-Path $PSScriptRoot "ensure-streaming-friendly-terminal.ps1")
 
@@ -281,7 +285,7 @@ function Ensure-FreeClaudeCodeProxy {
   } catch {}
   if (-not (Test-Path -LiteralPath $Dir)) { throw "free-claude-code dir not found: $Dir" }
 
-  $uv = "C:\Users\chelaxian\.local\bin\uv.exe"
+  $uv = Join-Path $env:USERPROFILE ".local\bin\uv.exe"
   if (-not (Test-Path -LiteralPath $uv)) { throw "uv.exe not found at $uv" }
 
   Push-Location $Dir

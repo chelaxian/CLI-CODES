@@ -37,40 +37,87 @@ Write-Status "" "Cyan"
 Write-Status "======================================================================" "Cyan"
 Write-Host ""
 
-Write-Status "Checking dependencies..." "Cyan"
+Write-Status "Проверка зависимостей..." "Cyan"
 
-$missing = @()
+$hasWinget = $null -ne (Get-Command winget -ErrorAction SilentlyContinue)
+$needRefresh = $false
 
+# --- git ---
 if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
-    $missing += "git (https://git-scm.com/download/win)"
-}
-if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
-    $missing += "Node.js LTS (https://nodejs.org/)"
-}
-if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
-    $missing += "npm (installs with Node.js)"
+    Write-Status "  git не найден, устанавливаем..." "Yellow"
+    if ($hasWinget) {
+        $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+        & winget install -e --id Git.Git --accept-source-agreements --accept-package-agreements 2>&1 | ForEach-Object { Write-Host "    $_" }
+        $ErrorActionPreference = $prevEAP
+        $needRefresh = $true
+    } else {
+        Write-Status "  [WARN] winget не найден. Скачайте git вручную: https://git-scm.com/download/win" "Red"
+        Read-Host "Нажмите Enter для выхода"
+        return
+    }
 }
 
-if ($missing.Count -gt 0) {
-    Write-Status "Не хватает обязательных инструментов:" "Red"
-    foreach ($m in $missing) {
-        Write-Status "  - $m" "Yellow"
+# --- node ---
+if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+    Write-Status "  Node.js не найден, устанавливаем..." "Yellow"
+    if ($hasWinget) {
+        $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+        & winget install -e --id OpenJS.NodeJS.LTS --accept-source-agreements --accept-package-agreements 2>&1 | ForEach-Object { Write-Host "    $_" }
+        $ErrorActionPreference = $prevEAP
+        $needRefresh = $true
+    } else {
+        Write-Status "  [WARN] winget не найден. Скачайте Node.js вручную: https://nodejs.org/" "Red"
+        Read-Host "Нажмите Enter для выхода"
+        return
     }
+}
+
+# --- npm (if node is present but npm missing) ---
+if ((Get-Command node -ErrorAction SilentlyContinue) -and -not (Get-Command npm -ErrorAction SilentlyContinue)) {
+    Write-Status "  npm не найден, обновляем..." "Yellow"
+    $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+    & node -e "require('child_process').exec('npm install -g npm@latest', {stdio:'inherit'})" 2>$null
+    $ErrorActionPreference = $prevEAP
+    $needRefresh = $true
+}
+
+# Refresh PATH if we installed something
+if ($needRefresh) {
+    $env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [Environment]::GetEnvironmentVariable("Path", "User")
+}
+
+# Final check
+$allOk = $true
+if (Get-Command git -ErrorAction SilentlyContinue) {
+    Write-Status "  [OK] git" "Green"
+} else {
+    Write-Status "  [WARN] git не найден после установки" "Red"
+    $allOk = $false
+}
+if (Get-Command node -ErrorAction SilentlyContinue) {
+    Write-Status "  [OK] node" "Green"
+} else {
+    Write-Status "  [WARN] node не найден после установки" "Red"
+    $allOk = $false
+}
+if (Get-Command npm -ErrorAction SilentlyContinue) {
+    Write-Status "  [OK] npm" "Green"
+} else {
+    Write-Status "  [WARN] npm не найден после установки" "Red"
+    $allOk = $false
+}
+
+if (-not $allOk) {
     Write-Host ""
-    Write-Host "Установите их и запустите инсталлятор ещё раз." -ForegroundColor Yellow
-    Write-Host ""
-    Read-Host "Press Enter to exit"
+    Write-Host "Не все зависимости удалось установить. Перезапустите терминал и попробуйте снова." -ForegroundColor Red
+    Read-Host "Нажмите Enter для выхода"
     return
 }
-
-Write-Status "  [OK] git" "Green"
-Write-Status "  [OK] node" "Green"
-Write-Status "  [OK] npm" "Green"
 Write-Host ""
 
 if (Test-Path -LiteralPath (Join-Path $InstallDir ".git")) {
-    Write-Status "Repo already cloned: $InstallDir" "Yellow"
-    Write-Status "Updating (git pull)..." "Cyan"
+    Write-Status "Репозиторий уже клонирован: $InstallDir" "Yellow"
+    Write-Status "Обновление…" "Cyan"
     Push-Location $InstallDir
     try {
         $prevPrompt = $env:GIT_TERMINAL_PROMPT
@@ -84,7 +131,7 @@ if (Test-Path -LiteralPath (Join-Path $InstallDir ".git")) {
         $ErrorActionPreference = $prevEAP
 
         if ($code -eq 0) {
-            Write-Status "  [OK] Repository updated" "Green"
+            Write-Status "  [OK] Репозиторий обновлён" "Green"
         } else {
             Write-Status "  [WARN] git pull failed (code $code). Using local files." "Yellow"
             if ($out) { Write-Host $out }
@@ -97,7 +144,7 @@ if (Test-Path -LiteralPath (Join-Path $InstallDir ".git")) {
         Pop-Location
     }
 } else {
-    Write-Status "Cloning repository..." "Cyan"
+    Write-Status "Клонирование репозитория…" "Cyan"
     $prevPrompt = $env:GIT_TERMINAL_PROMPT
     $prevGcm = $env:GCM_INTERACTIVE
     $env:GIT_TERMINAL_PROMPT = "0"
@@ -116,7 +163,7 @@ if (Test-Path -LiteralPath (Join-Path $InstallDir ".git")) {
         if ($out) { Write-Host $out }
         return
     }
-    Write-Status "  [OK] Repository cloned: $InstallDir" "Green"
+    Write-Status "  [OK] Репозиторий клонирован: $InstallDir" "Green"
 }
 
 Write-Host ""
@@ -128,17 +175,106 @@ Write-Host ""
 Write-Status "  [1] Qwen Code (cloud)" "Green"
 Write-Status "  [2] Claude Code (cloud)" "Green"
 Write-Status "  [3] OpenCode (cloud)" "Green"
-Write-Status "  [4] All three" "Green"
-Write-Status "  [5] Полное удаление (удалить всё)" "Red"
-Write-Status "  [0] Exit" "Gray"
+Write-Status "  [4] Все три" "Green"
+Write-Status "  [5] Обновление всех компонентов" "Green"
+Write-Status "  [6] Полное удаление (удалить всё)" "Red"
+Write-Status "  [0] Выход" "Gray"
 Write-Host ""
 
 $installChoice = Read-Host "Ваш выбор [4]"
 
 if ([string]::IsNullOrWhiteSpace($installChoice)) { $installChoice = "4" }
 
-# --- Uninstall ---
+# --- Update all components ---
 if ($installChoice -eq "5") {
+    Write-Host ""
+    Write-Status "======================================================================" "Cyan"
+    Write-Status "ОБНОВЛЕНИЕ ВСЕХ КОМПОНЕНТОВ" "Magenta"
+    Write-Status "======================================================================" "Cyan"
+    Write-Host ""
+
+    # git pull
+    if (Test-Path -LiteralPath (Join-Path $InstallDir ".git")) {
+        Write-Status "Обновление репозитория..." "Cyan"
+        Push-Location $InstallDir
+        try {
+            $prevPrompt = $env:GIT_TERMINAL_PROMPT
+            $prevGcm = $env:GCM_INTERACTIVE
+            $env:GIT_TERMINAL_PROMPT = "0"
+            $env:GCM_INTERACTIVE = "Never"
+            $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+            $out = git pull origin main 2>&1
+            $code = $LASTEXITCODE
+            $ErrorActionPreference = $prevEAP
+            if ($code -eq 0) {
+                Write-Status "  [OK] Репозиторий обновлён" "Green"
+            } else {
+                Write-Status "  [WARN] git pull failed (code $code)" "Yellow"
+                if ($out) { Write-Host $out }
+            }
+        } catch {
+            Write-Status "  [WARN] Не удалось обновить" "Yellow"
+        } finally {
+            $env:GIT_TERMINAL_PROMPT = $prevPrompt
+            $env:GCM_INTERACTIVE = $prevGcm
+            Pop-Location
+        }
+    } else {
+        Write-Status "  [SKIP] Репозиторий не найден, пропуск git pull" "Yellow"
+    }
+
+    Write-Host ""
+    Write-Status "Обновление npm пакетов..." "Cyan"
+
+    $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+
+    # Helper to get version before update
+    function Get-PkgVersion($cmd) {
+        $c = Get-Command $cmd -ErrorAction SilentlyContinue
+        if ($c) {
+            try {
+                $v = & $cmd --version 2>$null
+                return $v.Trim()
+            } catch { return "?" }
+        }
+        return $null
+    }
+
+    $pkgs = @(
+        @{ Name = "qwen-code";  NpmPkg = "@qwen-code/qwen-code";      Fallback = "@anthropic-ai/qwen-code"; Cmd = "qwen" },
+        @{ Name = "claude-code"; NpmPkg = "@anthropic-ai/claude-code"; Fallback = $null;                     Cmd = "claude" },
+        @{ Name = "opencode-ai"; NpmPkg = "opencode-ai";               Fallback = $null;                     Cmd = "opencode" },
+        @{ Name = "claude-mem";  NpmPkg = "claude-mem";                Fallback = $null;                     Cmd = "claude-mem" }
+    )
+
+    foreach ($pkg in $pkgs) {
+        $before = Get-PkgVersion $pkg.Cmd
+        & npm.cmd install -g "$($pkg.NpmPkg)@latest" 2>$null
+        if ($LASTEXITCODE -ne 0 -and $pkg.Fallback) {
+            & npm.cmd install -g "$($pkg.Fallback)@latest" 2>$null
+        }
+        $after = Get-PkgVersion $pkg.Cmd
+        if ($after) {
+            $verInfo = if ($before) { "($before → $after)" } else { "($after)" }
+            Write-Status "  [OK] $($pkg.Name) $verInfo" "Green"
+        } else {
+            Write-Status "  [SKIP] $($pkg.Name) не установлен" "Yellow"
+        }
+    }
+
+    $ErrorActionPreference = $prevEAP
+
+    Write-Host ""
+    Write-Status "======================================================================" "Green"
+    Write-Status "ОБНОВЛЕНИЕ ЗАВЕРШЕНО!" "Green"
+    Write-Status "======================================================================" "Green"
+    Write-Host ""
+    Read-Host "Нажмите Enter для выхода"
+    return
+}
+
+# --- Uninstall ---
+if ($installChoice -eq "6") {
     Write-Host ""
     Write-Status "======================================================================" "Red"
     Write-Status "ПОЛНОЕ УДАЛЕНИЕ" "Red"
@@ -155,7 +291,7 @@ if ($installChoice -eq "5") {
     $confirm = Read-Host "Введите 'yes' для подтверждения удаления"
     if ($confirm -ne "yes") {
         Write-Status "Удаление отменено." "Yellow"
-        Read-Host "Press Enter to exit"
+        Read-Host "Нажмите Enter для выхода"
         return
     }
 
@@ -198,7 +334,7 @@ if ($installChoice -eq "5") {
         }
     }
 
-    Write-Status "Uninstalling global npm packages..." "Cyan"
+    Write-Status "Удаление глобальных npm пакетов..." "Cyan"
     $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
     foreach ($pkg in @("@qwen-code/qwen-code", "@anthropic-ai/qwen-code", "@anthropic-ai/claude-code", "opencode-ai")) {
         & npm.cmd uninstall -g $pkg 2>$null
@@ -213,7 +349,7 @@ if ($installChoice -eq "5") {
     Write-Host ""
     Write-Status "Перезапустите терминал, чтобы переменные окружения применились." "Yellow"
     Write-Host ""
-    Read-Host "Press Enter to exit"
+    Read-Host "Нажмите Enter для выхода"
     return
 }
 
@@ -226,8 +362,8 @@ switch ($installChoice) {
     "2" { $installClaude = $true }
     "3" { $installOpenCode = $true }
     "4" { $installQwen = $true; $installClaude = $true; $installOpenCode = $true }
-    "0" { Write-Status "Exit." "Yellow"; return }
-    default { Write-Status "Invalid choice. Installing all three." "Yellow"; $installQwen = $true; $installClaude = $true; $installOpenCode = $true }
+    "0" { Write-Status "Выход." "Yellow"; return }
+    default { Write-Status "Неверный выбор. Устанавливаем все три." "Yellow"; $installQwen = $true; $installClaude = $true; $installOpenCode = $true }
 }
 
 Write-Host ""
@@ -269,14 +405,23 @@ if ($installClaude) {
     Write-Status "" "Cyan"
     Write-Status "Claude: установка доп. компонентов (claude-mem, Obsidian)..." "Magenta"
 
-    # claude-mem (used via npx in scripts, but preinstall helps a lot)
+    # claude-mem - полная установка
     $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
     & npm.cmd install -g claude-mem@latest 2>$null
     $ErrorActionPreference = $prevEAP
+    $claudeMemInstalled = $false
     if (Get-Command claude-mem -ErrorAction SilentlyContinue) {
         Write-Status "  [OK] claude-mem установлен" "Green"
+        $claudeMemInstalled = $true
     } else {
-        Write-Status "  [WARN] claude-mem не найден (будет подтягиваться через npx при первом запуске)" "Yellow"
+        Write-Status "  Установка claude-mem через npx (первый запуск)…" "Cyan"
+        & npx.cmd --yes claude-mem install 2>$null
+        if (Get-Command claude-mem -ErrorAction SilentlyContinue) {
+            Write-Status "  [OK] claude-mem установлен через npx" "Green"
+            $claudeMemInstalled = $true
+        } else {
+            Write-Status "  [WARN] claude-mem не найден (будет подтягиваться через npx при первом запуске)" "Yellow"
+        }
     }
 
     # Obsidian (best-effort via winget)
@@ -373,7 +518,7 @@ if (-not [string]::IsNullOrWhiteSpace($orKey)) {
 
 Write-Host ""
 Write-Status "======================================================================" "Cyan"
-Write-Status "SESSION SETUP (/resume)" "Magenta"
+Write-Status "НАСТРОЙКА СЕССИЙ (/resume)" "Magenta"
 Write-Status "======================================================================" "Cyan"
 Write-Host ""
 
@@ -462,4 +607,4 @@ if ($installOpenCode) { Write-Status "  * OpenCode (cloud)" "Green" }
 Write-Host ""
 Write-Status "Перезапустите терминал, чтобы API ключи применились. Запускайте через ярлыки!" "Yellow"
 Write-Host ""
-Read-Host "Press Enter to exit"
+Read-Host "Нажмите Enter для выхода"

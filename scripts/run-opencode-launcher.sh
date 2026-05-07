@@ -20,7 +20,6 @@ PROFILES=(
     "zai-flash45|Z.AI - GLM-4.5-Flash (free, tool calling)"
     "nim-glm|NVIDIA NIM - GLM-4.7 (free, tool calling)"
     "nim-qwen|NVIDIA NIM - Qwen3.5-122B-A10B (free, tool calling)"
-    "openrouter-qwen-coder|OpenRouter - Qwen3 Coder (free, tool calling)"
     "openrouter-hy3|OpenRouter - Tencent Hy3 (free, tool calling)"
     "openrouter-nemotron|OpenRouter - Nemotron 3 Super 120B (free, tool calling)"
     "openrouter-laguna|OpenRouter - Poolside Laguna M.1 (free, tool calling, coding)"
@@ -74,7 +73,7 @@ resolve_profile_from_state() {
     local profile_id=$(echo "$state" | grep -o '"profileId":"[^"]*"' | cut -d'"' -f4)
     
     case "$profile_id" in
-        "zai-glm"|"zai-glm51"|"zai-flash47"|"zai-flash45"|"nim-glm"|"nim-qwen"|"openrouter-qwen-coder"|"openrouter-hy3"|"openrouter-nemotron"|"openrouter-laguna"|"custom-opencode-zai"|"custom-opencode-nim"|"custom-opencode-groq"|"custom-opencode-openrouter")
+        "zai-glm"|"zai-glm51"|"zai-flash47"|"zai-flash45"|"nim-glm"|"nim-qwen"|"openrouter-hy3"|"openrouter-nemotron"|"openrouter-laguna"|"custom-opencode-zai"|"custom-opencode-nim"|"custom-opencode-groq"|"custom-opencode-openrouter")
             echo "$profile_id"
             return 0
             ;;
@@ -293,20 +292,6 @@ invoke_opencode_profile() {
             config_path=$(write_opencode_config "nvidia-nim" "qwen/qwen3.5-122b-a10b" "https://integrate.api.nvidia.com/v1" "$api_key")
             export OPENCODE_CONFIG="$config_path"
             echo -e "${CYAN}Запуск OpenCode (NVIDIA NIM Qwen3.5-122B-A10B)…${RESET}"
-            "$opencode_exe"
-            ;;
-        "openrouter-qwen-coder")
-            local api_key
-            api_key=$(get_openrouter_api_key)
-            if [ -z "$api_key" ]; then
-                echo -e "${YELLOW}OpenRouter API ключ не задан.${RESET}"
-                read -p "Нажмите Enter для продолжения..."
-                return 0
-            fi
-            local config_path
-            config_path=$(write_opencode_config "openrouter" "qwen/qwen3-coder:free" "https://openrouter.ai/api/v1" "$api_key" 8192 16384)
-            export OPENCODE_CONFIG="$config_path"
-            echo -e "${CYAN}Запуск OpenCode (OpenRouter Qwen3 Coder)…${RESET}"
             "$opencode_exe"
             ;;
         "openrouter-hy3")
