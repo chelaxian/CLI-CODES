@@ -25,12 +25,14 @@ if (-not $InstallDir) {
 Clear-Host
 Write-Status "════════════════════════════════════════════════════════════════════════════════" "Cyan"
 Write-Status "" "Cyan"
-Write-Status "  ██████╗ ██╗    ██╗███████╗███╗   ██╗           +  CLI-CODE" "Cyan"
-Write-Status " ██╔═══██╗██║    ██║██╔════╝████╗  ██║" "Cyan"
-Write-Status " ██║   ██║██║ █╗ ██║█████╗  ██╔██╗ ██║            CLOUD SETUP" "Cyan"
-Write-Status " ██║▄▄ ██║██║███╗██║██╔══╝  ██║╚██╗██║" "Cyan"
-Write-Status " ╚██████╔╝╚███╔███╔╝███████╗██║ ╚████║           1-click install" "Cyan"
-Write-Status "  ╚══▀▀═╝  ╚══╝╚══╝ ╚══════╝╚═╝  ╚═══╝" "Cyan"
+Write-Status "   ██████╗██╗      ██████╗██╗  ██╗███████╗   ██████╗ ███████╗ ██████╗ ███████╗" "Cyan"
+Write-Status "  ██╔════╝██║     ██╔════╝██║ ██╔╝██╔════╝   ██╔══██╗██╔════╝██╔════╝ ██╔════╝" "Cyan"
+Write-Status "  ██║     ██║     ██║     █████╔╝ ███████╗   ██████╔╝█████╗  ██║  ███╗█████╗  " "Cyan"
+Write-Status "  ██║     ██║     ██║     ██╔═██╗ ╚════██║   ██╔══██╗██╔══╝  ██║   ██║██╔══╝  " "Cyan"
+Write-Status "  ╚██████╗███████╗╚██████╗██║  ██╗███████║   ██║  ██║███████╗╚██████╔╝███████╗" "Cyan"
+Write-Status "   ╚═════╝╚══════╝ ╚═════╝╚═╝  ╚═╝╚══════╝   ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚══════╝" "Cyan"
+Write-Status "" "Cyan"
+Write-Status "            C L O U D   S E T U P      1-click install" "Yellow"
 Write-Status "" "Cyan"
 Write-Status "  Qwen Code + Claude Code + OpenCode" "Yellow"
 Write-Status "" "Cyan"
@@ -140,17 +142,14 @@ Write-Status "══════════════════════
 Write-Host ""
 
 if ($installQwen) {
-    Write-Status "Установка Qwen Code CLI…" "Cyan"
-    $qwenCmd = Get-Command qwen -ErrorAction SilentlyContinue
-    if (-not $qwenCmd) {
-        $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
-        & npm.cmd install -g @qwen-code/qwen-code@latest 2>$null
-        if ($LASTEXITCODE -ne 0) {
-            & npm.cmd install -g @anthropic-ai/qwen-code@latest 2>$null
-        }
-        $ErrorActionPreference = $prevEAP
-        $qwenCmd = Get-Command qwen -ErrorAction SilentlyContinue
+    Write-Status "Установка/обновление Qwen Code CLI..." "Cyan"
+    $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+    & npm.cmd install -g @qwen-code/qwen-code@latest 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        & npm.cmd install -g @anthropic-ai/qwen-code@latest 2>$null
     }
+    $ErrorActionPreference = $prevEAP
+    $qwenCmd = Get-Command qwen -ErrorAction SilentlyContinue
     if ($qwenCmd) {
         Write-Status "  [OK] Qwen Code CLI: $($qwenCmd.Source)" "Green"
     } else {
@@ -160,14 +159,11 @@ if ($installQwen) {
 }
 
 if ($installClaude) {
-    Write-Status "Установка Claude Code CLI…" "Cyan"
+    Write-Status "Установка/обновление Claude Code CLI..." "Cyan"
+    $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+    & npm.cmd install -g @anthropic-ai/claude-code@latest 2>$null
+    $ErrorActionPreference = $prevEAP
     $claudeCmd = Get-Command claude -ErrorAction SilentlyContinue
-    if (-not $claudeCmd) {
-        $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
-        & npm.cmd install -g @anthropic-ai/claude-code@latest 2>$null
-        $ErrorActionPreference = $prevEAP
-        $claudeCmd = Get-Command claude -ErrorAction SilentlyContinue
-    }
     if ($claudeCmd) {
         Write-Status "  [OK] Claude Code CLI: $($claudeCmd.Source)" "Green"
     } else {
@@ -177,14 +173,11 @@ if ($installClaude) {
 }
 
 if ($installOpenCode) {
-    Write-Status "Установка OpenCode CLI…" "Cyan"
+    Write-Status "Установка/обновление OpenCode CLI..." "Cyan"
+    $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+    & npm.cmd install -g opencode-ai@latest 2>$null
+    $ErrorActionPreference = $prevEAP
     $ocCmd = Get-Command opencode -ErrorAction SilentlyContinue
-    if (-not $ocCmd) {
-        $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
-        & npm.cmd install -g opencode-ai@latest 2>$null
-        $ErrorActionPreference = $prevEAP
-        $ocCmd = Get-Command opencode -ErrorAction SilentlyContinue
-    }
     if ($ocCmd) {
         Write-Status "  [OK] OpenCode CLI: $($ocCmd.Source)" "Green"
     } else {
