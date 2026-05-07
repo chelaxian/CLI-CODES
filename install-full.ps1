@@ -284,8 +284,14 @@ if ($installClaude) {
         if (Get-Command winget -ErrorAction SilentlyContinue) {
             Write-Status "  Установка Obsidian через winget..." "Cyan"
             $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
-            & winget install -e --id Obsidian.Obsidian --accept-source-agreements --accept-package-agreements 2>$null
+            $wingetResult = & winget install -e --id Obsidian.Obsidian --accept-source-agreements --accept-package-agreements 2>&1
+            $wingetExitCode = $LASTEXITCODE
             $ErrorActionPreference = $prevEAP
+            
+            if ($wingetExitCode -ne 0) {
+                Write-Status "  [WARN] Установка через winget не удалась (код: $wingetExitCode). Попробуйте вручную или проверьте соединение." "Yellow"
+                Write-Status "         Ссылка для ручной установки: https://obsidian.md/download" "Cyan"
+            }
         } else {
             Write-Status "  [WARN] winget не найден — Obsidian не установлен автоматически." "Yellow"
         }
@@ -293,7 +299,9 @@ if ($installClaude) {
     if (Test-Path -LiteralPath (Join-Path $env:LOCALAPPDATA "Programs\\Obsidian\\Obsidian.exe")) {
         Write-Status "  [OK] Obsidian найден" "Green"
     } else {
-        Write-Status "  [WARN] Obsidian.exe не найден (можно установить вручную: https://obsidian.md/download)" "Yellow"
+        Write-Status "  [WARN] Obsidian.exe не найден" "Yellow"
+        Write-Status "         Установите вручную: https://obsidian.md/download" "Cyan"
+        Write-Status "         Или через PowerShell: Invoke-WebRequest -Uri 'https://github.com/obsidianmd/obsidian-releases/releases/download/v1.12.7/Obsidian-1.12.7.exe' -OutFile 'Obsidian.exe'; .\Obsidian.exe" "Cyan"
     }
 }
 
