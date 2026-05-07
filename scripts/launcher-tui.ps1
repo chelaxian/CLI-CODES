@@ -210,7 +210,7 @@ function Show-TuiFramedMenu {
 
   $scroll.Top = 0
   Sync-TuiScroll
-  [Console]::CursorVisible = $false
+  try { [Console]::CursorVisible = $false } catch { }
   try {
     Redraw-TuiMenu
     while ($true) {
@@ -250,7 +250,7 @@ function Show-TuiFramedMenu {
       }
     }
   } finally {
-    [Console]::CursorVisible = $true
+    try { [Console]::CursorVisible = $true } catch { }
   }
 }
 

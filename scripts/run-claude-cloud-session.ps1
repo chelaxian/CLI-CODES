@@ -35,7 +35,7 @@ param(
   # Не блокировать запуск Claude Code ожиданием claude-mem (37777)
   [switch]$SkipClaudeMem,
   # Макс. секунд ожидания claude-mem после npx start (холодный кэш npx может занять 30–60 с).
-  [int]$ClaudeMemMaxWaitSec = 45
+  [int]$ClaudeMemMaxWaitSec = 60
 )
 
 $ErrorActionPreference = "Stop"

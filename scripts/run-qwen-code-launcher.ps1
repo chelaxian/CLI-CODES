@@ -88,10 +88,6 @@ $script:Profiles = @(
     Label       = "Z.AI - GLM-4.5-Flash (free, tool calling)"
   }
   @{
-    Id          = "openrouter-qwen-coder"
-    Label       = "OpenRouter - Qwen3 Coder (free, tool calling)"
-  }
-  @{
     Id          = "openrouter-hy3"
     Label       = "OpenRouter - Tencent Hy3 (free, tool calling)"
   }
@@ -145,7 +141,7 @@ function Save-LauncherState {
 function Resolve-ProfileFromState($state) {
   if (-not $state -or [string]::IsNullOrWhiteSpace($state.profileId)) { return $null }
   $id = [string]$state.profileId
-  if ($id -in @("nim-glm", "nim-qwen", "zai-glm", "zai-glm51", "zai-flash47", "zai-flash45", "openrouter-qwen-coder", "openrouter-hy3", "openrouter-nemotron", "openrouter-laguna", "custom-qwen-zai", "custom-qwen-zai-general", "custom-qwen-nim", "custom-qwen-groq", "custom-qwen-openrouter")) { return $id }
+  if ($id -in @("nim-glm", "nim-qwen", "zai-glm", "zai-glm51", "zai-flash47", "zai-flash45", "openrouter-hy3", "openrouter-nemotron", "openrouter-laguna", "custom-qwen-zai", "custom-qwen-zai-general", "custom-qwen-nim", "custom-qwen-groq", "custom-qwen-openrouter")) { return $id }
   return $null
 }
 
@@ -175,10 +171,6 @@ function Invoke-QwenProfile {
     }
     "zai-flash45" {
       & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider zai -ModelId "glm-4.5-flash"
-      return
-    }
-    "openrouter-qwen-coder" {
-      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider openrouter -ModelId "qwen/qwen3-coder:free"
       return
     }
     "openrouter-hy3" {

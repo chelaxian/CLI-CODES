@@ -245,9 +245,7 @@ function Invoke-OpenCodeProfile {
         $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "Z.AI" -HelpUrl "https://console.z.ai/"
       }
 
-      $configPath = Write-OpenCodeConfig -Provider "zhipuai" -Model "glm-4.7" -BaseURL "https://api.z.ai/api/coding/paas/v4" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072 -UseBuiltInApi
-
-      $env:ZAI_CODING_API_KEY = $apiKey
+      $configPath = Write-OpenCodeConfig -Provider "zai" -Model "glm-4.7" -BaseURL "https://api.z.ai/api/coding/paas/v4" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
       $env:OPENCODE_CONFIG = $configPath
       Write-Host "Запуск OpenCode (Z.AI GLM-4.7)…" -ForegroundColor Cyan
       & $opencodeExe
@@ -268,9 +266,7 @@ function Invoke-OpenCodeProfile {
         $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "Z.AI" -HelpUrl "https://console.z.ai/"
       }
 
-      $configPath = Write-OpenCodeConfig -Provider "zhipuai" -Model "glm-5.1" -BaseURL "https://api.z.ai/api/coding/paas/v4" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072 -UseBuiltInApi
-
-      $env:ZAI_CODING_API_KEY = $apiKey
+      $configPath = Write-OpenCodeConfig -Provider "zai" -Model "glm-5.1" -BaseURL "https://api.z.ai/api/coding/paas/v4" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
       $env:OPENCODE_CONFIG = $configPath
       Write-Host "Запуск OpenCode (Z.AI GLM-5.1)…" -ForegroundColor Cyan
       & $opencodeExe
@@ -284,8 +280,7 @@ function Invoke-OpenCodeProfile {
       if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") {
         $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "Z.AI" -HelpUrl "https://console.z.ai/"
       }
-      $configPath = Write-OpenCodeConfig -Provider "zhipuai" -Model "glm-4.7-flash" -BaseURL "https://api.z.ai/api/coding/paas/v4" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072 -UseBuiltInApi
-      $env:ZAI_CODING_API_KEY = $apiKey
+      $configPath = Write-OpenCodeConfig -Provider "zai" -Model "glm-4.7-flash" -BaseURL "https://api.z.ai/api/coding/paas/v4" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
       $env:OPENCODE_CONFIG = $configPath
       Write-Host "Запуск OpenCode (Z.AI GLM-4.7-Flash)…" -ForegroundColor Cyan
       & $opencodeExe
@@ -299,8 +294,7 @@ function Invoke-OpenCodeProfile {
       if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") {
         $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "Z.AI" -HelpUrl "https://console.z.ai/"
       }
-      $configPath = Write-OpenCodeConfig -Provider "zhipuai" -Model "glm-4.5-flash" -BaseURL "https://api.z.ai/api/coding/paas/v4" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072 -UseBuiltInApi
-      $env:ZAI_CODING_API_KEY = $apiKey
+      $configPath = Write-OpenCodeConfig -Provider "zai" -Model "glm-4.5-flash" -BaseURL "https://api.z.ai/api/coding/paas/v4" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
       $env:OPENCODE_CONFIG = $configPath
       Write-Host "Запуск OpenCode (Z.AI GLM-4.5-Flash)…" -ForegroundColor Cyan
       & $opencodeExe
@@ -351,8 +345,7 @@ function Invoke-OpenCodeProfile {
       if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") {
         $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "Z.AI" -HelpUrl "https://console.z.ai/"
       }
-      $configPath = Write-OpenCodeConfig -Provider "zhipuai" -Model $mid.Trim() -BaseURL "https://api.z.ai/api/coding/paas/v4" -ApiKey $apiKey -UseBuiltInApi
-      $env:ZAI_CODING_API_KEY = $apiKey
+      $configPath = Write-OpenCodeConfig -Provider "zai" -Model $mid.Trim() -BaseURL "https://api.z.ai/api/coding/paas/v4" -ApiKey $apiKey
       $env:OPENCODE_CONFIG = $configPath
       Write-Host "Запуск OpenCode (Z.AI custom: $($mid.Trim()))…" -ForegroundColor Cyan
       & $opencodeExe

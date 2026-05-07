@@ -52,12 +52,12 @@ if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
 }
 
 if ($missing.Count -gt 0) {
-    Write-Status "Missing required tools:" "Red"
+    Write-Status "Не хватает обязательных инструментов:" "Red"
     foreach ($m in $missing) {
         Write-Status "  - $m" "Yellow"
     }
     Write-Host ""
-    Write-Host "Install them and re-run this script." -ForegroundColor Yellow
+    Write-Host "Установите их и запустите инсталлятор ещё раз." -ForegroundColor Yellow
     Write-Host ""
     Read-Host "Press Enter to exit"
     return
@@ -122,18 +122,18 @@ if (Test-Path -LiteralPath (Join-Path $InstallDir ".git")) {
 Write-Host ""
 
 Write-Status "======================================================================" "Cyan"
-Write-Status "WHAT TO INSTALL?" "Magenta"
+Write-Status "ЧТО УСТАНАВЛИВАЕМ?" "Magenta"
 Write-Status "======================================================================" "Cyan"
 Write-Host ""
 Write-Status "  [1] Qwen Code (cloud)" "Green"
 Write-Status "  [2] Claude Code (cloud)" "Green"
 Write-Status "  [3] OpenCode (cloud)" "Green"
 Write-Status "  [4] All three" "Green"
-Write-Status "  [5] Full uninstall (remove everything)" "Red"
+Write-Status "  [5] Полное удаление (удалить всё)" "Red"
 Write-Status "  [0] Exit" "Gray"
 Write-Host ""
 
-$installChoice = Read-Host "Your choice [4]"
+$installChoice = Read-Host "Ваш выбор [4]"
 
 if ([string]::IsNullOrWhiteSpace($installChoice)) { $installChoice = "4" }
 
@@ -141,10 +141,10 @@ if ([string]::IsNullOrWhiteSpace($installChoice)) { $installChoice = "4" }
 if ($installChoice -eq "5") {
     Write-Host ""
     Write-Status "======================================================================" "Red"
-    Write-Status "FULL UNINSTALL" "Red"
+    Write-Status "ПОЛНОЕ УДАЛЕНИЕ" "Red"
     Write-Status "======================================================================" "Red"
     Write-Host ""
-    Write-Host "WARNING: This will remove:" -ForegroundColor Red
+    Write-Host "ВНИМАНИЕ: будет удалено:" -ForegroundColor Red
     Write-Host "  - Repository: $InstallDir" -ForegroundColor Red
     Write-Host "  - Session directories (qwen/claude/opencode-sessions)" -ForegroundColor Red
     Write-Host "  - CLI configs (~/.claude, ~/.qwen)" -ForegroundColor Red
@@ -152,15 +152,15 @@ if ($installChoice -eq "5") {
     Write-Host "  - Desktop shortcuts (.cmd, .lnk)" -ForegroundColor Red
     Write-Host "  - Global npm packages (qwen-code, claude-code, opencode-ai)" -ForegroundColor Red
     Write-Host ""
-    $confirm = Read-Host "Type 'yes' to confirm uninstall"
+    $confirm = Read-Host "Введите 'yes' для подтверждения удаления"
     if ($confirm -ne "yes") {
-        Write-Status "Uninstall cancelled." "Yellow"
+        Write-Status "Удаление отменено." "Yellow"
         Read-Host "Press Enter to exit"
         return
     }
 
     Write-Host ""
-    Write-Status "Removing repository..." "Cyan"
+    Write-Status "Удаляю репозиторий..." "Cyan"
     if (Test-Path -LiteralPath $InstallDir) {
         Remove-Item -LiteralPath $InstallDir -Recurse -Force -ErrorAction SilentlyContinue
         Write-Status "  [OK] Removed: $InstallDir" "Green"
@@ -168,7 +168,7 @@ if ($installChoice -eq "5") {
         Write-Status "  [SKIP] $InstallDir not found" "Yellow"
     }
 
-    Write-Status "Removing CLI configs..." "Cyan"
+    Write-Status "Удаляю конфиги CLI..." "Cyan"
     foreach ($cfg in @("$env:USERPROFILE\.claude", "$env:USERPROFILE\.qwen", "$env:USERPROFILE\.opencode")) {
         if (Test-Path -LiteralPath $cfg) {
             Remove-Item -LiteralPath $cfg -Recurse -Force -ErrorAction SilentlyContinue
@@ -176,7 +176,7 @@ if ($installChoice -eq "5") {
         }
     }
 
-    Write-Status "Removing API keys from user environment..." "Cyan"
+    Write-Status "Удаляю API ключи из переменных окружения пользователя..." "Cyan"
     foreach ($var in @("NVIDIA_NIM_API_KEY", "ZAI_API_KEY", "OPENAI_API_KEY", "GROQ_API_KEY", "OPENROUTER_API_KEY")) {
         $existing = [Environment]::GetEnvironmentVariable($var, "User")
         if ($existing) {
@@ -185,7 +185,7 @@ if ($installChoice -eq "5") {
         }
     }
 
-    Write-Status "Removing desktop shortcuts..." "Cyan"
+    Write-Status "Удаляю ярлыки на рабочем столе..." "Cyan"
     $desktop = [Environment]::GetFolderPath("Desktop")
     if (-not $desktop) { $desktop = Join-Path $env:USERPROFILE "Desktop" }
     foreach ($name in @("Qwen Code (cloud)", "Claude Code (cloud)", "OpenCode (cloud)")) {
@@ -208,10 +208,10 @@ if ($installChoice -eq "5") {
 
     Write-Host ""
     Write-Status "======================================================================" "Green"
-    Write-Status "UNINSTALL COMPLETE!" "Green"
+    Write-Status "УДАЛЕНИЕ ЗАВЕРШЕНО!" "Green"
     Write-Status "======================================================================" "Green"
     Write-Host ""
-    Write-Status "Restart your terminal to clear environment variables." "Yellow"
+    Write-Status "Перезапустите терминал, чтобы переменные окружения применились." "Yellow"
     Write-Host ""
     Read-Host "Press Enter to exit"
     return
@@ -232,12 +232,12 @@ switch ($installChoice) {
 
 Write-Host ""
 Write-Status "======================================================================" "Cyan"
-Write-Status "INSTALLING CLI" "Magenta"
+Write-Status "УСТАНОВКА CLI" "Magenta"
 Write-Status "======================================================================" "Cyan"
 Write-Host ""
 
 if ($installQwen) {
-    Write-Status "Installing Qwen Code CLI..." "Cyan"
+    Write-Status "Установка Qwen Code CLI..." "Cyan"
     $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
     & npm.cmd install -g @qwen-code/qwen-code@latest 2>$null
     if ($LASTEXITCODE -ne 0) {
@@ -254,7 +254,7 @@ if ($installQwen) {
 }
 
 if ($installClaude) {
-    Write-Status "Installing Claude Code CLI..." "Cyan"
+    Write-Status "Установка Claude Code CLI..." "Cyan"
     $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
     & npm.cmd install -g @anthropic-ai/claude-code@latest 2>$null
     $ErrorActionPreference = $prevEAP
@@ -265,10 +265,40 @@ if ($installClaude) {
         Write-Status "  [WARN] Claude Code CLI not found. Install manually:" "Yellow"
         Write-Status "         npm i -g @anthropic-ai/claude-code" "Yellow"
     }
+
+    Write-Status "" "Cyan"
+    Write-Status "Claude: установка доп. компонентов (claude-mem, Obsidian)..." "Magenta"
+
+    # claude-mem (used via npx in scripts, but preinstall helps a lot)
+    $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+    & npm.cmd install -g claude-mem@latest 2>$null
+    $ErrorActionPreference = $prevEAP
+    if (Get-Command claude-mem -ErrorAction SilentlyContinue) {
+        Write-Status "  [OK] claude-mem установлен" "Green"
+    } else {
+        Write-Status "  [WARN] claude-mem не найден (будет подтягиваться через npx при первом запуске)" "Yellow"
+    }
+
+    # Obsidian (best-effort via winget)
+    if (-not (Test-Path -LiteralPath (Join-Path $env:LOCALAPPDATA "Programs\\Obsidian\\Obsidian.exe"))) {
+        if (Get-Command winget -ErrorAction SilentlyContinue) {
+            Write-Status "  Установка Obsidian через winget..." "Cyan"
+            $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+            & winget install -e --id Obsidian.Obsidian --accept-source-agreements --accept-package-agreements 2>$null
+            $ErrorActionPreference = $prevEAP
+        } else {
+            Write-Status "  [WARN] winget не найден — Obsidian не установлен автоматически." "Yellow"
+        }
+    }
+    if (Test-Path -LiteralPath (Join-Path $env:LOCALAPPDATA "Programs\\Obsidian\\Obsidian.exe")) {
+        Write-Status "  [OK] Obsidian найден" "Green"
+    } else {
+        Write-Status "  [WARN] Obsidian.exe не найден (можно установить вручную: https://obsidian.md/download)" "Yellow"
+    }
 }
 
 if ($installOpenCode) {
-    Write-Status "Installing OpenCode CLI..." "Cyan"
+    Write-Status "Установка OpenCode CLI..." "Cyan"
     $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
     & npm.cmd install -g opencode-ai@latest 2>$null
     $ErrorActionPreference = $prevEAP
@@ -283,10 +313,10 @@ if ($installOpenCode) {
 
 Write-Host ""
 Write-Status "======================================================================" "Cyan"
-Write-Status "API KEY SETUP" "Magenta"
+Write-Status "НАСТРОЙКА API КЛЮЧЕЙ" "Magenta"
 Write-Status "======================================================================" "Cyan"
 Write-Host ""
-Write-Status "Leave empty to skip. Keys can be changed later via launcher menu." "Yellow"
+Write-Status "Оставьте пустым чтобы пропустить. Ключи можно поменять позже через меню лаунчера." "Yellow"
 Write-Host ""
 
 function Read-Secret($Prompt) {
@@ -295,7 +325,7 @@ function Read-Secret($Prompt) {
     try { return [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr) } finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr) }
 }
 
-$nimKey = Read-Secret "NVIDIA NIM API key (Enter = skip): "
+$nimKey = Read-Secret "NVIDIA NIM API key (Enter = пропустить): "
 if (-not [string]::IsNullOrWhiteSpace($nimKey)) {
     [Environment]::SetEnvironmentVariable("NVIDIA_NIM_API_KEY", $nimKey.Trim(), "User")
     Write-Status "  [OK] NVIDIA_NIM_API_KEY saved" "Green"
@@ -305,7 +335,7 @@ if (-not [string]::IsNullOrWhiteSpace($nimKey)) {
 
 Write-Host ""
 
-$zaiKey = Read-Secret "Z.AI API key (Enter = skip): "
+$zaiKey = Read-Secret "Z.AI API key (Enter = пропустить): "
 if (-not [string]::IsNullOrWhiteSpace($zaiKey)) {
     [Environment]::SetEnvironmentVariable("ZAI_API_KEY", $zaiKey.Trim(), "User")
     Write-Status "  [OK] ZAI_API_KEY saved" "Green"
@@ -315,7 +345,7 @@ if (-not [string]::IsNullOrWhiteSpace($zaiKey)) {
 
 Write-Host ""
 
-$groqKey = Read-Secret "Groq API key (Enter = skip): "
+$groqKey = Read-Secret "Groq API key (Enter = пропустить): "
 if (-not [string]::IsNullOrWhiteSpace($groqKey)) {
     [Environment]::SetEnvironmentVariable("GROQ_API_KEY", $groqKey.Trim(), "User")
     Write-Status "  [OK] GROQ_API_KEY saved" "Green"
@@ -325,7 +355,7 @@ if (-not [string]::IsNullOrWhiteSpace($groqKey)) {
 
 Write-Host ""
 
-$orKey = Read-Secret "OpenRouter API key (Enter = skip): "
+$orKey = Read-Secret "OpenRouter API key (Enter = пропустить): "
 if (-not [string]::IsNullOrWhiteSpace($orKey)) {
     [Environment]::SetEnvironmentVariable("OPENROUTER_API_KEY", $orKey.Trim(), "User")
     Write-Status "  [OK] OPENROUTER_API_KEY saved" "Green"
@@ -357,7 +387,7 @@ if ($installOpenCode) {
 
 Write-Host ""
 Write-Status "======================================================================" "Cyan"
-Write-Status "CREATING DESKTOP SHORTCUTS" "Magenta"
+Write-Status "СОЗДАНИЕ ЯРЛЫКОВ НА РАБОЧЕМ СТОЛЕ" "Magenta"
 Write-Status "======================================================================" "Cyan"
 Write-Host ""
 
@@ -402,18 +432,26 @@ if ($installQwen)     { New-LauncherShortcut -Name "Qwen Code (cloud)"     -Scri
 if ($installClaude)   { New-LauncherShortcut -Name "Claude Code (cloud)"   -ScriptFile "run-claude-cloud-launcher.ps1" }
 if ($installOpenCode) { New-LauncherShortcut -Name "OpenCode (cloud)"      -ScriptFile "run-opencode-launcher.ps1" }
 
+# Also (re)create shortcuts via the dedicated helper script (keeps them in sync)
+try {
+    $shortcutScript = Join-Path $scriptsDir "create-desktop-shortcuts.ps1"
+    if (Test-Path -LiteralPath $shortcutScript) {
+        & $psExe -NoProfile -ExecutionPolicy Bypass -File $shortcutScript -RepoRoot $InstallDir 2>$null
+    }
+} catch { }
+
 Write-Host ""
 Write-Status "======================================================================" "Cyan"
-Write-Status "INSTALL COMPLETE!" "Green"
+Write-Status "УСТАНОВКА ЗАВЕРШЕНА!" "Green"
 Write-Status "======================================================================" "Cyan"
 Write-Host ""
 Write-Status "Repository: $InstallDir" "Gray"
 Write-Host ""
-Write-Status "Desktop shortcuts:" "Cyan"
+Write-Status "Ярлыки на рабочем столе:" "Cyan"
 if ($installQwen)  { Write-Status "  * Qwen Code (cloud)" "Green" }
 if ($installClaude) { Write-Status "  * Claude Code (cloud)" "Green" }
 if ($installOpenCode) { Write-Status "  * OpenCode (cloud)" "Green" }
 Write-Host ""
-Write-Status "Restart your terminal for API keys to take effect. Use the desktop shortcuts!" "Yellow"
+Write-Status "Перезапустите терминал, чтобы API ключи применились. Запускайте через ярлыки!" "Yellow"
 Write-Host ""
 Read-Host "Press Enter to exit"

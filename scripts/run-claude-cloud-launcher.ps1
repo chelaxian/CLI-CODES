@@ -11,8 +11,8 @@ $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "launcher-custom-model-wizard.ps1")
 . (Join-Path $PSScriptRoot "launcher-api-keys.ps1")
 
-$VaultPath = "C:\Users\chelaxian\Documents\Obsidian Vault"
-$ObsidianExe = "C:\Users\chelaxian\AppData\Local\Programs\Obsidian\Obsidian.exe"
+$VaultPath = Join-Path $env:USERPROFILE "Documents\Obsidian Vault"
+$ObsidianExe = Join-Path $env:LOCALAPPDATA "Programs\Obsidian\Obsidian.exe"
 
 $StatePath = Join-Path $PSScriptRoot "claude-cloud-launcher-state.json"
 $SessionScript = Join-Path $PSScriptRoot "run-claude-cloud-session.ps1"
@@ -68,7 +68,7 @@ Write-Host "Claude (облако): общая подготовка (claude-mem, 
   -VaultPath $VaultPath `
   -ObsidianExe $ObsidianExe `
   -OpenClaudeMemObserver 1 `
-  -ClaudeMemMaxWaitSec 35
+  -ClaudeMemMaxWaitSec 60
 
 $script:Profiles = @(
   @{
@@ -98,14 +98,6 @@ $script:Profiles = @(
   @{
     Id    = "claude-nim-qwen"
     Label = "NVIDIA NIM - Qwen3.5-122B-A10B (free, tool calling)"
-  }
-  @{
-    Id    = "claude-openrouter-sonnet"
-    Label = "OpenRouter - Claude Sonnet 4 (paid, tool calling)"
-  }
-  @{
-    Id    = "claude-openrouter-qwen-coder"
-    Label = "OpenRouter - Qwen3 Coder (free, tool calling)"
   }
   @{
     Id    = "claude-openrouter-hy3"
@@ -162,7 +154,7 @@ function Resolve-ProfileFromState($state) {
   $id = [string]$state.profileId
   if ($id -in @(
       "claude-zai", "claude-zai-glm51", "claude-zai-flash47", "claude-zai-flash45", "claude-nim", "claude-nim-qwen",
-      "claude-openrouter-sonnet", "claude-openrouter-qwen-coder", "claude-openrouter-hy3", "claude-openrouter-nemotron", "claude-openrouter-laguna",
+      "claude-openrouter-hy3", "claude-openrouter-nemotron", "claude-openrouter-laguna",
       "custom-claude-zai", "custom-claude-nim", "custom-claude-openrouter"
     )) { return $id }
   return $null
@@ -183,42 +175,32 @@ function Invoke-ClaudeCloudProfile {
   switch ($ProfileId) {
     "claude-zai" {
       & $SessionScript -Provider zai -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
-        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+        -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
       return
     }
     "claude-zai-glm51" {
       & $SessionScript -Provider zai -ZaiAnthropicModelId "glm-5.1" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
-        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+        -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
       return
     }
     "claude-zai-flash47" {
       & $SessionScript -Provider zai -ZaiAnthropicModelId "glm-4.7-flash" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
-        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+        -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
       return
     }
     "claude-zai-flash45" {
       & $SessionScript -Provider zai -ZaiAnthropicModelId "glm-4.5-flash" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
-        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+        -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
       return
     }
     "claude-nim" {
       & $SessionScript -Provider nim -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
-        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+        -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
       return
     }
     "claude-nim-qwen" {
       & $SessionScript -Provider nim-qwen -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
-        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
-      return
-    }
-    "claude-openrouter-sonnet" {
-      & $SessionScript -Provider openrouter -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
-        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
-      return
-    }
-    "claude-openrouter-qwen-coder" {
-      & $SessionScript -Provider openrouter -ZaiAnthropicModelId "qwen/qwen3-coder:free" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
-        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+        -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
       return
     }
     "claude-openrouter-hy3" {
