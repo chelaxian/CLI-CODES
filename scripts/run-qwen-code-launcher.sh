@@ -84,37 +84,73 @@ get_qwen_zai_api_key() {
         key="${OPENAI_API_KEY:-}"
     fi
     if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then
-        echo -e "${YELLOW}Z.AI API ключ не задан. Задайте ZAI_API_KEY.${RESET}" >&2
-        return 1
+        printf "${YELLOW}Z.AI API ключ не задан.${RESET}\n" >&3
+        printf "${CYAN}Получить ключ: https://console.z.ai/${RESET}\n" >&3
+        local input
+        input=$(read_secret_text "Z.AI API key: ")
+        if [ -n "$input" ]; then
+            set_provider_api_key "ZAI" "$input"
+            echo "$input"
+        else
+            return 1
+        fi
+    else
+        echo "$key"
     fi
-    echo "$key"
 }
 
 get_qwen_nim_api_key() {
     local key="${NVIDIA_NIM_API_KEY:-}"
     if [ -z "$key" ]; then
-        echo -e "${YELLOW}NVIDIA NIM API ключ не задан. Задайте NVIDIA_NIM_API_KEY.${RESET}" >&2
-        return 1
+        printf "${YELLOW}NVIDIA NIM API ключ не задан.${RESET}\n" >&3
+        printf "${CYAN}Получить ключ: https://build.nvidia.com/api-key${RESET}\n" >&3
+        local input
+        input=$(read_secret_text "NVIDIA NIM API key: ")
+        if [ -n "$input" ]; then
+            set_provider_api_key "NVIDIA_NIM" "$input"
+            echo "$input"
+        else
+            return 1
+        fi
+    else
+        echo "$key"
     fi
-    echo "$key"
 }
 
 get_qwen_groq_api_key() {
     local key="${GROQ_API_KEY:-}"
     if [ -z "$key" ]; then
-        echo -e "${YELLOW}Groq API ключ не задан. Задайте GROQ_API_KEY.${RESET}" >&2
-        return 1
+        printf "${YELLOW}Groq API ключ не задан.${RESET}\n" >&3
+        printf "${CYAN}Получить ключ: https://console.groq.com/keys${RESET}\n" >&3
+        local input
+        input=$(read_secret_text "Groq API key: ")
+        if [ -n "$input" ]; then
+            set_provider_api_key "GROQ" "$input"
+            echo "$input"
+        else
+            return 1
+        fi
+    else
+        echo "$key"
     fi
-    echo "$key"
 }
 
 get_qwen_openrouter_api_key() {
     local key="${OPENROUTER_API_KEY:-}"
     if [ -z "$key" ]; then
-        echo -e "${YELLOW}OpenRouter API ключ не задан. Задайте OPENROUTER_API_KEY.${RESET}" >&2
-        return 1
+        printf "${YELLOW}OpenRouter API ключ не задан.${RESET}\n" >&3
+        printf "${CYAN}Получить ключ: https://openrouter.ai/settings/keys${RESET}\n" >&3
+        local input
+        input=$(read_secret_text "OpenRouter API key: ")
+        if [ -n "$input" ]; then
+            set_provider_api_key "OPENROUTER" "$input"
+            echo "$input"
+        else
+            return 1
+        fi
+    else
+        echo "$key"
     fi
-    echo "$key"
 }
 
 # ── Мастер выбора модели ─────────────────────────────────────────────────────
@@ -261,10 +297,10 @@ invoke_qwen_profile() {
     
     case "$profile_id" in
         "nim-glm")
-            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider nim -ModelId "nim-glm-4.7-tools"
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider nim -ModelId "z-ai/glm4.7"
             ;;
         "nim-qwen")
-            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider nim -ModelId "nim-qwen3.5-122b-a10b-tools"
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider nim -ModelId "qwen/qwen3.5-122b-a10b"
             ;;
         "zai-glm")
             bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider zai -ModelId "glm-4.7"

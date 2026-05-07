@@ -154,12 +154,14 @@ get_zai_api_key() {
         key="${OPENAI_API_KEY:-}"
     fi
     if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then
-        echo -e "${YELLOW}Z.AI API ключ не задан.${RESET}"
-        echo -e "${CYAN}Получить ключ: https://console.z.ai/${RESET}"
-    fi
-
-    if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then
-        read_secret_text "Z.AI API key: "
+        printf "${YELLOW}Z.AI API ключ не задан.${RESET}\n" >&3
+        printf "${CYAN}Получить ключ: https://console.z.ai/${RESET}\n" >&3
+        local input
+        input=$(read_secret_text "Z.AI API key: ")
+        if [ -n "$input" ]; then
+            set_provider_api_key "ZAI" "$input"
+            echo "$input"
+        fi
     else
         echo "$key"
     fi
@@ -168,12 +170,14 @@ get_zai_api_key() {
 get_nim_api_key() {
     local key="${NVIDIA_NIM_API_KEY:-}"
     if [ -z "$key" ]; then
-        echo -e "${YELLOW}NVIDIA NIM API ключ не задан.${RESET}"
-        echo -e "${CYAN}Получить ключ: https://build.nvidia.com/api-key${RESET}"
-    fi
-
-    if [ -z "$key" ]; then
-        read_secret_text "NVIDIA NIM API key: "
+        printf "${YELLOW}NVIDIA NIM API ключ не задан.${RESET}\n" >&3
+        printf "${CYAN}Получить ключ: https://build.nvidia.com/api-key${RESET}\n" >&3
+        local input
+        input=$(read_secret_text "NVIDIA NIM API key: ")
+        if [ -n "$input" ]; then
+            set_provider_api_key "NVIDIA_NIM" "$input"
+            echo "$input"
+        fi
     else
         echo "$key"
     fi
@@ -182,12 +186,14 @@ get_nim_api_key() {
 get_groq_api_key() {
     local key="${GROQ_API_KEY:-}"
     if [ -z "$key" ]; then
-        echo -e "${YELLOW}Groq API ключ не задан.${RESET}"
-        echo -e "${CYAN}Получить ключ: https://console.groq.com/keys${RESET}"
-    fi
-
-    if [ -z "$key" ]; then
-        read_secret_text "Groq API key: "
+        printf "${YELLOW}Groq API ключ не задан.${RESET}\n" >&3
+        printf "${CYAN}Получить ключ: https://console.groq.com/keys${RESET}\n" >&3
+        local input
+        input=$(read_secret_text "Groq API key: ")
+        if [ -n "$input" ]; then
+            set_provider_api_key "GROQ" "$input"
+            echo "$input"
+        fi
     else
         echo "$key"
     fi
@@ -196,12 +202,14 @@ get_groq_api_key() {
 get_openrouter_api_key() {
     local key="${OPENROUTER_API_KEY:-}"
     if [ -z "$key" ]; then
-        echo -e "${YELLOW}OpenRouter API ключ не задан.${RESET}"
-        echo -e "${CYAN}Получить ключ: https://openrouter.ai/settings/keys${RESET}"
-    fi
-
-    if [ -z "$key" ]; then
-        read_secret_text "OpenRouter API key: "
+        printf "${YELLOW}OpenRouter API ключ не задан.${RESET}\n" >&3
+        printf "${CYAN}Получить ключ: https://openrouter.ai/settings/keys${RESET}\n" >&3
+        local input
+        input=$(read_secret_text "OpenRouter API key: ")
+        if [ -n "$input" ]; then
+            set_provider_api_key "OPENROUTER" "$input"
+            echo "$input"
+        fi
     else
         echo "$key"
     fi

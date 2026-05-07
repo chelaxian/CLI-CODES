@@ -5,7 +5,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STATE_FILE="$SCRIPT_DIR/claude-cloud-launcher-state.json"
-SESSION_SCRIPT="$SCRIPT_DIR/run-claude-cloud-session.sh"
+SESSION_DIR="$SCRIPT_DIR/../claude-sessions/_shared"
 
 # Единое пространство для /resume (как у Qwen): общий каталог для запуска claude
 CLAUDE_SESSION_ROOT="${CLAUDE_SESSION_ROOT:-$SCRIPT_DIR/../claude-sessions/_shared}"
@@ -114,149 +114,98 @@ invoke_claude_cloud_profile() {
         fi
     fi
     
-    clear >&3
-    echo -e "${CYAN}Запуск сессии Claude Code (облако)…${RESET}"
-    echo -e "${GRAY}Профиль: $profile_id   Vault: $VAULT_PATH${RESET}"
+    # Находим claude CLI
+    local claude_exe=""
+    if command -v claude &>/dev/null; then
+        claude_exe="$(command -v claude)"
+    fi
+    if [ -z "$claude_exe" ]; then
+        printf "${RED}Claude Code CLI не найден. Установите: npm install -g @anthropic-ai/claude-code@latest${RESET}\n" >&3
+        return 1
+    fi
     
+    # Определяем модель и env vars
+    local model=""
     case "$profile_id" in
-        "claude-zai")
-            bash "$SESSION_SCRIPT" -Provider zai \
-                -VaultPath "$VAULT_PATH" \
-                -ObsidianExe "$OBSIDIAN_EXE" \
-                -ClaudeTools default \
-                -SkipCommonPreamble
-            ;;
-        "claude-zai-glm51")
-            bash "$SESSION_SCRIPT" -Provider zai \
-                -ZaiAnthropicModelId "glm-5.1" \
-                -VaultPath "$VAULT_PATH" \
-                -ObsidianExe "$OBSIDIAN_EXE" \
-                -ClaudeTools default \
-                -SkipCommonPreamble
-            ;;
-        "claude-zai-flash47")
-            bash "$SESSION_SCRIPT" -Provider zai \
-                -ZaiAnthropicModelId "glm-4.7-flash" \
-                -VaultPath "$VAULT_PATH" \
-                -ObsidianExe "$OBSIDIAN_EXE" \
-                -ClaudeTools default \
-                -SkipCommonPreamble
-            ;;
-        "claude-zai-flash45")
-            bash "$SESSION_SCRIPT" -Provider zai \
-                -ZaiAnthropicModelId "glm-4.5-flash" \
-                -VaultPath "$VAULT_PATH" \
-                -ObsidianExe "$OBSIDIAN_EXE" \
-                -ClaudeTools default \
-                -SkipCommonPreamble
-            ;;
-        "claude-nim")
-            bash "$SESSION_SCRIPT" -Provider nim \
-                -VaultPath "$VAULT_PATH" \
-                -ObsidianExe "$OBSIDIAN_EXE" \
-                -ClaudeTools default \
-                -SkipCommonPreamble
-            ;;
-        "claude-nim-qwen")
-            bash "$SESSION_SCRIPT" -Provider nim-qwen \
-                -VaultPath "$VAULT_PATH" \
-                -ObsidianExe "$OBSIDIAN_EXE" \
-                -ClaudeTools default \
-                -SkipCommonPreamble
-            ;;
-        "claude-openrouter-sonnet")
-            bash "$SESSION_SCRIPT" -Provider openrouter \
-                -VaultPath "$VAULT_PATH" \
-                -ObsidianExe "$OBSIDIAN_EXE" \
-                -ClaudeTools default \
-                -SkipCommonPreamble
-            ;;
-        "claude-openrouter-qwen-coder")
-            bash "$SESSION_SCRIPT" -Provider openrouter \
-                -ZaiAnthropicModelId "qwen/qwen3-coder:free" \
-                -VaultPath "$VAULT_PATH" \
-                -ObsidianExe "$OBSIDIAN_EXE" \
-                -ClaudeTools default \
-                -SkipCommonPreamble
-            ;;
-        "claude-openrouter-hy3")
-            bash "$SESSION_SCRIPT" -Provider openrouter \
-                -ZaiAnthropicModelId "tencent/hy3-preview:free" \
-                -VaultPath "$VAULT_PATH" \
-                -ObsidianExe "$OBSIDIAN_EXE" \
-                -ClaudeTools default \
-                -SkipCommonPreamble
-            ;;
-        "claude-openrouter-nemotron")
-            bash "$SESSION_SCRIPT" -Provider openrouter \
-                -ZaiAnthropicModelId "nvidia/nemotron-3-super-120b-a12b:free" \
-                -VaultPath "$VAULT_PATH" \
-                -ObsidianExe "$OBSIDIAN_EXE" \
-                -ClaudeTools default \
-                -SkipCommonPreamble
-            ;;
-        "claude-openrouter-laguna")
-            bash "$SESSION_SCRIPT" -Provider openrouter \
-                -ZaiAnthropicModelId "poolside/laguna-m.1:free" \
-                -VaultPath "$VAULT_PATH" \
-                -ObsidianExe "$OBSIDIAN_EXE" \
-                -ClaudeTools default \
-                -SkipCommonPreamble
-            ;;
-        "custom-claude-zai")
+        "claude-zai") model="glm-4.7" ;;
+        "claude-zai-glm51") model="glm-5.1" ;;
+        "claude-zai-flash47") model="glm-4.7-flash" ;;
+        "claude-zai-flash45") model="glm-4.5-flash" ;;
+        "claude-openrouter-sonnet") model="open_router/anthropic/claude-sonnet-4-20250514" ;;
+        "claude-openrouter-qwen-coder") model="open_router/qwen/qwen3-coder:free" ;;
+        "claude-openrouter-hy3") model="open_router/tencent/hy3-preview:free" ;;
+        "claude-openrouter-nemotron") model="open_router/nvidia/nemotron-3-super-120b-a12b:free" ;;
+        "claude-openrouter-laguna") model="open_router/poolside/laguna-m.1:free" ;;
+        "custom-claude-zai"|"custom-claude-openrouter"|"custom-claude-nim")
             local state=$(get_launcher_state)
-            local model_id=$(echo "$state" | grep -o '"customModelId":"[^"]*"' | cut -d'"' -f4)
-            
-            if [ -z "$model_id" ]; then
-                echo -e "${RED}Нет customModelId в claude-cloud-launcher-state.json.${RESET}"
-                echo -e "${RED}Выберите модель в «Другая модель».${RESET}"
-                return 1
-            fi
-            
-            bash "$SESSION_SCRIPT" -Provider zai \
-                -ZaiAnthropicModelId "$model_id" \
-                -VaultPath "$VAULT_PATH" \
-                -ObsidianExe "$OBSIDIAN_EXE" \
-                -ClaudeTools default \
-                -SkipCommonPreamble
-            ;;
-        "custom-claude-nim")
-            local state=$(get_launcher_state)
-            local model=$(echo "$state" | grep -o '"customNimModel":"[^"]*"' | cut -d'"' -f4)
-            
+            model=$(echo "$state" | grep -o '"customModelId":"[^"]*"' | cut -d'"' -f4)
             if [ -z "$model" ]; then
-                echo -e "${RED}Нет customNimModel в claude-cloud-launcher-state.json.${RESET}"
+                printf "${RED}Нет customModelId. Выберите модель в «Другая модель».${RESET}\n" >&3
                 return 1
             fi
-            
-            bash "$SESSION_SCRIPT" -Provider nim \
-                -NimModel "$model" \
-                -VaultPath "$VAULT_PATH" \
-                -ObsidianExe "$OBSIDIAN_EXE" \
-                -ClaudeTools minimal \
-                -SkipCommonPreamble
             ;;
-        "custom-claude-openrouter")
-            local state=$(get_launcher_state)
-            local model_id=$(echo "$state" | grep -o '"customModelId":"[^"]*"' | cut -d'"' -f4)
-            
-            if [ -z "$model_id" ]; then
-                echo -e "${RED}Нет customModelId для custom-claude-openrouter. Выберите модель в «Другая модель».${RESET}"
-                return 1
-            fi
-            
-            bash "$SESSION_SCRIPT" -Provider openrouter \
-                -ZaiAnthropicModelId "$model_id" \
-                -VaultPath "$VAULT_PATH" \
-                -ObsidianExe "$OBSIDIAN_EXE" \
-                -ClaudeTools default \
-                -SkipCommonPreamble
+        *) model="" ;;
+    esac
+    
+    # Устанавливаем env vars для Claude Code
+    case "$profile_id" in
+        claude-zai*|custom-claude-zai*)
+            local key="${ZAI_API_KEY:-}"
+            if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then key="${OPENAI_API_KEY:-}"; fi
+            export ANTHROPIC_AUTH_TOKEN="$key"
+            export ANTHROPIC_BASE_URL="https://api.z.ai/api/anthropic"
+            export ANTHROPIC_DEFAULT_OPUS_MODEL="$model"
+            export ANTHROPIC_DEFAULT_SONNET_MODEL="$model"
+            export ANTHROPIC_DEFAULT_HAIKU_MODEL="$model"
+            export API_TIMEOUT_MS="3000000"
             ;;
-        *)
-            echo -e "${RED}Неизвестный профиль: $profile_id${RESET}"
-            return 1
+        claude-nim*|custom-claude-nim*)
+            printf "${YELLOW}NVIDIA NIM для Claude Code на Linux требует free-claude-code proxy.${RESET}\n" >&3
+            printf "${YELLOW}Используется прямой запуск с ANTHROPIC_BASE_URL.${RESET}\n" >&3
+            local key="${NVIDIA_NIM_API_KEY:-}"
+            export ANTHROPIC_AUTH_TOKEN="$key"
+            export ANTHROPIC_BASE_URL="https://integrate.api.nvidia.com/v1"
+            export API_TIMEOUT_MS="3000000"
+            ;;
+        claude-openrouter*|custom-claude-openrouter*)
+            local key="${OPENROUTER_API_KEY:-}"
+            export ANTHROPIC_AUTH_TOKEN="$key"
+            export ANTHROPIC_BASE_URL="https://openrouter.ai/api/v1"
+            export API_TIMEOUT_MS="3000000"
             ;;
     esac
+    
+    # Отключаем лишний трафик Claude Code
+    mkdir -p "$HOME/.claude"
+    local settings_file="$HOME/.claude/settings.json"
+    if [ -f "$settings_file" ]; then
+        # Обновляем существующий settings
+        if command -v python3 &>/dev/null; then
+            python3 -c "
+import json, sys
+try:
+    with open('$settings_file','r') as f: d=json.load(f)
+except: d={}
+if 'env' not in d: d['env']={}
+d['env']['CLAUDE_CODE_ATTRIBUTION_HEADER']='0'
+d['env']['CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC']='1'
+with open('$settings_file','w') as f: json.dump(d,f,indent=2)
+" 2>/dev/null || true
+        fi
+    else
+        echo '{"env":{"CLAUDE_CODE_ATTRIBUTION_HEADER":"0","CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC":"1"}}' > "$settings_file"
+    fi
+    
+    # Входим в shared session dir и запускаем claude
+    enter_claude_shared_dir
+    
+    clear >&3
+    printf "${CYAN}Запуск Claude Code…${RESET}\n" >&3
+    printf "${GRAY}Провайдер: $profile_id   Модель: ${model:-default}${RESET}\n" >&3
+    printf "${GRAY}Директория сессий: $(pwd)${RESET}\n" >&3
+    printf "\n" >&3
+    
+    "$claude_exe"
 }
 
 # ── API key helpers ──────────────────────────────────────────────────────────
@@ -266,21 +215,34 @@ get_claude_zai_api_key() {
         key="${OPENAI_API_KEY:-}"
     fi
     if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then
-        echo -e "${YELLOW}Z.AI API ключ не задан. Задайте ZAI_API_KEY.${RESET}" >&2
-        return 1
+        printf "${YELLOW}Z.AI API ключ не задан.${RESET}\n" >&3
+        printf "${CYAN}Получить ключ: https://console.z.ai/${RESET}\n" >&3
+        local input
+        input=$(read_secret_text "Z.AI API key: ")
+        if [ -n "$input" ]; then
+            set_provider_api_key "ZAI" "$input"
+            echo "$input"
+        else
+            return 1
+        fi
+    else
+        echo "$key"
     fi
-    echo "$key"
 }
 
 get_claude_nim_api_key() {
     local key="${NVIDIA_NIM_API_KEY:-}"
     if [ -z "$key" ]; then
-        echo -e "${YELLOW}NVIDIA NIM API ключ не задан.${RESET}"
-        echo -e "${CYAN}Получить ключ: https://build.nvidia.com/api-key${RESET}"
-    fi
-
-    if [ -z "$key" ]; then
-        read_secret_text "NVIDIA NIM API key: "
+        printf "${YELLOW}NVIDIA NIM API ключ не задан.${RESET}\n" >&3
+        printf "${CYAN}Получить ключ: https://build.nvidia.com/api-key${RESET}\n" >&3
+        local input
+        input=$(read_secret_text "NVIDIA NIM API key: ")
+        if [ -n "$input" ]; then
+            set_provider_api_key "NVIDIA_NIM" "$input"
+            echo "$input"
+        else
+            return 1
+        fi
     else
         echo "$key"
     fi
@@ -289,12 +251,16 @@ get_claude_nim_api_key() {
 get_claude_openrouter_api_key() {
     local key="${OPENROUTER_API_KEY:-}"
     if [ -z "$key" ]; then
-        echo -e "${YELLOW}OpenRouter API ключ не задан.${RESET}"
-        echo -e "${CYAN}Получить ключ: https://openrouter.ai/settings/keys${RESET}"
-    fi
-
-    if [ -z "$key" ]; then
-        read_secret_text "OpenRouter API key: "
+        printf "${YELLOW}OpenRouter API ключ не задан.${RESET}\n" >&3
+        printf "${CYAN}Получить ключ: https://openrouter.ai/settings/keys${RESET}\n" >&3
+        local input
+        input=$(read_secret_text "OpenRouter API key: ")
+        if [ -n "$input" ]; then
+            set_provider_api_key "OPENROUTER" "$input"
+            echo "$input"
+        else
+            return 1
+        fi
     else
         echo "$key"
     fi
