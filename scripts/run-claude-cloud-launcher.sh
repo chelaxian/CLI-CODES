@@ -102,10 +102,19 @@ ensure_fcc_proxy() {
     local model="$2"
     local port="${3:-8082}"
 
-    # Check if proxy already running on this port
-    if ss -tlnp 2>/dev/null | grep -q ":${port} " || nc -z 127.0.0.1 "$port" 2>/dev/null; then
-        echo "$port"
-        return 0
+    # Check if proxy already running on this port AND responding to HTTP
+    if (ss -tlnp 2>/dev/null | grep -q ":${port} " || nc -z 127.0.0.1 "$port" 2>/dev/null); then
+        local existing_code
+        existing_code=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:${port}/v1/models" 2>/dev/null) || true
+        if [ -n "$existing_code" ] && [ "$existing_code" != "000" ]; then
+            printf "${GREEN}  [OK] Proxy уже работает на порту ${port} (HTTP ${existing_code})${RESET}\n" >&3
+            echo "$port"
+            return 0
+        fi
+        # Port is open but not HTTP — kill whatever is on it and restart
+        printf "${YELLOW}Порт ${port} занят, но не отвечает на HTTP. Перезапуск...${RESET}\n" >&3
+        fuser -k "${port}/tcp" 2>/dev/null || true
+        sleep 1
     fi
 
     # Install uv if missing
@@ -155,21 +164,46 @@ ENVEOF
     local log_file="$FCC_DIR/fcc-${port}.log"
     printf "${CYAN}Запуск free-claude-code proxy на порту ${port}...${RESET}\n" >&3
     printf "${GRAY}Логи: ${log_file}${RESET}\n" >&3
-    (cd "$FCC_DIR" && uv run uvicorn server:app --host 127.0.0.1 --port "$port" --log-level warning >>"$log_file" 2>&1 &)
 
-    # Wait for proxy to become ready
+    # Use nohup + disown so the process survives shell exits
+    nohup sh -c "cd '$FCC_DIR' && uv run uvicorn server:app --host 127.0.0.1 --port '$port' --log-level warning" >>"$log_file" 2>&1 &
+    local proxy_pid=$!
+    disown "$proxy_pid" 2>/dev/null || true
+
+    # Wait for proxy TCP port to become available
     local tries=0
     while [ $tries -lt 30 ]; do
         if nc -z 127.0.0.1 "$port" 2>/dev/null; then
-            printf "${GREEN}  [OK] Proxy запущен на порту ${port}${RESET}\n" >&3
-            echo "$port"
-            return 0
+            break
         fi
         sleep 1
         tries=$((tries + 1))
     done
 
-    printf "${RED}Proxy не запустился за 30 сек.${RESET}\n" >&3
+    if [ $tries -ge 30 ]; then
+        printf "${RED}Proxy не запустился за 30 сек (TCP порт не открыт).${RESET}\n" >&3
+        printf "${YELLOW}Последние строки лога:${RESET}\n" >&3
+        tail -20 "$log_file" >&3 2>/dev/null || true
+        return 1
+    fi
+
+    # Verify HTTP is actually responding (not just port open)
+    local http_tries=0
+    while [ $http_tries -lt 15 ]; do
+        local http_code
+        http_code=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:${port}/v1/models" 2>/dev/null) || true
+        if [ -n "$http_code" ] && [ "$http_code" != "000" ]; then
+            printf "${GREEN}  [OK] Proxy запущен на порту ${port} (HTTP ${http_code})${RESET}\n" >&3
+            echo "$port"
+            return 0
+        fi
+        sleep 1
+        http_tries=$((http_tries + 1))
+    done
+
+    printf "${RED}Proxy TCP порт открыт, но HTTP не отвечает за 15 сек.${RESET}\n" >&3
+    printf "${YELLOW}Последние строки лога:${RESET}\n" >&3
+    tail -20 "$log_file" >&3 2>/dev/null || true
     return 1
 }
 
@@ -250,6 +284,14 @@ invoke_claude_cloud_profile() {
                 printf "${RED}Не удалось запустить free-claude-code proxy.${RESET}\n" >&3
                 return 1
             }
+            # Final HTTP sanity check before launching Claude Code
+            local precheck_code
+            precheck_code=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:${proxy_port}/v1/models" 2>/dev/null) || true
+            if [ -z "$precheck_code" ] || [ "$precheck_code" = "000" ]; then
+                printf "${RED}Proxy на порту ${proxy_port} не отвечает на HTTP-запросы.${RESET}\n" >&3
+                printf "${YELLOW}Логи: $FCC_DIR/fcc-${proxy_port}.log${RESET}\n" >&3
+                return 1
+            fi
             export ANTHROPIC_AUTH_TOKEN="freecc"
             export ANTHROPIC_BASE_URL="http://127.0.0.1:${proxy_port}"
             export ANTHROPIC_DEFAULT_OPUS_MODEL="$fcc_model"
@@ -275,6 +317,14 @@ invoke_claude_cloud_profile() {
                 printf "${RED}Не удалось запустить free-claude-code proxy.${RESET}\n" >&3
                 return 1
             }
+            # Final HTTP sanity check before launching Claude Code
+            local precheck_code
+            precheck_code=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:${proxy_port}/v1/models" 2>/dev/null) || true
+            if [ -z "$precheck_code" ] || [ "$precheck_code" = "000" ]; then
+                printf "${RED}Proxy на порту ${proxy_port} не отвечает на HTTP-запросы.${RESET}\n" >&3
+                printf "${YELLOW}Логи: $FCC_DIR/fcc-${proxy_port}.log${RESET}\n" >&3
+                return 1
+            fi
             export ANTHROPIC_AUTH_TOKEN="freecc"
             export ANTHROPIC_BASE_URL="http://127.0.0.1:${proxy_port}"
             export ANTHROPIC_DEFAULT_OPUS_MODEL="$fcc_model"

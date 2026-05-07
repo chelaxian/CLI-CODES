@@ -221,13 +221,15 @@ function Ensure-ClaudeMemWorker {
     Write-Host ("Предупреждение: не удалось стартовать claude-mem: {0}" -f $_.Exception.Message) -ForegroundColor DarkYellow
   }
 
-  $waitSec = [Math]::Max(5, $ClaudeMemMaxWaitSec)
-  $deadline = (Get-Date).AddSeconds($waitSec)
+  # Non-blocking: wait only 5 seconds max, then continue regardless.
+  # Claude Code works fine without claude-mem; it will connect once the worker finishes starting.
+  $quickWaitSec = 5
+  $deadline = (Get-Date).AddSeconds($quickWaitSec)
   while ((Get-Date) -lt $deadline) {
     if (Test-ClaudeMemWorkerUp) { return }
     Start-Sleep -Milliseconds 400
   }
-  Write-Host ("Предупреждение: claude-mem (127.0.0.1:37777) не готов за {0} с. Смотрите логи: {1} и {2}" -f $waitSec, $outLog, $errLog) -ForegroundColor DarkYellow
+  Write-Host ("Предупреждение: claude-mem (127.0.0.1:37777) ещё не готов через {0} с — запуск в фоне, продолжаем." -f $quickWaitSec) -ForegroundColor DarkYellow
 }
 
 function Read-SecretText([string]$Prompt) {

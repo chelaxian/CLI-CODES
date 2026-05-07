@@ -284,6 +284,8 @@ if ($installChoice -eq "6") {
     Write-Host "  - Repository: $InstallDir" -ForegroundColor Red
     Write-Host "  - Session directories (qwen/claude/opencode-sessions)" -ForegroundColor Red
     Write-Host "  - CLI configs (~/.claude, ~/.qwen)" -ForegroundColor Red
+    Write-Host "  - claude-mem (данные и npm пакет)" -ForegroundColor Red
+    Write-Host "  - Obsidian (если установлен через winget)" -ForegroundColor Red
     Write-Host "  - API keys (user environment variables)" -ForegroundColor Red
     Write-Host "  - Desktop shortcuts (.cmd, .lnk)" -ForegroundColor Red
     Write-Host "  - Global npm packages (qwen-code, claude-code, opencode-ai)" -ForegroundColor Red
@@ -324,7 +326,7 @@ if ($installChoice -eq "6") {
     Write-Status "Удаляю ярлыки на рабочем столе..." "Cyan"
     $desktop = [Environment]::GetFolderPath("Desktop")
     if (-not $desktop) { $desktop = Join-Path $env:USERPROFILE "Desktop" }
-    foreach ($name in @("Qwen Code (cloud)", "Claude Code (cloud)", "OpenCode (cloud)")) {
+    foreach ($name in @("Qwen Code (cloud)", "Claude Code (cloud)", "OpenCode (cloud)", "Claude Mem Start", "Claude Mem Viewer", "Claude Mem Clear", "Obsidian")) {
         foreach ($ext in @(".cmd", ".lnk")) {
             $f = Join-Path $desktop "$name$ext"
             if (Test-Path -LiteralPath $f) {
@@ -334,13 +336,32 @@ if ($installChoice -eq "6") {
         }
     }
 
+    Write-Status "Удаление данных claude-mem..." "Cyan"
+    $claudeMemDir = Join-Path $env:USERPROFILE ".claude-mem"
+    if (Test-Path -LiteralPath $claudeMemDir) {
+        Remove-Item -LiteralPath $claudeMemDir -Recurse -Force -ErrorAction SilentlyContinue
+        Write-Status "  [OK] Removed: $claudeMemDir" "Green"
+    } else {
+        Write-Status "  [SKIP] $claudeMemDir not found" "Yellow"
+    }
+
     Write-Status "Удаление глобальных npm пакетов..." "Cyan"
     $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
-    foreach ($pkg in @("@qwen-code/qwen-code", "@anthropic-ai/qwen-code", "@anthropic-ai/claude-code", "opencode-ai")) {
+    foreach ($pkg in @("@qwen-code/qwen-code", "@anthropic-ai/qwen-code", "@anthropic-ai/claude-code", "opencode-ai", "claude-mem")) {
         & npm.cmd uninstall -g $pkg 2>$null
         Write-Status "  [OK] Uninstalled: $pkg" "Green"
     }
     $ErrorActionPreference = $prevEAP
+
+    Write-Status "Удаление Obsidian..." "Cyan"
+    if (Get-Command winget -ErrorAction SilentlyContinue) {
+        $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+        & winget uninstall -e --id Obsidian.Obsidian 2>$null
+        $ErrorActionPreference = $prevEAP
+        Write-Status "  [OK] Obsidian uninstall requested" "Green"
+    } else {
+        Write-Status "  [SKIP] winget не найден, Obsidian не удалён" "Yellow"
+    }
 
     Write-Host ""
     Write-Status "======================================================================" "Green"
@@ -568,10 +589,12 @@ function New-LauncherShortcut {
 
     $lnkPath = Join-Path $desktop "$Name.lnk"
     try {
+        $cmdExe = (Get-Command cmd.exe -ErrorAction SilentlyContinue).Source
+        if (-not $cmdExe) { $cmdExe = "$env:SystemRoot\System32\cmd.exe" }
         $shell = New-Object -ComObject WScript.Shell -ErrorAction Stop
         $lnk = $shell.CreateShortcut($lnkPath)
-        $lnk.TargetPath = $psExe
-        $lnk.Arguments = "-NoProfile -ExecutionPolicy Bypass -Command `"chcp 65001 | Out-Null; & '$launcher'`""
+        $lnk.TargetPath = $cmdExe
+        $lnk.Arguments = "/k chcp 65001 >nul & `"$psExe`" -NoProfile -ExecutionPolicy Bypass -File `"$launcher`""
         $lnk.WorkingDirectory = $InstallDir
         $lnk.WindowStyle = 1
         $lnk.Save()

@@ -63,13 +63,6 @@ if (-not (Test-Path -LiteralPath $SessionScript)) {
   throw "Не найден скрипт: $SessionScript"
 }
 
-Write-Host "Claude (облако): общая подготовка (claude-mem, Obsidian, настройки)…" -ForegroundColor DarkCyan
-& $SessionScript -PrepareOnly `
-  -VaultPath $VaultPath `
-  -ObsidianExe $ObsidianExe `
-  -OpenClaudeMemObserver 1 `
-  -ClaudeMemMaxWaitSec 60
-
 $script:Profiles = @(
   @{
     Id    = "last"
