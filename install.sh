@@ -100,6 +100,7 @@ echo -e "  ${GREEN}[1]${RESET} Qwen Code (cloud)"
 echo -e "  ${GREEN}[2]${RESET} Claude Code (cloud)"
 echo -e "  ${GREEN}[3]${RESET} OpenCode (cloud)"
 echo -e "  ${GREEN}[4]${RESET} Все три"
+echo -e "  ${RED}[5]${RESET} Полное удаление (uninstall)"
 echo -e "  ${GRAY}[0]${RESET} Выход"
 echo ""
 
@@ -109,15 +110,113 @@ install_choice="${install_choice:-4}"
 INSTALL_QWEN=false
 INSTALL_CLAUDE=false
 INSTALL_OPENCODE=false
+DO_UNINSTALL=false
 
 case "$install_choice" in
     1) INSTALL_QWEN=true ;;
     2) INSTALL_CLAUDE=true ;;
     3) INSTALL_OPENCODE=true ;;
     4) INSTALL_QWEN=true; INSTALL_CLAUDE=true; INSTALL_OPENCODE=true ;;
+    5) DO_UNINSTALL=true ;;
     0) echo -e "${YELLOW}Выход.${RESET}"; exit 0 ;;
     *) warn "Неверный выбор. Устанавливаем все три."; INSTALL_QWEN=true; INSTALL_CLAUDE=true; INSTALL_OPENCODE=true ;;
 esac
+
+# --- Uninstall ---
+if $DO_UNINSTALL; then
+    step "ПОЛНОЕ УДАЛЕНИЕ"
+
+    echo -e "${RED}ВНИМАНИЕ: Это действие удалит:${RESET}"
+    echo -e "${RED}  - Репозиторий $INSTALL_DIR${RESET}"
+    echo -e "${RED}  - Все сессии (qwen/claude/opencode-sessions)${RESET}"
+    echo -e "${RED}  - Конфиги CLI (~/.claude, ~/.qwen)${RESET}"
+    echo -e "${RED}  - API ключи из ~/.bashrc и ~/.zshrc${RESET}"
+    echo -e "${RED}  - Лаунчеры ~/qwen-code-cloud.sh, ~/claude-code-cloud.sh, ~/opencode-cloud.sh${RESET}"
+    echo -e "${RED}  - Desktop ярлыки (.desktop)${RESET}"
+    echo -e "${RED}  - Глобальные npm пакеты (qwen-code, claude-code, opencode-ai)${RESET}"
+    echo ""
+    echo -e "${YELLOW}Введите 'yes' для подтверждения удаления: ${RESET}"
+    read -r confirm
+    if [ "$confirm" != "yes" ]; then
+        echo -e "${YELLOW}Отмена удаления.${RESET}"
+        read -p "Нажмите Enter для выхода..."
+        exit 0
+    fi
+
+    echo ""
+    echo -e "${CYAN}Удаление репозитория...${RESET}"
+    if [ -d "$INSTALL_DIR" ]; then
+        rm -rf "$INSTALL_DIR"
+        ok "Удалён: $INSTALL_DIR"
+    else
+        skip "$INSTALL_DIR не найден"
+    fi
+
+    echo -e "${CYAN}Удаление сессий...${RESET}"
+    for sdir in "$HOME/qwen-sessions" "$HOME/claude-sessions" "$HOME/opencode-sessions"; do
+        if [ -d "$sdir" ]; then
+            rm -rf "$sdir"
+            ok "Удалён: $sdir"
+        fi
+    done
+
+    echo -e "${CYAN}Удаление конфигов CLI...${RESET}"
+    for cfg in "$HOME/.claude" "$HOME/.qwen" "$HOME/.opencode"; do
+        if [ -d "$cfg" ]; then
+            rm -rf "$cfg"
+            ok "Удалён: $cfg"
+        fi
+    done
+
+    echo -e "${CYAN}Удаление API ключей из ~/.bashrc и ~/.zshrc...${RESET}"
+    for rc in "$HOME/.bashrc" "$HOME/.zshrc"; do
+        if [ -f "$rc" ]; then
+            for var in NVIDIA_NIM_API_KEY ZAI_API_KEY OPENAI_API_KEY GROQ_API_KEY OPENROUTER_API_KEY; do
+                sed -i "/^export ${var}=/d" "$rc"
+            done
+            ok "Очищен: $rc"
+        fi
+    done
+
+    echo -e "${CYAN}Удаление лаунчеров...${RESET}"
+    for launcher in "$HOME/qwen-code-cloud.sh" "$HOME/claude-code-cloud.sh" "$HOME/opencode-cloud.sh"; do
+        if [ -f "$launcher" ]; then
+            rm -f "$launcher"
+            ok "Удалён: $launcher"
+        fi
+    done
+
+    echo -e "${CYAN}Удаление desktop ярлыков...${RESET}"
+    for d in "$HOME/Desktop" "$HOME/Рабочий стол"; do
+        if [ -d "$d" ]; then
+            for f in "$d/Qwen Code (cloud).desktop" "$d/Claude Code (cloud).desktop" "$d/OpenCode (cloud).desktop"; do
+                if [ -f "$f" ]; then
+                    rm -f "$f"
+                    ok "Удалён: $f"
+                fi
+            done
+        fi
+    done
+
+    echo -e "${CYAN}Удаление глобальных npm пакетов...${RESET}"
+    for pkg in @qwen-code/qwen-code @anthropic-ai/qwen-code @anthropic-ai/claude-code opencode-ai; do
+        if npm ls -g "$pkg" &>/dev/null; then
+            npm uninstall -g "$pkg" 2>/dev/null && ok "Удалён npm: $pkg" || warn "Не удалось удалить: $pkg"
+        else
+            skip "npm $pkg не установлен"
+        fi
+    done
+
+    echo ""
+    echo -e "${GREEN}════════════════════════════════════════════════════════════════════════════════${RESET}"
+    echo -e "${GREEN}  ПОЛНОЕ УДАЛЕНИЕ ЗАВЕРШЕНО!${RESET}"
+    echo -e "${GREEN}════════════════════════════════════════════════════════════════════════════════${RESET}"
+    echo ""
+    echo -e "${YELLOW}Перезапустите терминал для очистки переменных окружения.${RESET}"
+    echo ""
+    read -p "Нажмите Enter для выхода..."
+    exit 0
+fi
 
 # ─── Установка CLI ───────────────────────────────────────────────────────────
 

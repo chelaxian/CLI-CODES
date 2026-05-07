@@ -129,12 +129,93 @@ Write-Status "  [1] Qwen Code (cloud)" "Green"
 Write-Status "  [2] Claude Code (cloud)" "Green"
 Write-Status "  [3] OpenCode (cloud)" "Green"
 Write-Status "  [4] All three" "Green"
+Write-Status "  [5] Full uninstall (remove everything)" "Red"
 Write-Status "  [0] Exit" "Gray"
 Write-Host ""
 
 $installChoice = Read-Host "Your choice [4]"
 
 if ([string]::IsNullOrWhiteSpace($installChoice)) { $installChoice = "4" }
+
+# --- Uninstall ---
+if ($installChoice -eq "5") {
+    Write-Host ""
+    Write-Status "======================================================================" "Red"
+    Write-Status "FULL UNINSTALL" "Red"
+    Write-Status "======================================================================" "Red"
+    Write-Host ""
+    Write-Host "WARNING: This will remove:" -ForegroundColor Red
+    Write-Host "  - Repository: $InstallDir" -ForegroundColor Red
+    Write-Host "  - Session directories (qwen/claude/opencode-sessions)" -ForegroundColor Red
+    Write-Host "  - CLI configs (~/.claude, ~/.qwen)" -ForegroundColor Red
+    Write-Host "  - API keys (user environment variables)" -ForegroundColor Red
+    Write-Host "  - Desktop shortcuts (.cmd, .lnk)" -ForegroundColor Red
+    Write-Host "  - Global npm packages (qwen-code, claude-code, opencode-ai)" -ForegroundColor Red
+    Write-Host ""
+    $confirm = Read-Host "Type 'yes' to confirm uninstall"
+    if ($confirm -ne "yes") {
+        Write-Status "Uninstall cancelled." "Yellow"
+        Read-Host "Press Enter to exit"
+        return
+    }
+
+    Write-Host ""
+    Write-Status "Removing repository..." "Cyan"
+    if (Test-Path -LiteralPath $InstallDir) {
+        Remove-Item -LiteralPath $InstallDir -Recurse -Force -ErrorAction SilentlyContinue
+        Write-Status "  [OK] Removed: $InstallDir" "Green"
+    } else {
+        Write-Status "  [SKIP] $InstallDir not found" "Yellow"
+    }
+
+    Write-Status "Removing CLI configs..." "Cyan"
+    foreach ($cfg in @("$env:USERPROFILE\.claude", "$env:USERPROFILE\.qwen", "$env:USERPROFILE\.opencode")) {
+        if (Test-Path -LiteralPath $cfg) {
+            Remove-Item -LiteralPath $cfg -Recurse -Force -ErrorAction SilentlyContinue
+            Write-Status "  [OK] Removed: $cfg" "Green"
+        }
+    }
+
+    Write-Status "Removing API keys from user environment..." "Cyan"
+    foreach ($var in @("NVIDIA_NIM_API_KEY", "ZAI_API_KEY", "OPENAI_API_KEY", "GROQ_API_KEY", "OPENROUTER_API_KEY")) {
+        $existing = [Environment]::GetEnvironmentVariable($var, "User")
+        if ($existing) {
+            [Environment]::SetEnvironmentVariable($var, $null, "User")
+            Write-Status "  [OK] Removed: $var" "Green"
+        }
+    }
+
+    Write-Status "Removing desktop shortcuts..." "Cyan"
+    $desktop = [Environment]::GetFolderPath("Desktop")
+    if (-not $desktop) { $desktop = Join-Path $env:USERPROFILE "Desktop" }
+    foreach ($name in @("Qwen Code (cloud)", "Claude Code (cloud)", "OpenCode (cloud)")) {
+        foreach ($ext in @(".cmd", ".lnk")) {
+            $f = Join-Path $desktop "$name$ext"
+            if (Test-Path -LiteralPath $f) {
+                Remove-Item -LiteralPath $f -Force -ErrorAction SilentlyContinue
+                Write-Status "  [OK] Removed: $f" "Green"
+            }
+        }
+    }
+
+    Write-Status "Uninstalling global npm packages..." "Cyan"
+    $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+    foreach ($pkg in @("@qwen-code/qwen-code", "@anthropic-ai/qwen-code", "@anthropic-ai/claude-code", "opencode-ai")) {
+        & npm.cmd uninstall -g $pkg 2>$null
+        Write-Status "  [OK] Uninstalled: $pkg" "Green"
+    }
+    $ErrorActionPreference = $prevEAP
+
+    Write-Host ""
+    Write-Status "======================================================================" "Green"
+    Write-Status "UNINSTALL COMPLETE!" "Green"
+    Write-Status "======================================================================" "Green"
+    Write-Host ""
+    Write-Status "Restart your terminal to clear environment variables." "Yellow"
+    Write-Host ""
+    Read-Host "Press Enter to exit"
+    return
+}
 
 $installQwen = $false
 $installClaude = $false
