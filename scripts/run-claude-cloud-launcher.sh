@@ -7,6 +7,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STATE_FILE="$SCRIPT_DIR/claude-cloud-launcher-state.json"
 SESSION_SCRIPT="$SCRIPT_DIR/run-claude-cloud-session.sh"
 
+# Единое пространство для /resume (как у Qwen): общий каталог для запуска claude
+CLAUDE_SESSION_ROOT="${CLAUDE_SESSION_ROOT:-$SCRIPT_DIR/../claude-sessions/_shared}"
+
 # Настройки (можно изменить под свои пути)
 VAULT_PATH="${CLAUDE_VAULT_PATH:-$HOME/Documents/Obsidian\ Vault}"
 OBSIDIAN_EXE="${OBSIDIAN_EXE:-/usr/bin/obsidian}"
@@ -14,6 +17,11 @@ OBSIDIAN_EXE="${OBSIDIAN_EXE:-/usr/bin/obsidian}"
 # Загрузка модулей
 . "$SCRIPT_DIR/launcher-tui.sh"
 . "$SCRIPT_DIR/launcher-api-keys.sh"
+
+enter_claude_shared_dir() {
+    mkdir -p "$CLAUDE_SESSION_ROOT"
+    cd "$CLAUDE_SESSION_ROOT"
+}
 
 PROFILES=(
     "last|Запустить с последними настройками (быстрый старт)"
@@ -295,10 +303,10 @@ invoke_claude_custom_model_wizard() {
             prov_menu+=("$label")
         done
 
-        show_tui_framed_menu "$app_brand" "Другая модель" "Шаг 1 из 2 - выберите провайдера" "${prov_menu[@]}"
-        local prov_choice=$?
+        local prov_choice
+        prov_choice="$(show_tui_framed_menu "$app_brand" "Другая модель" "Шаг 1 из 2 - выберите провайдера" "${prov_menu[@]}")"
 
-        if [ $prov_choice -eq 0 ]; then
+        if [ "${prov_choice:-0}" -eq 0 ]; then
             return 1
         fi
 
@@ -360,10 +368,10 @@ invoke_claude_custom_model_wizard() {
             model_menu+=("$id")
         done
 
-        show_tui_framed_menu "$app_brand" "Другая модель" "Шаг 2 из 2 - моделей: ${#ids[@]}" "${model_menu[@]}"
-        local model_choice=$?
+        local model_choice
+        model_choice="$(show_tui_framed_menu "$app_brand" "Другая модель" "Шаг 2 из 2 - моделей: ${#ids[@]}" "${model_menu[@]}")"
 
-        if [ $model_choice -eq 0 ]; then
+        if [ "${model_choice:-0}" -eq 0 ]; then
             continue
         fi
 
@@ -409,10 +417,10 @@ while true; do
         menu_items+=("$label")
     done
     
-    show_tui_framed_menu "Claude" "Claude Code (облако) - провайдер" "Z.AI Anthropic · NVIDIA NIM через free-claude-code" "${menu_items[@]}"
-    local choice=$?
+    local choice
+    choice="$(show_tui_framed_menu "Claude" "Claude Code (облако) - провайдер" "Z.AI Anthropic · NVIDIA NIM через free-claude-code" "${menu_items[@]}")"
     
-    if [ $choice -eq 0 ]; then
+    if [ "${choice:-0}" -eq 0 ]; then
         echo -e "${YELLOW}Отменено.${RESET}"
         exit 0
     fi
@@ -433,10 +441,10 @@ while true; do
                 login_menu+=("${item##*|}")
             done
 
-            show_tui_framed_menu "Claude" "Нативный логин Claude Code" "Anthropic авторизация" "${login_menu[@]}"
-            local login_choice=$?
+            local login_choice
+            login_choice="$(show_tui_framed_menu "Claude" "Нативный логин Claude Code" "Anthropic авторизация" "${login_menu[@]}")"
 
-            if [ $login_choice -eq 0 ]; then
+            if [ "${login_choice:-0}" -eq 0 ]; then
                 continue
             fi
 
@@ -453,6 +461,7 @@ while true; do
                     echo -e "${YELLOW}  Нужна подписка Claude Pro / Max (claude.ai).${RESET}"
                     echo ""
                     echo -e "${CYAN}  Запуск...${RESET}"
+                    enter_claude_shared_dir
                     claude auth login --claudeai
                     echo ""
                     echo -e "${GREEN}  Текущий статус:${RESET}"
@@ -471,6 +480,7 @@ while true; do
                     echo -e "${YELLOW}  Нужен аккаунт на console.anthropic.com.${RESET}"
                     echo ""
                     echo -e "${CYAN}  Запуск...${RESET}"
+                    enter_claude_shared_dir
                     claude auth login --console
                     echo ""
                     echo -e "${GREEN}  Текущий статус:${RESET}"
@@ -487,6 +497,7 @@ while true; do
                     echo ""
                     echo -e "${YELLOW}  Команда: claude${RESET}"
                     echo ""
+                    enter_claude_shared_dir
                     claude
                     echo ""
                     echo -e "${GREEN}Нажмите Enter для возврата в меню…${RESET}"

@@ -292,6 +292,22 @@ if ($installQwen) {
     Write-Host ""
 }
 
+# ─── Единое пространство Claude Code / OpenCode ───────────────────────────────
+Write-Status "════════════════════════════════════════════════════════════════════════════════" "Cyan"
+Write-Status "НАСТРОЙКА СЕССИЙ CLAUDE CODE / OPENCODE" "Magenta"
+Write-Status "════════════════════════════════════════════════════════════════════════════════" "Cyan"
+Write-Host ""
+
+$claudeShared = Join-Path $InstallDir "claude-sessions\_shared"
+if (-not (Test-Path -LiteralPath $claudeShared)) { New-Item -ItemType Directory -Path $claudeShared -Force | Out-Null }
+Write-Status "  [OK] claude-sessions/_shared/ — единое пространство /resume" "Green"
+
+$ocShared = Join-Path $InstallDir "opencode-sessions\_shared"
+if (-not (Test-Path -LiteralPath $ocShared)) { New-Item -ItemType Directory -Path $ocShared -Force | Out-Null }
+Write-Status "  [OK] opencode-sessions/_shared/ — единое пространство /resume" "Green"
+
+Write-Host ""
+
 # ─── Создание ярлыков ────────────────────────────────────────────────────────
 
 Write-Status "════════════════════════════════════════════════════════════════════════════════" "Cyan"

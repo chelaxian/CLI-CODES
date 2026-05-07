@@ -148,7 +148,8 @@ draw_tui_banner_opencode() {
 
 # Main TUI menu with arrow-key navigation
 # Args: app_brand title subtitle item1 item2 item3 ...
-# Returns selected index (1-based) via $? or 0 for Esc/exit
+# Prints selected index (1-based) to stdout. Prints 0 for Esc/exit.
+# Always returns 0 (важно для скриптов с `set -e`).
 show_tui_framed_menu() {
     local app_brand="$1"
     local title="$2"
@@ -363,11 +364,13 @@ show_tui_framed_menu() {
             enter)
                 show_cursor
                 trap - EXIT
-                return $((idx + 1))
+                printf '%s\n' "$((idx + 1))"
+                return 0
                 ;;
             esc)
                 show_cursor
                 trap - EXIT
+                printf '0\n'
                 return 0
                 ;;
             num_*)
@@ -386,10 +389,12 @@ show_tui_framed_menu() {
                 if [[ "$typed" =~ ^[0-9]+$ ]] && [ "$typed" -ge 1 ] && [ "$typed" -le "$num_items" ]; then
                     show_cursor
                     trap - EXIT
-                    return "$typed"
+                    printf '%s\n' "$typed"
+                    return 0
                 elif [ "$typed" = "0" ]; then
                     show_cursor
                     trap - EXIT
+                    printf '0\n'
                     return 0
                 fi
                 # Invalid number, redraw

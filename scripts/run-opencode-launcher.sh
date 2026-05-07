@@ -5,7 +5,8 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STATE_FILE="$SCRIPT_DIR/opencode-launcher-state.json"
-CONFIG_DIR="$SCRIPT_DIR/opencode-sessions"
+# Единое пространство (как у Qwen /resume): общий рабочий каталог + единый config
+CONFIG_DIR="$SCRIPT_DIR/../opencode-sessions/_shared"
 
 # Загрузка модулей
 . "$SCRIPT_DIR/launcher-tui.sh"
@@ -429,10 +430,10 @@ invoke_custom_model_wizard() {
             prov_menu+=("$label")
         done
         
-        show_tui_framed_menu "$app_brand" "Другая модель" "Шаг 1 из 2 - выберите провайдера" "${prov_menu[@]}"
-        local prov_choice=$?
+        local prov_choice
+        prov_choice="$(show_tui_framed_menu "$app_brand" "Другая модель" "Шаг 1 из 2 - выберите провайдера" "${prov_menu[@]}")"
         
-        if [ $prov_choice -eq 0 ]; then
+        if [ "${prov_choice:-0}" -eq 0 ]; then
             return 1
         fi
         
@@ -508,10 +509,10 @@ invoke_custom_model_wizard() {
             model_menu+=("$id")
         done
         
-        show_tui_framed_menu "$app_brand" "Другая модель" "Шаг 2 из 2 - моделей: ${#ids[@]}" "${model_menu[@]}"
-        local model_choice=$?
+        local model_choice
+        model_choice="$(show_tui_framed_menu "$app_brand" "Другая модель" "Шаг 2 из 2 - моделей: ${#ids[@]}" "${model_menu[@]}")"
         
-        if [ $model_choice -eq 0 ]; then
+        if [ "${model_choice:-0}" -eq 0 ]; then
             continue
         fi
         
@@ -559,10 +560,10 @@ while true; do
         menu_items+=("$label")
     done
     
-    show_tui_framed_menu "OpenCode" "OpenCode - выбор провайдера" "Z.AI · NVIDIA NIM (OpenAI-compatible)" "${menu_items[@]}"
-    local choice=$?
+    local choice
+    choice="$(show_tui_framed_menu "OpenCode" "OpenCode - выбор провайдера" "Z.AI · NVIDIA NIM (OpenAI-compatible)" "${menu_items[@]}")"
     
-    if [ $choice -eq 0 ]; then
+    if [ "${choice:-0}" -eq 0 ]; then
         echo -e "${YELLOW}Отменено.${RESET}"
         exit 0
     fi
@@ -585,10 +586,10 @@ while true; do
                 login_menu+=("${item##*|}")
             done
 
-            show_tui_framed_menu "OpenCode" "Нативный логин OpenCode" "Выберите действие" "${login_menu[@]}"
-            local login_choice=$?
+            local login_choice
+            login_choice="$(show_tui_framed_menu "OpenCode" "Нативный логин OpenCode" "Выберите действие" "${login_menu[@]}")"
 
-            if [ $login_choice -eq 0 ]; then
+            if [ "${login_choice:-0}" -eq 0 ]; then
                 continue
             fi
 

@@ -233,6 +233,13 @@ if $INSTALL_QWEN; then
     SHARED_DIR="$INSTALL_DIR/qwen-sessions/_shared/.qwen"
     mkdir -p "$SHARED_DIR"
     ok "qwen-sessions/_shared/ — единое пространство /resume"
+
+# ─── Единое пространство Claude Code / OpenCode ───────────────────────────────
+step "НАСТРОЙКА СЕССИЙ CLAUDE CODE / OPENCODE"
+
+mkdir -p "$REPO_DIR/claude-sessions/_shared" "$REPO_DIR/opencode-sessions/_shared"
+ok "claude-sessions/_shared/ — единое пространство /resume (claude)"
+ok "opencode-sessions/_shared/ — единое пространство /resume (opencode)"
 fi
 
 # ─── Создание ярлыков ────────────────────────────────────────────────────────
