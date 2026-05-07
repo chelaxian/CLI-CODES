@@ -251,12 +251,15 @@ if $INSTALL_CLAUDE; then
         git clone https://github.com/Alishahryar1/free-claude-code.git "$FCC_DIR" 2>/dev/null
         if [ -d "$FCC_DIR" ]; then
             ok "free-claude-code: $FCC_DIR"
+            # Preinstall deps to avoid first-run hang
+            (cd "$FCC_DIR" && uv sync &>/dev/null) || warn "free-claude-code: не удалось прогреть зависимости (uv sync)"
         else
             warn "Не удалось клонировать free-claude-code. NIM/OpenRouter будут недоступны."
         fi
     else
         (cd "$FCC_DIR" && git pull origin main 2>/dev/null) || true
         ok "free-claude-code: обновлён"
+        (cd "$FCC_DIR" && uv sync &>/dev/null) || true
     fi
 fi
 

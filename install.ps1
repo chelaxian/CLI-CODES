@@ -1,6 +1,8 @@
 # cloud-code-setup - 1-click Windows installer
 # Usage (PowerShell 5.1+):
 #   [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; irm https://raw.githubusercontent.com/chelaxian/cloud-code-setup/main/install.ps1 | iex
+# If `irm` fails with "Базовое соединение закрыто", use the curl.exe fallback:
+#   curl.exe -fsSL https://raw.githubusercontent.com/chelaxian/cloud-code-setup/main/install.ps1 | powershell.exe -NoProfile -ExecutionPolicy Bypass -Command -
 
 try { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.ServicePointManager]::SecurityProtocol } catch {}
 

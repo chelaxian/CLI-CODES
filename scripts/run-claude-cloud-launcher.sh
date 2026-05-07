@@ -31,8 +31,6 @@ PROFILES=(
     "claude-zai-flash45|Z.AI - GLM-4.5-Flash (free, tool calling)"
     "claude-nim|NVIDIA NIM - GLM-4.7 (free, tool calling)"
     "claude-nim-qwen|NVIDIA NIM - Qwen3.5-122B-A10B (free, tool calling)"
-    "claude-openrouter-sonnet|OpenRouter - Claude Sonnet 4 (paid, tool calling)"
-    "claude-openrouter-gemma4|OpenRouter - Gemma 4 31B (free, tool calling)"
     "claude-openrouter-hy3|OpenRouter - Tencent Hy3 (free, tool calling)"
     "claude-openrouter-nemotron|OpenRouter - Nemotron 3 Super 120B (free, tool calling)"
     "claude-openrouter-laguna|OpenRouter - Poolside Laguna M.1 (free, tool calling, coding)"
@@ -69,7 +67,7 @@ resolve_profile_from_state() {
     local profile_id=$(echo "$state" | grep -o '"profileId":"[^"]*"' | cut -d'"' -f4)
 
     case "$profile_id" in
-        "claude-zai"|"claude-zai-glm51"|"claude-zai-flash47"|"claude-zai-flash45"|"claude-nim"|"claude-nim-qwen"|"claude-openrouter-sonnet"|"claude-openrouter-gemma4"|"claude-openrouter-hy3"|"claude-openrouter-nemotron"|"claude-openrouter-laguna"|"custom-claude-zai"|"custom-claude-zai-general"|"custom-claude-nim"|"custom-claude-openrouter")
+        "claude-zai"|"claude-zai-glm51"|"claude-zai-flash47"|"claude-zai-flash45"|"claude-nim"|"claude-nim-qwen"|"claude-openrouter-hy3"|"claude-openrouter-nemotron"|"claude-openrouter-laguna"|"custom-claude-zai"|"custom-claude-zai-general"|"custom-claude-nim"|"custom-claude-openrouter")
             echo "$profile_id"
             return 0
             ;;
@@ -150,9 +148,14 @@ MESSAGING_PLATFORM="none"
 ENABLE_WEB_SERVER_TOOLS=false
 ENVEOF
 
-    # Start proxy in background
+    # Warm deps once (prevents long first-run hang)
+    (cd "$FCC_DIR" && uv sync &>/dev/null) || true
+
+    # Start proxy in background (log to file for debugging)
+    local log_file="$FCC_DIR/fcc-${port}.log"
     printf "${CYAN}Запуск free-claude-code proxy на порту ${port}...${RESET}\n" >&3
-    (cd "$FCC_DIR" && uv run uvicorn server:app --host 127.0.0.1 --port "$port" &>/dev/null &)
+    printf "${GRAY}Логи: ${log_file}${RESET}\n" >&3
+    (cd "$FCC_DIR" && uv run uvicorn server:app --host 127.0.0.1 --port "$port" --log-level warning >>"$log_file" 2>&1 &)
 
     # Wait for proxy to become ready
     local tries=0
@@ -255,9 +258,9 @@ invoke_claude_cloud_profile() {
             export API_TIMEOUT_MS="3000000"
             ;;
         claude-openrouter*|custom-claude-openrouter*)
-            local fcc_model="open_router/anthropic/claude-sonnet-4-20250514"
+            # Keep main menu to 3 working free models; custom still supported.
+            local fcc_model="open_router/tencent/hy3-preview:free"
             case "$profile_id" in
-                "claude-openrouter-gemma4") fcc_model="open_router/google/gemma-4-31b:free" ;;
                 "claude-openrouter-hy3") fcc_model="open_router/tencent/hy3-preview:free" ;;
                 "claude-openrouter-nemotron") fcc_model="open_router/nvidia/nemotron-3-super-120b-a12b:free" ;;
                 "claude-openrouter-laguna") fcc_model="open_router/poolside/laguna-m.1:free" ;;
