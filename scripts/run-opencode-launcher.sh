@@ -245,7 +245,7 @@ invoke_opencode_profile() {
             local api_key
             api_key=$(get_zai_api_key) || true
             local config_path
-            config_path=$(write_opencode_config "zai" "glm-4.7" "https://api.z.ai/api/openai/v1" "$api_key")
+            config_path=$(write_opencode_config "zai" "glm-4.7" "https://api.z.ai/api/coding/paas/v4" "$api_key")
             export OPENCODE_CONFIG="$config_path"
             echo -e "${CYAN}Запуск OpenCode (Z.AI GLM-4.7)…${RESET}"
             "$opencode_exe"
@@ -254,7 +254,7 @@ invoke_opencode_profile() {
             local api_key
             api_key=$(get_zai_api_key) || true
             local config_path
-            config_path=$(write_opencode_config "zai" "glm-5.1" "https://api.z.ai/api/openai/v1" "$api_key")
+            config_path=$(write_opencode_config "zai" "glm-5.1" "https://api.z.ai/api/coding/paas/v4" "$api_key")
             export OPENCODE_CONFIG="$config_path"
             echo -e "${CYAN}Запуск OpenCode (Z.AI GLM-5.1)…${RESET}"
             "$opencode_exe"
@@ -263,7 +263,7 @@ invoke_opencode_profile() {
             local api_key
             api_key=$(get_zai_api_key) || true
             local config_path
-            config_path=$(write_opencode_config "zai" "glm-4.7-flash" "https://api.z.ai/api/openai/v1" "$api_key")
+            config_path=$(write_opencode_config "zai" "glm-4.7-flash" "https://api.z.ai/api/coding/paas/v4" "$api_key")
             export OPENCODE_CONFIG="$config_path"
             echo -e "${CYAN}Запуск OpenCode (Z.AI GLM-4.7-Flash)…${RESET}"
             "$opencode_exe"
@@ -272,7 +272,7 @@ invoke_opencode_profile() {
             local api_key
             api_key=$(get_zai_api_key) || true
             local config_path
-            config_path=$(write_opencode_config "zai" "glm-4.5-flash" "https://api.z.ai/api/openai/v1" "$api_key")
+            config_path=$(write_opencode_config "zai" "glm-4.5-flash" "https://api.z.ai/api/coding/paas/v4" "$api_key")
             export OPENCODE_CONFIG="$config_path"
             echo -e "${CYAN}Запуск OpenCode (Z.AI GLM-4.5-Flash)…${RESET}"
             "$opencode_exe"
@@ -364,7 +364,7 @@ invoke_opencode_profile() {
             local api_key
             api_key=$(get_zai_api_key) || true
             local config_path
-            config_path=$(write_opencode_config "zai" "$model_id" "https://api.z.ai/api/openai/v1" "$api_key")
+            config_path=$(write_opencode_config "zai" "$model_id" "https://api.z.ai/api/coding/paas/v4" "$api_key")
             export OPENCODE_CONFIG="$config_path"
             echo -e "${CYAN}Запуск OpenCode (Z.AI custom: $model_id)…${RESET}"
             "$opencode_exe"
@@ -401,7 +401,7 @@ invoke_opencode_profile() {
                 return 1
             fi
             local config_path
-            config_path=$(write_opencode_config "groq" "$model_id" "https://api.groq.com/openai/v1" "$api_key" 4096 8192)
+            config_path=$(write_opencode_config "groq" "$model_id" "https://api.groq.com/openai/v1" "$api_key" 8192 131072)
             export OPENCODE_CONFIG="$config_path"
             echo -e "${CYAN}Запуск OpenCode (Groq custom: $model_id)…${RESET}"
             "$opencode_exe"
@@ -438,7 +438,8 @@ invoke_custom_model_wizard() {
     local app_brand="$1"
     
     local prov_items=(
-        "zai|Z.AI - Coding / Anthropic (список моделей по вашему ключу)"
+        "zai|Z.AI - Coding endpoint (список моделей по вашему ключу)"
+        "zai-general|Z.AI - General endpoint (все модели, статический список)"
         "nim|NVIDIA NIM - полный каталог (GET /v1/models)"
         "groq|Groq - полный каталог моделей (GET /v1/models)"
         "groq-free|Groq - только бесплатные модели (статический список)"
@@ -483,6 +484,17 @@ invoke_custom_model_wizard() {
             if [ ${#ids[@]} -eq 0 ]; then
                 ids=("glm-4.7" "glm-4.7-flash" "glm-4.7-flashx" "glm-4.6" "glm-4.5" "glm-5" "glm-5-turbo" "glm-5.1")
             fi
+        elif [ "$prov_source" = "zai-general" ]; then
+            show_tui_wait_frame "$app_brand" "Z.AI General (статический список)…"
+            key=$(get_zai_api_key) || true
+            ids=(
+                "glm-4.7" "glm-4.7-flash" "glm-4.7-flashx"
+                "glm-4.6" "glm-4.6v" "glm-4.6v-flashx" "glm-4.6v-flash"
+                "glm-4.5" "glm-4.5-x" "glm-4.5-air" "glm-4.5-airx" "glm-4.5-flash" "glm-4.5v"
+                "glm-4-32b-0414-128k"
+                "glm-5" "glm-5-turbo" "glm-5.1" "glm-5v-turbo"
+                "glm-ocr"
+            )
         elif [ "$prov_source" = "nim" ]; then
             show_tui_wait_frame "$app_brand" "Загрузка каталога NVIDIA NIM…"
             key=$(get_nim_api_key) || { echo -e "${RED}Не удалось получить API ключ${RESET}"; read -p "Нажмите Enter..."; return 1; }
@@ -504,7 +516,8 @@ invoke_custom_model_wizard() {
                 ids=($(echo "$response" | grep -o '"id":"[^"]*"' | cut -d'"' -f4 | sort -u))
             fi
         elif [ "$prov_source" = "groq-free" ]; then
-            ids=( "llama-3.1-8b-instant" "llama-3.3-70b-versatile" "meta-llama/llama-4-scout-17b-16e-instruct" "openai/gpt-oss-120b" "openai/gpt-oss-20b" "qwen/qwen3-32b" "allam-2-7b" "deepseek-r1-distill-llama-70b" "deepseek-r1-distill-qwen-32b" "gemma2-9b-it" )
+            show_tui_wait_frame "$app_brand" "Groq free (статический список, 6K TPM / 30 RPM)…"
+            ids=( "llama-3.3-70b-versatile" "llama-3.1-8b-instant" "meta-llama/llama-4-scout-17b-16e-instruct" "qwen/qwen3-32b" "openai/gpt-oss-120b" "deepseek-r1-distill-llama-70b" "deepseek-r1-distill-qwen-32b" )
             key=$(get_groq_api_key) || true
         elif [ "$prov_source" = "openrouter" ]; then
             show_tui_wait_frame "$app_brand" "Загрузка каталога OpenRouter…"
@@ -541,7 +554,7 @@ invoke_custom_model_wizard() {
         
         local model_id="${ids[$((model_choice-1))]}"
         local prov="nim"
-        if [ "$prov_source" = "zai" ]; then
+        if [ "$prov_source" = "zai" ] || [ "$prov_source" = "zai-general" ]; then
             prov="zai"
         elif [ "$prov_source" = "groq" ] || [ "$prov_source" = "groq-free" ]; then
             prov="groq"

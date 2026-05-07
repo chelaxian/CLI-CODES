@@ -223,7 +223,8 @@ invoke_qwen_custom_model_wizard() {
                 ids=($(echo "$response" | grep -o '"id":"[^"]*"' | cut -d'"' -f4 | sort -u))
             fi
         elif [ "$prov_source" = "groq-free" ]; then
-            ids=( "llama-3.1-8b-instant" "llama-3.3-70b-versatile" "meta-llama/llama-4-scout-17b-16e-instruct" "openai/gpt-oss-120b" "openai/gpt-oss-20b" "qwen/qwen3-32b" "allam-2-7b" "deepseek-r1-distill-llama-70b" "deepseek-r1-distill-qwen-32b" "gemma2-9b-it" )
+            show_tui_wait_frame "$app_brand" "Groq free (статический список, 6K TPM / 30 RPM)…"
+            ids=( "llama-3.3-70b-versatile" "llama-3.1-8b-instant" "meta-llama/llama-4-scout-17b-16e-instruct" "qwen/qwen3-32b" "openai/gpt-oss-120b" "deepseek-r1-distill-llama-70b" "deepseek-r1-distill-qwen-32b" )
             key=$(get_qwen_groq_api_key) || true
         elif [ "$prov_source" = "openrouter" ]; then
             show_tui_wait_frame "$app_brand" "Загрузка каталога OpenRouter…"

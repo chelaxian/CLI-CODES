@@ -69,7 +69,7 @@ resolve_profile_from_state() {
     local profile_id=$(echo "$state" | grep -o '"profileId":"[^"]*"' | cut -d'"' -f4)
 
     case "$profile_id" in
-        "claude-zai"|"claude-zai-glm51"|"claude-zai-flash47"|"claude-zai-flash45"|"claude-nim"|"claude-nim-qwen"|"claude-openrouter-sonnet"|"claude-openrouter-qwen-coder"|"claude-openrouter-hy3"|"claude-openrouter-nemotron"|"claude-openrouter-laguna"|"custom-claude-zai"|"custom-claude-nim"|"custom-claude-openrouter")
+        "claude-zai"|"claude-zai-glm51"|"claude-zai-flash47"|"claude-zai-flash45"|"claude-nim"|"claude-nim-qwen"|"claude-openrouter-sonnet"|"claude-openrouter-qwen-coder"|"claude-openrouter-hy3"|"claude-openrouter-nemotron"|"claude-openrouter-laguna"|"custom-claude-zai"|"custom-claude-zai-general"|"custom-claude-nim"|"custom-claude-openrouter")
             echo "$profile_id"
             return 0
             ;;
@@ -96,6 +96,80 @@ resolve_api_key_or_prompt() {
     fi
 }
 
+# ── free-claude-code proxy for NIM/OpenRouter ──────────────────────────────────
+FCC_DIR="$HOME/.free-claude-code"
+
+ensure_fcc_proxy() {
+    local provider="$1"
+    local model="$2"
+    local port="${3:-8082}"
+
+    # Check if proxy already running on this port
+    if ss -tlnp 2>/dev/null | grep -q ":${port} " || nc -z 127.0.0.1 "$port" 2>/dev/null; then
+        echo "$port"
+        return 0
+    fi
+
+    # Install uv if missing
+    if ! command -v uv &>/dev/null; then
+        printf "${CYAN}Установка uv (Python package manager)...${RESET}\n" >&3
+        curl -LsSf https://astral.sh/uv/install.sh | sh 2>/dev/null || {
+            printf "${RED}Не удалось установить uv.${RESET}\n" >&3
+            return 1
+        }
+        export PATH="$HOME/.local/bin:$PATH"
+    fi
+
+    # Clone free-claude-code if missing
+    if [ ! -d "$FCC_DIR" ]; then
+        printf "${CYAN}Клонирование free-claude-code...${RESET}\n" >&3
+        git clone https://github.com/Alishahryar1/free-claude-code.git "$FCC_DIR" 2>/dev/null || {
+            printf "${RED}Не удалось клонировать free-claude-code.${RESET}\n" >&3
+            return 1
+        }
+    fi
+
+    # Update repo
+    (cd "$FCC_DIR" && git pull origin main 2>/dev/null) || true
+
+    # Write .env
+    local nim_key="${NVIDIA_NIM_API_KEY:-}"
+    local or_key="${OPENROUTER_API_KEY:-}"
+    local env_file="$FCC_DIR/.env"
+    cat > "$env_file" << ENVEOF
+NVIDIA_NIM_API_KEY="${nim_key}"
+OPENROUTER_API_KEY="${or_key}"
+MODEL="${model}"
+ANTHROPIC_AUTH_TOKEN="freecc"
+ENABLE_MODEL_THINKING=true
+PROVIDER_RATE_LIMIT=1
+PROVIDER_RATE_WINDOW=3
+PROVIDER_MAX_CONCURRENCY=5
+HTTP_READ_TIMEOUT=300
+MESSAGING_PLATFORM="none"
+ENABLE_WEB_SERVER_TOOLS=false
+ENVEOF
+
+    # Start proxy in background
+    printf "${CYAN}Запуск free-claude-code proxy на порту ${port}...${RESET}\n" >&3
+    (cd "$FCC_DIR" && uv run uvicorn server:app --host 127.0.0.1 --port "$port" &>/dev/null &)
+
+    # Wait for proxy to become ready
+    local tries=0
+    while [ $tries -lt 30 ]; do
+        if nc -z 127.0.0.1 "$port" 2>/dev/null; then
+            printf "${GREEN}  [OK] Proxy запущен на порту ${port}${RESET}\n" >&3
+            echo "$port"
+            return 0
+        fi
+        sleep 1
+        tries=$((tries + 1))
+    done
+
+    printf "${RED}Proxy не запустился за 30 сек.${RESET}\n" >&3
+    return 1
+}
+
 invoke_claude_cloud_profile() {
     local profile_id="$1"
     
@@ -105,6 +179,7 @@ invoke_claude_cloud_profile() {
     local provider_url=""
     case "$profile_id" in
         claude-zai*|custom-claude-zai*) env_var="ZAI"; provider_name="Z.AI"; provider_url="https://console.z.ai/" ;;
+        "custom-claude-zai-general") env_var="ZAI"; provider_name="Z.AI General"; provider_url="https://console.z.ai/" ;;
         claude-nim*|custom-claude-nim*) env_var="NVIDIA_NIM"; provider_name="NVIDIA NIM"; provider_url="https://build.nvidia.com/api-key" ;;
         claude-openrouter*|custom-claude-openrouter*) env_var="OPENROUTER"; provider_name="OpenRouter"; provider_url="https://openrouter.ai/settings/keys" ;;
     esac
@@ -124,19 +199,14 @@ invoke_claude_cloud_profile() {
         return 1
     fi
     
-    # Определяем модель и env vars
+    # Определяем модель для Z.AI (NIM/OpenRouter используют proxy — модель задаётся ниже)
     local model=""
     case "$profile_id" in
         "claude-zai") model="glm-4.7" ;;
         "claude-zai-glm51") model="glm-5.1" ;;
         "claude-zai-flash47") model="glm-4.7-flash" ;;
         "claude-zai-flash45") model="glm-4.5-flash" ;;
-        "claude-openrouter-sonnet") model="open_router/anthropic/claude-sonnet-4-20250514" ;;
-        "claude-openrouter-qwen-coder") model="open_router/qwen/qwen3-coder:free" ;;
-        "claude-openrouter-hy3") model="open_router/tencent/hy3-preview:free" ;;
-        "claude-openrouter-nemotron") model="open_router/nvidia/nemotron-3-super-120b-a12b:free" ;;
-        "claude-openrouter-laguna") model="open_router/poolside/laguna-m.1:free" ;;
-        "custom-claude-zai"|"custom-claude-openrouter"|"custom-claude-nim")
+        custom-claude-zai|"custom-claude-zai-general")
             local state=$(get_launcher_state)
             model=$(echo "$state" | grep -o '"customModelId":"[^"]*"' | cut -d'"' -f4)
             if [ -z "$model" ]; then
@@ -144,12 +214,15 @@ invoke_claude_cloud_profile() {
                 return 1
             fi
             ;;
+        claude-nim*|claude-openrouter*|custom-claude-nim|custom-claude-openrouter)
+            # Model determined in env-vars block below (via proxy)
+            ;;
         *) model="" ;;
     esac
     
     # Устанавливаем env vars для Claude Code
     case "$profile_id" in
-        claude-zai*|custom-claude-zai*)
+        claude-zai*|custom-claude-zai*|custom-claude-zai-general)
             local key="${ZAI_API_KEY:-}"
             if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then key="${OPENAI_API_KEY:-}"; fi
             export ANTHROPIC_AUTH_TOKEN="$key"
@@ -160,17 +233,50 @@ invoke_claude_cloud_profile() {
             export API_TIMEOUT_MS="3000000"
             ;;
         claude-nim*|custom-claude-nim*)
-            printf "${YELLOW}NVIDIA NIM для Claude Code на Linux требует free-claude-code proxy.${RESET}\n" >&3
-            printf "${YELLOW}Используется прямой запуск с ANTHROPIC_BASE_URL.${RESET}\n" >&3
-            local key="${NVIDIA_NIM_API_KEY:-}"
-            export ANTHROPIC_AUTH_TOKEN="$key"
-            export ANTHROPIC_BASE_URL="https://integrate.api.nvidia.com/v1"
+            local fcc_model="nvidia_nim/z-ai/glm4.7"
+            case "$profile_id" in
+                "claude-nim-qwen") fcc_model="nvidia_nim/qwen/qwen3.5-122b-a10b" ;;
+                "custom-claude-nim")
+                    local st=$(get_launcher_state)
+                    local cm=$(echo "$st" | grep -o '"customModelId":"[^"]*"' | cut -d'"' -f4)
+                    if [ -n "$cm" ]; then fcc_model="nvidia_nim/$cm"; fi
+                    ;;
+            esac
+            local proxy_port
+            proxy_port=$(ensure_fcc_proxy "nvidia_nim" "$fcc_model" "8082") || {
+                printf "${RED}Не удалось запустить free-claude-code proxy.${RESET}\n" >&3
+                return 1
+            }
+            export ANTHROPIC_AUTH_TOKEN="freecc"
+            export ANTHROPIC_BASE_URL="http://127.0.0.1:${proxy_port}"
+            export ANTHROPIC_DEFAULT_OPUS_MODEL="$fcc_model"
+            export ANTHROPIC_DEFAULT_SONNET_MODEL="$fcc_model"
+            export ANTHROPIC_DEFAULT_HAIKU_MODEL="$fcc_model"
             export API_TIMEOUT_MS="3000000"
             ;;
         claude-openrouter*|custom-claude-openrouter*)
-            local key="${OPENROUTER_API_KEY:-}"
-            export ANTHROPIC_AUTH_TOKEN="$key"
-            export ANTHROPIC_BASE_URL="https://openrouter.ai/api/v1"
+            local fcc_model="open_router/anthropic/claude-sonnet-4-20250514"
+            case "$profile_id" in
+                "claude-openrouter-qwen-coder") fcc_model="open_router/qwen/qwen3-coder:free" ;;
+                "claude-openrouter-hy3") fcc_model="open_router/tencent/hy3-preview:free" ;;
+                "claude-openrouter-nemotron") fcc_model="open_router/nvidia/nemotron-3-super-120b-a12b:free" ;;
+                "claude-openrouter-laguna") fcc_model="open_router/poolside/laguna-m.1:free" ;;
+                "custom-claude-openrouter")
+                    local st=$(get_launcher_state)
+                    local cm=$(echo "$st" | grep -o '"customModelId":"[^"]*"' | cut -d'"' -f4)
+                    if [ -n "$cm" ]; then fcc_model="open_router/$cm"; fi
+                    ;;
+            esac
+            local proxy_port
+            proxy_port=$(ensure_fcc_proxy "open_router" "$fcc_model" "8084") || {
+                printf "${RED}Не удалось запустить free-claude-code proxy.${RESET}\n" >&3
+                return 1
+            }
+            export ANTHROPIC_AUTH_TOKEN="freecc"
+            export ANTHROPIC_BASE_URL="http://127.0.0.1:${proxy_port}"
+            export ANTHROPIC_DEFAULT_OPUS_MODEL="$fcc_model"
+            export ANTHROPIC_DEFAULT_SONNET_MODEL="$fcc_model"
+            export ANTHROPIC_DEFAULT_HAIKU_MODEL="$fcc_model"
             export API_TIMEOUT_MS="3000000"
             ;;
     esac
@@ -271,7 +377,8 @@ invoke_claude_custom_model_wizard() {
     local app_brand="$1"
 
     local prov_items=(
-        "zai|Z.AI - Coding / Anthropic (список моделей по вашему ключу)"
+        "zai|Z.AI - Coding endpoint (список моделей по вашему ключу)"
+        "zai-general|Z.AI - General endpoint (все модели, статический список)"
         "nim|NVIDIA NIM - полный каталог (GET /v1/models)"
         "openrouter|OpenRouter - полный каталог моделей (GET /v1/models)"
         "openrouter-free|OpenRouter - только бесплатные модели (статический список)"
@@ -313,6 +420,17 @@ invoke_claude_custom_model_wizard() {
             if [ ${#ids[@]} -eq 0 ]; then
                 ids=("glm-4.7" "glm-4.7-flash" "glm-4.7-flashx" "glm-4.6" "glm-4.5" "glm-5" "glm-5-turbo" "glm-5.1")
             fi
+        elif [ "$prov_source" = "zai-general" ]; then
+            show_tui_wait_frame "$app_brand" "Z.AI General (статический список)…"
+            key=$(get_claude_zai_api_key) || true
+            ids=(
+                "glm-4.7" "glm-4.7-flash" "glm-4.7-flashx"
+                "glm-4.6" "glm-4.6v" "glm-4.6v-flashx" "glm-4.6v-flash"
+                "glm-4.5" "glm-4.5-x" "glm-4.5-air" "glm-4.5-airx" "glm-4.5-flash" "glm-4.5v"
+                "glm-4-32b-0414-128k"
+                "glm-5" "glm-5-turbo" "glm-5.1" "glm-5v-turbo"
+                "glm-ocr"
+            )
         elif [ "$prov_source" = "nim" ]; then
             show_tui_wait_frame "$app_brand" "Загрузка каталога NVIDIA NIM…"
             key=$(get_claude_nim_api_key) || true
@@ -358,7 +476,7 @@ invoke_claude_custom_model_wizard() {
 
         local model_id="${ids[$((model_choice-1))]}"
         local prov="nim"
-        if [ "$prov_source" = "zai" ]; then
+        if [ "$prov_source" = "zai" ] || [ "$prov_source" = "zai-general" ]; then
             prov="zai"
         elif [ "$prov_source" = "openrouter" ] || [ "$prov_source" = "openrouter-free" ]; then
             prov="openrouter"
@@ -501,7 +619,7 @@ while true; do
             
             local new_id="custom-claude-nim"
             local extra="\"customNimModel\":\"$wiz_model\""
-            if [ "$wiz_provider" = "zai" ]; then
+            if [ "$wiz_provider" = "zai" ] || [ "$wiz_provider" = "zai-general" ]; then
                 new_id="custom-claude-zai"
                 extra="\"customModelId\":\"$wiz_model\""
             elif [ "$wiz_provider" = "openrouter" ]; then
