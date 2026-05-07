@@ -30,7 +30,7 @@ PROFILES=(
     "zai-glm51|Z.AI - GLM-5.1 (paid, tool calling)"
     "zai-flash47|Z.AI - GLM-4.7-Flash (free, tool calling)"
     "zai-flash45|Z.AI - GLM-4.5-Flash (free, tool calling)"
-    "openrouter-deepseek-r1|OpenRouter - DeepSeek R1 (free, reasoning)"
+    "openrouter-gemma4|OpenRouter - Gemma 4 31B (free, tool calling)"
     "openrouter-hy3|OpenRouter - Tencent Hy3 (free, tool calling)"
     "openrouter-nemotron|OpenRouter - Nemotron 3 Super 120B (free, tool calling)"
     "openrouter-laguna|OpenRouter - Poolside Laguna M.1 (free, tool calling, coding)"
@@ -67,7 +67,7 @@ resolve_profile_from_state() {
     local profile_id=$(echo "$state" | grep -o '"profileId":"[^"]*"' | cut -d'"' -f4)
     
     case "$profile_id" in
-        "nim-glm"|"nim-qwen"|"zai-glm"|"zai-glm51"|"zai-flash47"|"zai-flash45"|"openrouter-deepseek-r1"|"openrouter-hy3"|"openrouter-nemotron"|"openrouter-laguna"|"custom-qwen-zai"|"custom-qwen-zai-general"|"custom-qwen-nim"|"custom-qwen-groq"|"custom-qwen-openrouter")
+        "nim-glm"|"nim-qwen"|"zai-glm"|"zai-glm51"|"zai-flash47"|"zai-flash45"|"openrouter-gemma4"|"openrouter-hy3"|"openrouter-nemotron"|"openrouter-laguna"|"custom-qwen-zai"|"custom-qwen-zai-general"|"custom-qwen-nim"|"custom-qwen-groq"|"custom-qwen-openrouter")
             echo "$profile_id"
             return 0
             ;;
@@ -237,7 +237,7 @@ invoke_qwen_custom_model_wizard() {
                 ids=($(echo "$response" | grep -o '"id":"[^"]*"' | cut -d'"' -f4 | sort -u))
             fi
         elif [ "$prov_source" = "openrouter-free" ]; then
-            ids=( "openrouter/free" "tencent/hy3-preview:free" "nvidia/nemotron-3-super:free" "inclusionai/ling-2.6-1t:free" "openai/gpt-oss-120b:free" "poolside/laguna-m.1:free" "openrouter/owl-alpha:free" "z-ai/glm-4.5-air:free" "minimax/minimax-m2.5:free" "nvidia/nemotron-3-nano-30b-a3b:free" "openai/gpt-oss-20b:free" "meta-llama/llama-4-scout:free" "qwen/qwen3-235b-a22b:free" "qwen/qwen3-coder:free" "deepseek/deepseek-r1:free" "google/gemma-4-31b:free" "meta-llama/llama-3.3-70b-instruct:free" "mistralai/mistral-small-3.1-24b-instruct:free" )
+            ids=( "openrouter/free" "tencent/hy3-preview:free" "nvidia/nemotron-3-super:free" "inclusionai/ling-2.6-1t:free" "openai/gpt-oss-120b:free" "poolside/laguna-m.1:free" "openrouter/owl-alpha:free" "z-ai/glm-4.5-air:free" "minimax/minimax-m2.5:free" "openai/gpt-oss-20b:free" "meta-llama/llama-4-scout:free" "qwen/qwen3-235b-a22b:free" "google/gemma-4-31b:free" "meta-llama/llama-3.3-70b-instruct:free" "mistralai/mistral-small-3.1-24b-instruct:free" )
             key=$(get_qwen_openrouter_api_key) || true
         fi
 
@@ -315,8 +315,8 @@ invoke_qwen_profile() {
         "zai-flash45")
             bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider zai -ModelId "glm-4.5-flash"
             ;;
-        "openrouter-deepseek-r1")
-            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider openrouter -ModelId "deepseek/deepseek-r1:free"
+        "openrouter-gemma4")
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider openrouter -ModelId "google/gemma-4-31b:free"
             ;;
         "openrouter-hy3")
             bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider openrouter -ModelId "tencent/hy3-preview:free"
