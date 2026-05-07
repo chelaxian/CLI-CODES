@@ -2,14 +2,39 @@
 # Запуск: irm https://raw.githubusercontent.com/chelaxian/cloud-code-setup/main/install.ps1 | iex
 # Или: git clone + .\install.ps1
 
+# TLS 1.2 для старых PowerShell (5.1 / Windows PowerShell)
+try {
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.ServicePointManager]::SecurityProtocol
+} catch {}
+
 $ErrorActionPreference = "Stop"
 
 # Параметры (по умолчанию, можно задать до вызова)
 if (-not $RepoUrl) { $RepoUrl = "https://github.com/chelaxian/cloud-code-setup.git" }
 if (-not $InstallDir) { $InstallDir = "" }
 
-# Важно: irm|iex сначала скачивает скрипт, потом выполняет. Этот вывод гарантирует,
-# что после выполнения пользователь сразу видит, что скрипт стартовал.
+# При irm|iex скрипт работает в "inline" режиме (нет $PSScriptRoot).
+# Пересохраняем себя как .ps1 файл и перезапускаем для корректной работы.
+if (-not $PSScriptRoot) {
+    $tmpFile = Join-Path $env:TEMP "cloud-code-setup-install.ps1"
+    try {
+        $MyInvocation.InvocationName | Out-Null  # just access to trigger
+        # При iex $PSScriptRoot пустой — пересохраняем и запускаем как файл
+        $scriptContent = $MyInvocation.CommandOrigin
+    } catch {}
+    # Получаем себя из сети и запускаем как файл
+    Write-Host "cloud-code-setup :: preparing 1-click install..." -ForegroundColor Cyan
+    try {
+        $irm = Invoke-WebRequest -Uri "https://raw.githubusercontent.com/chelaxian/cloud-code-setup/main/install.ps1" -UseBasicParsing
+        [System.IO.File]::WriteAllText($tmpFile, $irm.Content, (New-Object System.Text.UTF8Encoding($false)))
+        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $tmpFile
+    } catch {
+        Write-Host "ERROR: Failed to download installer. Error: $_" -ForegroundColor Red
+        Write-Host "Alternative: git clone https://github.com/chelaxian/cloud-code-setup.git && cd cloud-code-setup && .\install.ps1" -ForegroundColor Yellow
+    }
+    return
+}
+
 Write-Host "cloud-code-setup :: starting..." -ForegroundColor Cyan
 
 function Write-Status($Text, $Color = "White") {
@@ -274,37 +299,28 @@ if (-not [string]::IsNullOrWhiteSpace($orKey)) {
 
 Write-Host ""
 
-# ─── Настройка сессий Qwen ───────────────────────────────────────────────────
+# ─── Единое пространство /resume ──────────────────────────────────────────────
 
-if ($installQwen) {
-    Write-Status "════════════════════════════════════════════════════════════════════════════════" "Cyan"
-    Write-Status "НАСТРОЙКА СЕССИЙ QWEN CODE" "Magenta"
-    Write-Status "════════════════════════════════════════════════════════════════════════════════" "Cyan"
-    Write-Host ""
-
-    # Единое пространство для /resume (все модели в одной директории)
-    $sharedDir = Join-Path $InstallDir "qwen-sessions\_shared\.qwen"
-    if (-not (Test-Path -LiteralPath $sharedDir)) {
-        New-Item -ItemType Directory -Path $sharedDir -Force | Out-Null
-    }
-    Write-Status "  [OK] qwen-sessions/_shared/ — единое пространство /resume" "Green"
-
-    Write-Host ""
-}
-
-# ─── Единое пространство Claude Code / OpenCode ───────────────────────────────
 Write-Status "════════════════════════════════════════════════════════════════════════════════" "Cyan"
-Write-Status "НАСТРОЙКА СЕССИЙ CLAUDE CODE / OPENCODE" "Magenta"
+Write-Status "НАСТРОЙКА СЕССИЙ (/resume)" "Magenta"
 Write-Status "════════════════════════════════════════════════════════════════════════════════" "Cyan"
 Write-Host ""
 
-$claudeShared = Join-Path $InstallDir "claude-sessions\_shared"
-if (-not (Test-Path -LiteralPath $claudeShared)) { New-Item -ItemType Directory -Path $claudeShared -Force | Out-Null }
-Write-Status "  [OK] claude-sessions/_shared/ — единое пространство /resume" "Green"
-
-$ocShared = Join-Path $InstallDir "opencode-sessions\_shared"
-if (-not (Test-Path -LiteralPath $ocShared)) { New-Item -ItemType Directory -Path $ocShared -Force | Out-Null }
-Write-Status "  [OK] opencode-sessions/_shared/ — единое пространство /resume" "Green"
+if ($installQwen) {
+    $sharedDir = Join-Path $InstallDir "qwen-sessions\_shared\.qwen"
+    if (-not (Test-Path -LiteralPath $sharedDir)) { New-Item -ItemType Directory -Path $sharedDir -Force | Out-Null }
+    Write-Status "  [OK] qwen-sessions/_shared/" "Green"
+}
+if ($installClaude) {
+    $claudeShared = Join-Path $InstallDir "claude-sessions\_shared"
+    if (-not (Test-Path -LiteralPath $claudeShared)) { New-Item -ItemType Directory -Path $claudeShared -Force | Out-Null }
+    Write-Status "  [OK] claude-sessions/_shared/" "Green"
+}
+if ($installOpenCode) {
+    $ocShared = Join-Path $InstallDir "opencode-sessions\_shared"
+    if (-not (Test-Path -LiteralPath $ocShared)) { New-Item -ItemType Directory -Path $ocShared -Force | Out-Null }
+    Write-Status "  [OK] opencode-sessions/_shared/" "Green"
+}
 
 Write-Host ""
 
@@ -373,10 +389,6 @@ if ($installQwen)  { Write-Status "  * Qwen Code (cloud)" "Green" }
 if ($installClaude) { Write-Status "  * Claude Code (cloud)" "Green" }
 if ($installOpenCode) { Write-Status "  * OpenCode (cloud)" "Green" }
 Write-Host ""
-Write-Status "ПРИМЕЧАНИЯ:" "Yellow"
-Write-Status "  - Перезапустите терминал, чтобы переменные окружения вступили в силу" "Gray"
-Write-Status "  - В меню лаунчеров есть пункт 'Сменить ключ API провайдера'" "Gray"
-Write-Status "  - Все сессии Qwen Code хранятся в едином пространстве (/resume)" "Gray"
-Write-Status "  - Для NIM пресетов (Qwen) нужен LiteLLM — см. docs/" "Gray"
+Write-Status "Перезапустите терминал для применения API ключей. Запускайте через ярлыки!" "Yellow"
 Write-Host ""
 Read-Host "Нажмите Enter для выхода"

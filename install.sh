@@ -224,22 +224,22 @@ else
     skip "OPENROUTER_API_KEY пропущен"
 fi
 
-# ─── Настройка сессий Qwen ──────────────────────────────────────────────────
+# ─── Единое пространство /resume ──────────────────────────────────────────────
+
+step "НАСТРОЙКА СЕССИЙ (/resume)"
 
 if $INSTALL_QWEN; then
-    step "НАСТРОЙКА СЕССИЙ QWEN CODE"
-
-    # Единое пространство для /resume (все модели в одной директории)
     SHARED_DIR="$INSTALL_DIR/qwen-sessions/_shared/.qwen"
     mkdir -p "$SHARED_DIR"
-    ok "qwen-sessions/_shared/ — единое пространство /resume"
-
-# ─── Единое пространство Claude Code / OpenCode ───────────────────────────────
-step "НАСТРОЙКА СЕССИЙ CLAUDE CODE / OPENCODE"
-
-mkdir -p "$REPO_DIR/claude-sessions/_shared" "$REPO_DIR/opencode-sessions/_shared"
-ok "claude-sessions/_shared/ — единое пространство /resume (claude)"
-ok "opencode-sessions/_shared/ — единое пространство /resume (opencode)"
+    ok "qwen-sessions/_shared/"
+fi
+if $INSTALL_CLAUDE; then
+    mkdir -p "$REPO_DIR/claude-sessions/_shared"
+    ok "claude-sessions/_shared/"
+fi
+if $INSTALL_OPENCODE; then
+    mkdir -p "$REPO_DIR/opencode-sessions/_shared"
+    ok "opencode-sessions/_shared/"
 fi
 
 # ─── Создание ярлыков ────────────────────────────────────────────────────────
@@ -338,11 +338,7 @@ if $INSTALL_QWEN;     then echo -e "${GREEN}  ~/qwen-code-cloud.sh${RESET}"; fi
 if $INSTALL_CLAUDE;   then echo -e "${GREEN}  ~/claude-code-cloud.sh${RESET}"; fi
 if $INSTALL_OPENCODE; then echo -e "${GREEN}  ~/opencode-cloud.sh${RESET}"; fi
 echo ""
-echo -e "${YELLOW}ПРИМЕЧАНИЯ:${RESET}"
-echo -e "${GRAY}  - Выполните: source ~/.bashrc  (или перезапустите терминал)${RESET}"
-echo -e "${GRAY}  - В меню лаунчеров есть пункт 'Сменить ключ API провайдера'${RESET}"
-echo -e "${GRAY}  - Все сессии Qwen Code хранятся в едином пространстве (/resume)${RESET}"
-echo -e "${GRAY}  - Для NIM пресетов (Qwen) нужен LiteLLM — см. docs/${RESET}"
+echo -e "${YELLOW}Перезапустите терминал для применения API ключей. Запускайте через команды выше!${RESET}"
 echo ""
 echo -e "${CYAN}Приятного использования!${RESET}"
 echo ""

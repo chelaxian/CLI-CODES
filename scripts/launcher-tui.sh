@@ -1,5 +1,6 @@
 #!/bin/bash
 # TUI menu for launchers Qwen/Claude/OpenCode (Linux) - arrow-key navigation
+# All UI output goes to FD 3 (=/dev/tty). Only the selected index goes to stdout.
 
 # ANSI colors
 export RED='\033[0;31m'
@@ -13,6 +14,9 @@ export WHITE='\033[1;37m'
 export RESET='\033[0m'
 export BOLD='\033[1m'
 export BG_SELECTED='\033[44m'
+
+# FD 3 = /dev/tty for UI output (stdout reserved for return value)
+exec 3>/dev/tty
 
 get_terminal_width() {
     if command -v tput &> /dev/null; then
@@ -32,35 +36,32 @@ draw_box_line() {
     printf '%s' "$line"
 }
 
-# Move cursor to row, col (1-based)
 move_cursor() {
-    printf '\033[%d;%dH' "$1" "$2"
+    printf '\033[%d;%dH' "$1" "$2" >&3
 }
 
-# Hide/show cursor
-hide_cursor() { printf '\033[?25l'; }
-show_cursor() { printf '\033[?25h'; }
+hide_cursor() { printf '\033[?25l' >&3; }
+show_cursor() { printf '\033[?25h' >&3; }
 
-# Read a single keypress; returns: up/down/left/right/enter/esc/number/space/pgup/pgdn/home/end/tab/other
+# Read a single keypress from /dev/tty
 read_key() {
     local key
-    IFS= read -rsn1 key
+    IFS= read -rsn1 key < /dev/tty
     case "$key" in
         $'\x1b')
             local seq=""
-            # Read rest of escape sequence with tiny timeout
-            if IFS= read -rsn1 -t 0.1 seq; then
+            if IFS= read -rsn1 -t 0.1 seq < /dev/tty; then
                 case "$seq" in
                     '[')
                         local code=""
-                        IFS= read -rsn1 -t 0.1 code
+                        IFS= read -rsn1 -t 0.1 code < /dev/tty
                         case "$code" in
                             'A') echo "up"; return ;;
                             'B') echo "down"; return ;;
                             'C') echo "right"; return ;;
                             'D') echo "left"; return ;;
-                            '5') IFS= read -rsn1 -t 0.1 code; echo "pgup"; return ;;
-                            '6') IFS= read -rsn1 -t 0.1 code; echo "pgdn"; return ;;
+                            '5') IFS= read -rsn1 -t 0.1 code < /dev/tty; echo "pgup"; return ;;
+                            '6') IFS= read -rsn1 -t 0.1 code < /dev/tty; echo "pgdn"; return ;;
                             'H') echo "home"; return ;;
                             'F') echo "end"; return ;;
                             *)   echo "other"; return ;;
@@ -70,7 +71,6 @@ read_key() {
             fi
             echo "esc"; return
             ;;
-        # В bash `read -n1` по Enter часто возвращает пустую строку.
         '') echo "enter"; return ;;
         $'\n'|$'\r') echo "enter"; return ;;
         $'\x7f') echo "backspace"; return ;;
@@ -79,7 +79,7 @@ read_key() {
     echo "other"
 }
 
-# Banner functions - псевдографика (как было до последней правки)
+# Banner functions - псевдографика
 draw_tui_banner_qwen() {
     local inner_width="$1"
     local lines=(
@@ -92,13 +92,14 @@ draw_tui_banner_qwen() {
     )
     for line in "${lines[@]}"; do
         local len=${#line}
-        local pad_left=$(( (inner_width - len) / 2 ))
-        local pad_right=$((inner_width - len - pad_left ))
-        printf "${CYAN}║${RESET}"
-        printf '%*s' "$pad_left" ''
-        printf '%s' "$line"
-        printf '%*s' "$pad_right" ''
-        printf "${CYAN}║${RESET}\n"
+        if [ $len -gt $inner_width ]; then
+            line="${line:0:$((inner_width-1))}…"
+        else
+            local pad_left=$(( (inner_width - len) / 2 ))
+            local pad_right=$((inner_width - len - pad_left ))
+            line=$(printf '%*s%s%*s' "$pad_left" '' "$line" "$pad_right" '')
+        fi
+        printf "${CYAN}║${line}║${RESET}\n" >&3
     done
 }
 
@@ -114,13 +115,14 @@ draw_tui_banner_claude() {
     )
     for line in "${lines[@]}"; do
         local len=${#line}
-        local pad_left=$(( (inner_width - len) / 2 ))
-        local pad_right=$((inner_width - len - pad_left ))
-        printf "${MAGENTA}║${RESET}"
-        printf '%*s' "$pad_left" ''
-        printf '%s' "$line"
-        printf '%*s' "$pad_right" ''
-        printf "${MAGENTA}║${RESET}\n"
+        if [ $len -gt $inner_width ]; then
+            line="${line:0:$((inner_width-1))}…"
+        else
+            local pad_left=$(( (inner_width - len) / 2 ))
+            local pad_right=$((inner_width - len - pad_left ))
+            line=$(printf '%*s%s%*s' "$pad_left" '' "$line" "$pad_right" '')
+        fi
+        printf "${MAGENTA}║${line}║${RESET}\n" >&3
     done
 }
 
@@ -136,20 +138,22 @@ draw_tui_banner_opencode() {
     )
     for line in "${lines[@]}"; do
         local len=${#line}
-        local pad_left=$(( (inner_width - len) / 2 ))
-        local pad_right=$((inner_width - len - pad_left ))
-        printf "${GREEN}║${RESET}"
-        printf '%*s' "$pad_left" ''
-        printf '%s' "$line"
-        printf '%*s' "$pad_right" ''
-        printf "${GREEN}║${RESET}\n"
+        if [ $len -gt $inner_width ]; then
+            line="${line:0:$((inner_width-1))}…"
+        else
+            local pad_left=$(( (inner_width - len) / 2 ))
+            local pad_right=$((inner_width - len - pad_left))
+            line=$(printf '%*s%s%*s' "$pad_left" '' "$line" "$pad_right" '')
+        fi
+        printf "${GREEN}║${line}║${RESET}\n" >&3
     done
 }
 
 # Main TUI menu with arrow-key navigation
 # Args: app_brand title subtitle item1 item2 item3 ...
 # Prints selected index (1-based) to stdout. Prints 0 for Esc/exit.
-# Always returns 0 (важно для скриптов с `set -e`).
+# All visual output goes to FD 3 (/dev/tty).
+# Always returns 0.
 show_tui_framed_menu() {
     local app_brand="$1"
     local title="$2"
@@ -159,6 +163,7 @@ show_tui_framed_menu() {
 
     local num_items=${#items[@]}
     if [ "$num_items" -eq 0 ]; then
+        printf '0\n'
         return 0
     fi
 
@@ -174,10 +179,10 @@ show_tui_framed_menu() {
     fi
 
     local visible=$((num_items > 20 ? 20 : num_items))
-    local idx=0        # currently selected (0-based)
-    local scroll_top=0 # first visible item
+    local idx=0
+    local scroll_top=0
 
-    trap 'show_cursor; echo -e "${RESET}"; stty echo 2>/dev/null' EXIT
+    trap 'show_cursor; printf "${RESET}" >&3; stty echo 2>/dev/null' EXIT
 
     sync_scroll() {
         if [ "$idx" -lt "$scroll_top" ]; then
@@ -200,71 +205,61 @@ show_tui_framed_menu() {
         sync_scroll
         move_cursor 1 1
 
-        # Top border
-        printf "${banner_color}╔${RESET}"
-        draw_box_line '═' "$inner_width"
-        printf "${banner_color}╗${RESET}\n"
+        printf "${banner_color}╔${RESET}" >&3
+        draw_box_line '═' "$inner_width" >&3
+        printf "${banner_color}╗${RESET}\n" >&3
 
-        # Empty line
-        printf "${banner_color}║${RESET}"
-        printf '%*s' "$inner_width" ''
-        printf "${banner_color}║${RESET}\n"
+        printf "${banner_color}║${RESET}" >&3
+        printf '%*s' "$inner_width" '' >&3
+        printf "${banner_color}║${RESET}\n" >&3
 
-        # Banner
         case "$app_brand" in
             "Qwen")   draw_tui_banner_qwen "$inner_width" ;;
             "Claude") draw_tui_banner_claude "$inner_width" ;;
             "OpenCode") draw_tui_banner_opencode "$inner_width" ;;
         esac
 
-        # Empty line
-        printf "${banner_color}║${RESET}"
-        printf '%*s' "$inner_width" ''
-        printf "${banner_color}║${RESET}\n"
+        printf "${banner_color}║${RESET}" >&3
+        printf '%*s' "$inner_width" '' >&3
+        printf "${banner_color}║${RESET}\n" >&3
 
-        # Separator
-        printf "${banner_color}╠${RESET}"
-        draw_box_line '═' "$inner_width"
-        printf "${banner_color}╣${RESET}\n"
+        printf "${banner_color}╠${RESET}" >&3
+        draw_box_line '═' "$inner_width" >&3
+        printf "${banner_color}╣${RESET}\n" >&3
 
-        # Title
         local title_text=" $title"
         local title_len=${#title_text}
-        printf "${banner_color}║${RESET} ${WHITE}${title}${RESET}"
+        printf "${banner_color}║${RESET} ${WHITE}${title}${RESET}" >&3
         if [ "$title_len" -lt "$inner_width" ]; then
-            printf '%*s' "$((inner_width - title_len))" ''
+            printf '%*s' "$((inner_width - title_len))" '' >&3
         fi
-        printf "${banner_color}║${RESET}\n"
+        printf "${banner_color}║${RESET}\n" >&3
 
-        # Subtitle
         if [ -n "$subtitle" ]; then
             local sub_text=" $subtitle"
             local sub_len=${#sub_text}
-            printf "${banner_color}║${RESET} ${GRAY}${subtitle}${RESET}"
+            printf "${banner_color}║${RESET} ${GRAY}${subtitle}${RESET}" >&3
             if [ "$sub_len" -lt "$inner_width" ]; then
-                printf '%*s' "$((inner_width - sub_len))" ''
+                printf '%*s' "$((inner_width - sub_len))" '' >&3
             fi
-            printf "${banner_color}║${RESET}\n"
+            printf "${banner_color}║${RESET}\n" >&3
         fi
 
-        # Separator
-        printf "${banner_color}╠${RESET}"
-        draw_box_line '═' "$inner_width"
-        printf "${banner_color}╣${RESET}\n"
+        printf "${banner_color}╠${RESET}" >&3
+        draw_box_line '═' "$inner_width" >&3
+        printf "${banner_color}╣${RESET}\n" >&3
 
-        # Empty line
-        printf "${banner_color}║${RESET}"
-        printf '%*s' "$inner_width" ''
-        printf "${banner_color}║${RESET}\n"
+        printf "${banner_color}║${RESET}" >&3
+        printf '%*s' "$inner_width" '' >&3
+        printf "${banner_color}║${RESET}\n" >&3
 
-        # Menu items
         local r
         for ((r=0; r<visible; r++)); do
             local i=$((scroll_top + r))
             if [ "$i" -ge "$num_items" ]; then
-                printf "${banner_color}║${RESET}"
-                printf '%*s' "$inner_width" ''
-                printf "${banner_color}║${RESET}\n"
+                printf "${banner_color}║${RESET}" >&3
+                printf '%*s' "$inner_width" '' >&3
+                printf "${banner_color}║${RESET}\n" >&3
                 continue
             fi
 
@@ -273,74 +268,65 @@ show_tui_framed_menu() {
                 local mark="  ▶ "
                 local row="${mark}${label}"
                 local row_len=$(( ${#mark} + ${#label} ))
-                printf "${banner_color}║${RESET}${YELLOW}${BG_SELECTED}${row}${RESET}"
+                printf "${banner_color}║${RESET}${YELLOW}${BG_SELECTED}${row}${RESET}" >&3
                 if [ "$row_len" -lt "$inner_width" ]; then
-                    printf '%*s' "$((inner_width - row_len))" ''
+                    printf '%*s' "$((inner_width - row_len))" '' >&3
                 fi
-                printf "${banner_color}║${RESET}\n"
+                printf "${banner_color}║${RESET}\n" >&3
             else
                 local row="     ${label}"
                 local row_len=${#row}
-                printf "${banner_color}║${RESET}${GRAY}${row}${RESET}"
+                printf "${banner_color}║${RESET}${GRAY}${row}${RESET}" >&3
                 if [ "$row_len" -lt "$inner_width" ]; then
-                    printf '%*s' "$((inner_width - row_len))" ''
+                    printf '%*s' "$((inner_width - row_len))" '' >&3
                 fi
-                printf "${banner_color}║${RESET}\n"
+                printf "${banner_color}║${RESET}\n" >&3
             fi
         done
 
-        # Empty line
-        printf "${banner_color}║${RESET}"
-        printf '%*s' "$inner_width" ''
-        printf "${banner_color}║${RESET}\n"
+        printf "${banner_color}║${RESET}" >&3
+        printf '%*s' "$inner_width" '' >&3
+        printf "${banner_color}║${RESET}\n" >&3
 
-        # Hint
         local hint="  ↑↓ выбор   Enter - OK   Esc - выход"
         local hint_len=${#hint}
-        printf "${banner_color}║${RESET}${GRAY}${hint}${RESET}"
+        printf "${banner_color}║${RESET}${GRAY}${hint}${RESET}" >&3
         if [ "$hint_len" -lt "$inner_width" ]; then
-            printf '%*s' "$((inner_width - hint_len))" ''
+            printf '%*s' "$((inner_width - hint_len))" '' >&3
         fi
-        printf "${banner_color}║${RESET}\n"
+        printf "${banner_color}║${RESET}\n" >&3
 
-        # Pagination
         if [ "$num_items" -gt "$visible" ]; then
             local pg_start=$((scroll_top + 1))
             local pg_end=$((scroll_top + visible))
             if [ "$pg_end" -gt "$num_items" ]; then pg_end=$num_items; fi
             local pg="  строки ${pg_start}-${pg_end} из ${num_items}"
             local pg_len=${#pg}
-            printf "${banner_color}║${RESET}  ${CYAN}${pg}${RESET}"
+            printf "${banner_color}║${RESET}  ${CYAN}${pg}${RESET}" >&3
             if [ "$((pg_len + 2))" -lt "$inner_width" ]; then
-                printf '%*s' "$((inner_width - pg_len - 2))" ''
+                printf '%*s' "$((inner_width - pg_len - 2))" '' >&3
             fi
-            printf "${banner_color}║${RESET}\n"
+            printf "${banner_color}║${RESET}\n" >&3
         fi
 
-        # Bottom border
-        printf "${banner_color}╚${RESET}"
-        draw_box_line '═' "$inner_width"
-        printf "${banner_color}╝${RESET}\n"
+        printf "${banner_color}╚${RESET}" >&3
+        draw_box_line '═' "$inner_width" >&3
+        printf "${banner_color}╝${RESET}\n" >&3
     }
 
-    # Main loop
     hide_cursor
-    clear
+    clear >&3
     draw_menu
 
     while true; do
         local key=$(read_key)
         case "$key" in
             up)
-                if [ "$idx" -gt 0 ]; then
-                    idx=$((idx - 1))
-                fi
+                if [ "$idx" -gt 0 ]; then idx=$((idx - 1)); fi
                 draw_menu
                 ;;
             down)
-                if [ "$idx" -lt $((num_items - 1)) ]; then
-                    idx=$((idx + 1))
-                fi
+                if [ "$idx" -lt $((num_items - 1)) ]; then idx=$((idx + 1)); fi
                 draw_menu
                 ;;
             pgup)
@@ -375,9 +361,7 @@ show_tui_framed_menu() {
                 ;;
             num_*)
                 local num="${key#num_}"
-                # Accumulate digits for multi-digit selection
                 local typed="$num"
-                local timeout=0.5
                 while true; do
                     local next_key=$(read_key)
                     case "$next_key" in
@@ -397,11 +381,7 @@ show_tui_framed_menu() {
                     printf '0\n'
                     return 0
                 fi
-                # Invalid number, redraw
                 draw_menu
-                ;;
-            *)
-                # Unknown key, ignore
                 ;;
         esac
     done
@@ -416,20 +396,17 @@ show_tui_wait_frame() {
     local inner_width=$((frame_width - 2))
 
     local banner_color="$CYAN"
-    if [ "$app_brand" = "Claude" ]; then
-        banner_color="$MAGENTA"
-    elif [ "$app_brand" = "OpenCode" ]; then
-        banner_color="$GREEN"
-    fi
+    if [ "$app_brand" = "Claude" ]; then banner_color="$MAGENTA"
+    elif [ "$app_brand" = "OpenCode" ]; then banner_color="$GREEN"; fi
 
-    clear
-    printf "${banner_color}╔${RESET}"
-    draw_box_line '═' "$inner_width"
-    printf "${banner_color}╗${RESET}\n"
+    clear >&3
+    printf "${banner_color}╔${RESET}" >&3
+    draw_box_line '═' "$inner_width" >&3
+    printf "${banner_color}╗${RESET}\n" >&3
 
-    printf "${banner_color}║${RESET}"
-    printf '%*s' "$inner_width" ''
-    printf "${banner_color}║${RESET}\n"
+    printf "${banner_color}║${RESET}" >&3
+    printf '%*s' "$inner_width" '' >&3
+    printf "${banner_color}║${RESET}\n" >&3
 
     case "$app_brand" in
         "Qwen")   draw_tui_banner_qwen "$inner_width" ;;
@@ -437,23 +414,23 @@ show_tui_wait_frame() {
         "OpenCode") draw_tui_banner_opencode "$inner_width" ;;
     esac
 
-    printf "${banner_color}║${RESET}"
-    printf '%*s' "$inner_width" ''
-    printf "${banner_color}║${RESET}\n"
+    printf "${banner_color}║${RESET}" >&3
+    printf '%*s' "$inner_width" '' >&3
+    printf "${banner_color}║${RESET}\n" >&3
 
     local msg="  ${message}"
     local msg_len=${#msg}
-    printf "${banner_color}║${RESET}${YELLOW}${msg}${RESET}"
+    printf "${banner_color}║${RESET}${YELLOW}${msg}${RESET}" >&3
     if [ "$msg_len" -lt "$inner_width" ]; then
-        printf '%*s' "$((inner_width - msg_len))" ''
+        printf '%*s' "$((inner_width - msg_len))" '' >&3
     fi
-    printf "${banner_color}║${RESET}\n"
+    printf "${banner_color}║${RESET}\n" >&3
 
-    printf "${banner_color}║${RESET}"
-    printf '%*s' "$inner_width" ''
-    printf "${banner_color}║${RESET}\n"
+    printf "${banner_color}║${RESET}" >&3
+    printf '%*s' "$inner_width" '' >&3
+    printf "${banner_color}║${RESET}\n" >&3
 
-    printf "${banner_color}╚${RESET}"
-    draw_box_line '═' "$inner_width"
-    printf "${banner_color}╝${RESET}\n"
+    printf "${banner_color}╚${RESET}" >&3
+    draw_box_line '═' "$inner_width" >&3
+    printf "${banner_color}╝${RESET}\n" >&3
 }
