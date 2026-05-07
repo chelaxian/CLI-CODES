@@ -78,8 +78,8 @@ step "КЛОНИРОВАНИЕ РЕПОЗИТОРИЯ"
 
 if [ -d "$INSTALL_DIR/.git" ]; then
     warn "Репозиторий уже клонирован: $INSTALL_DIR"
-    echo -e "${CYAN}Обновление (git pull)…${RESET}"
-    (cd "$INSTALL_DIR" && git pull origin main 2>/dev/null) || warn "Не удалось обновить"
+    echo -e "${CYAN}Обновление…${RESET}"
+    (cd "$INSTALL_DIR" && git fetch origin main 2>/dev/null && git reset --hard origin/main 2>/dev/null) || warn "Не удалось обновить"
     ok "Репозиторий обновлён"
 else
     echo -e "${CYAN}Клонирование $REPO_URL → $INSTALL_DIR…${RESET}"
@@ -122,41 +122,29 @@ esac
 step "УСТАНОВКА CLI"
 
 if $INSTALL_QWEN; then
-    if command -v qwen >/dev/null 2>&1; then
-        ok "Qwen Code CLI: $(which qwen)"
+    echo -e "${CYAN}Установка/обновление Qwen Code CLI…${RESET}"
+    if npm install -g @qwen-code/qwen-code@latest 2>/dev/null; then
+        ok "Qwen Code CLI: $(which qwen 2>/dev/null)"
     else
-        echo -e "${CYAN}Установка Qwen Code CLI…${RESET}"
-        if npm install -g @qwen-code/qwen-code@latest 2>/dev/null; then
-            ok "Qwen Code CLI установлен: $(which qwen 2>/dev/null)"
-        else
-            warn "Не удалось установить Qwen Code CLI. Установите вручную: npm i -g @qwen-code/qwen-code"
-        fi
+        warn "Не удалось установить Qwen Code CLI. Установите вручную: npm i -g @qwen-code/qwen-code"
     fi
 fi
 
 if $INSTALL_CLAUDE; then
-    if command -v claude >/dev/null 2>&1; then
-        ok "Claude Code CLI: $(which claude)"
+    echo -e "${CYAN}Установка/обновление Claude Code CLI…${RESET}"
+    if npm install -g @anthropic-ai/claude-code@latest 2>/dev/null; then
+        ok "Claude Code CLI: $(which claude 2>/dev/null)"
     else
-        echo -e "${CYAN}Установка Claude Code CLI…${RESET}"
-        if npm install -g @anthropic-ai/claude-code@latest 2>/dev/null; then
-            ok "Claude Code CLI установлен: $(which claude 2>/dev/null)"
-        else
-            warn "Не удалось установить Claude Code CLI. Установите вручную: npm i -g @anthropic-ai/claude-code"
-        fi
+        warn "Не удалось установить Claude Code CLI. Установите вручную: npm i -g @anthropic-ai/claude-code"
     fi
 fi
 
 if $INSTALL_OPENCODE; then
-    if command -v opencode >/dev/null 2>&1; then
-        ok "OpenCode CLI: $(which opencode)"
+    echo -e "${CYAN}Установка/обновление OpenCode CLI…${RESET}"
+    if npm install -g opencode-ai@latest 2>/dev/null; then
+        ok "OpenCode CLI: $(which opencode 2>/dev/null)"
     else
-        echo -e "${CYAN}Установка OpenCode CLI…${RESET}"
-        if npm install -g opencode-ai@latest 2>/dev/null; then
-            ok "OpenCode CLI установлен: $(which opencode 2>/dev/null)"
-        else
-            warn "Не удалось установить OpenCode CLI. Установите вручную: npm i -g opencode-ai@latest"
-        fi
+        warn "Не удалось установить OpenCode CLI. Установите вручную: npm i -g opencode-ai@latest"
     fi
 fi
 

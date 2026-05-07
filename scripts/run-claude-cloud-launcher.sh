@@ -17,17 +17,17 @@ OBSIDIAN_EXE="${OBSIDIAN_EXE:-/usr/bin/obsidian}"
 
 PROFILES=(
     "last|Запустить с последними настройками (быстрый старт)"
-    "claude-zai|Z.AI — GLM-4.7 (paid, tool calling)"
-    "claude-zai-glm51|Z.AI — GLM-5.1 (paid, tool calling)"
-    "claude-zai-flash47|Z.AI — GLM-4.7-Flash (free, tool calling)"
-    "claude-zai-flash45|Z.AI — GLM-4.5-Flash (free, tool calling)"
-    "claude-nim|NVIDIA NIM — GLM-4.7 (free, tool calling)"
-    "claude-nim-qwen|NVIDIA NIM — Qwen3.5-122B-A10B (free, tool calling)"
-    "claude-openrouter-sonnet|OpenRouter — Claude Sonnet 4 (paid, tool calling)"
-    "claude-openrouter-qwen-coder|OpenRouter — Qwen3 Coder (free, tool calling)"
-    "claude-openrouter-hy3|OpenRouter — Tencent Hy3 (free, tool calling)"
-    "claude-openrouter-nemotron|OpenRouter — Nemotron 3 Super 120B (free, tool calling)"
-    "claude-openrouter-laguna|OpenRouter — Poolside Laguna M.1 (free, tool calling, coding)"
+    "claude-zai|Z.AI - GLM-4.7 (paid, tool calling)"
+    "claude-zai-glm51|Z.AI - GLM-5.1 (paid, tool calling)"
+    "claude-zai-flash47|Z.AI - GLM-4.7-Flash (free, tool calling)"
+    "claude-zai-flash45|Z.AI - GLM-4.5-Flash (free, tool calling)"
+    "claude-nim|NVIDIA NIM - GLM-4.7 (free, tool calling)"
+    "claude-nim-qwen|NVIDIA NIM - Qwen3.5-122B-A10B (free, tool calling)"
+    "claude-openrouter-sonnet|OpenRouter - Claude Sonnet 4 (paid, tool calling)"
+    "claude-openrouter-qwen-coder|OpenRouter - Qwen3 Coder (free, tool calling)"
+    "claude-openrouter-hy3|OpenRouter - Tencent Hy3 (free, tool calling)"
+    "claude-openrouter-nemotron|OpenRouter - Nemotron 3 Super 120B (free, tool calling)"
+    "claude-openrouter-laguna|OpenRouter - Poolside Laguna M.1 (free, tool calling, coding)"
     "custom-model|Другая модель… → выбор провайдера и модели"
     "native-login|Нативный логин (Anthropic OAuth / Console)"
     "change-api-key|Сменить ключ API провайдера"
@@ -282,10 +282,10 @@ invoke_claude_custom_model_wizard() {
     local app_brand="$1"
 
     local prov_items=(
-        "zai|Z.AI — Coding / Anthropic (список моделей по вашему ключу)"
-        "nim|NVIDIA NIM — полный каталог (GET /v1/models)"
-        "openrouter|OpenRouter — полный каталог моделей (GET /v1/models)"
-        "openrouter-free|OpenRouter — только бесплатные модели (статический список)"
+        "zai|Z.AI - Coding / Anthropic (список моделей по вашему ключу)"
+        "nim|NVIDIA NIM - полный каталог (GET /v1/models)"
+        "openrouter|OpenRouter - полный каталог моделей (GET /v1/models)"
+        "openrouter-free|OpenRouter - только бесплатные модели (статический список)"
     )
 
     while true; do
@@ -295,7 +295,7 @@ invoke_claude_custom_model_wizard() {
             prov_menu+=("$label")
         done
 
-        show_tui_framed_menu "$app_brand" "Другая модель" "Шаг 1 из 2 — выберите провайдера" "${prov_menu[@]}"
+        show_tui_framed_menu "$app_brand" "Другая модель" "Шаг 1 из 2 - выберите провайдера" "${prov_menu[@]}"
         local prov_choice=$?
 
         if [ $prov_choice -eq 0 ]; then
@@ -360,7 +360,7 @@ invoke_claude_custom_model_wizard() {
             model_menu+=("$id")
         done
 
-        show_tui_framed_menu "$app_brand" "Другая модель" "Шаг 2 из 2 — моделей: ${#ids[@]}" "${model_menu[@]}"
+        show_tui_framed_menu "$app_brand" "Другая модель" "Шаг 2 из 2 - моделей: ${#ids[@]}" "${model_menu[@]}"
         local model_choice=$?
 
         if [ $model_choice -eq 0 ]; then
@@ -409,7 +409,7 @@ while true; do
         menu_items+=("$label")
     done
     
-    show_tui_framed_menu "Claude" "Claude Code (облако) — провайдер" "Z.AI Anthropic · NVIDIA NIM через free-claude-code" "${menu_items[@]}"
+    show_tui_framed_menu "Claude" "Claude Code (облако) - провайдер" "Z.AI Anthropic · NVIDIA NIM через free-claude-code" "${menu_items[@]}"
     local choice=$?
     
     if [ $choice -eq 0 ]; then
@@ -446,7 +446,7 @@ while true; do
                 "claude-sub")
                     clear
                     echo -e "${CYAN}═══════════════════════════════════════════════════${RESET}"
-                    echo -e "${CYAN}  Claude OAuth — авторизация через браузер${RESET}"
+                    echo -e "${CYAN}  Claude OAuth - авторизация через браузер${RESET}"
                     echo -e "${CYAN}═══════════════════════════════════════════════════${RESET}"
                     echo ""
                     echo -e "${YELLOW}  Откроется браузер. Завершите авторизацию в нём.${RESET}"
@@ -464,7 +464,7 @@ while true; do
                 "anthropic-console")
                     clear
                     echo -e "${CYAN}═══════════════════════════════════════════════════${RESET}"
-                    echo -e "${CYAN}  Anthropic Console — авторизация через браузер${RESET}"
+                    echo -e "${CYAN}  Anthropic Console - авторизация через браузер${RESET}"
                     echo -e "${CYAN}═══════════════════════════════════════════════════${RESET}"
                     echo ""
                     echo -e "${YELLOW}  Откроется браузер. Завершите авторизацию.${RESET}"

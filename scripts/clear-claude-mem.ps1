@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
   [switch]$Force
 )
@@ -41,7 +41,7 @@ if (Test-Path -LiteralPath $npmBin) {
 
 # ── Шаг 1: показать текущую статистику ───────────────────────────────────────
 Write-Host ""
-Write-Host "  claude-mem — очистка памяти" -ForegroundColor Cyan
+Write-Host "  claude-mem - очистка памяти" -ForegroundColor Cyan
 Write-Host "  ============================" -ForegroundColor DarkGray
 Write-Host ""
 
@@ -100,7 +100,7 @@ if (Test-ClaudeMemPortOpen) {
 }
 
 if (Test-ClaudeMemPortOpen) {
-  Write-Host "  Worker не остановился — принудительное завершение…" -ForegroundColor DarkYellow
+  Write-Host "  Worker не остановился - принудительное завершение…" -ForegroundColor DarkYellow
   if (Test-Path -LiteralPath $pidFile) {
     $pid = [int](Get-Content -LiteralPath $pidFile -ErrorAction SilentlyContinue)
     if ($pid -gt 0) {
@@ -111,7 +111,7 @@ if (Test-ClaudeMemPortOpen) {
 }
 
 if (Test-ClaudeMemPortOpen) {
-  # Последняя попытка — убить по порту
+  # Последняя попытка - убить по порту
   $conns = Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object { $_.LocalPort -eq 37777 }
   foreach ($conn in $conns) {
     try { Stop-Process -Id $conn.OwningProcess -Force -ErrorAction SilentlyContinue } catch {}

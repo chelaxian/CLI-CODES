@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
   [int]$OpenBrowser = 0,
   [switch]$SkipStatus,
@@ -98,7 +98,7 @@ function Repair-ClaudeMemInstall {
 $pidFile = Join-Path $HOME ".claude-mem\worker.pid"
 
 if (Test-ClaudeMemPortOpen) {
-  Write-Host "claude-mem уже слушает 127.0.0.1:37777 — повторный старт не нужен." -ForegroundColor DarkGreen
+  Write-Host "claude-mem уже слушает 127.0.0.1:37777 - повторный старт не нужен." -ForegroundColor DarkGreen
   if ($OpenBrowser -ne 0) {
     try { Start-Process "http://127.0.0.1:37777/" | Out-Null } catch {}
   }
@@ -113,7 +113,7 @@ if ($RepairInstall) {
   npx --yes claude-mem update
 }
 
-# Сброс «зависшего» worker.pid: внутренний worker-service сразу exit(0), если считает дубликат — тогда HTTP не поднимается.
+# Сброс «зависшего» worker.pid: внутренний worker-service сразу exit(0), если считает дубликат - тогда HTTP не поднимается.
 Write-Host "claude-mem: остановка и очистка stale PID…" -ForegroundColor DarkCyan
 try { npx --yes claude-mem stop 2>$null } catch {}
 Start-Sleep -Milliseconds 500

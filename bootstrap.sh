@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 # cloud-code-setup — bootstrap (curl | bash)
 # Определяет ОС и запускает нужный инсталлятор
 

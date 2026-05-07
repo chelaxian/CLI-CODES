@@ -248,7 +248,7 @@ show_api_key_change_menu() {
         new_key=$(read_secret_text "Введите новый API ключ (или оставьте пустым для отмены): ")
         
         if [ -z "$new_key" ]; then
-            echo -e "${YELLOW}Отмена — ключ не изменён.${RESET}"
+            echo -e "${YELLOW}Отмена - ключ не изменён.${RESET}"
             read -p "Нажмите Enter для продолжения..."
             continue
         fi

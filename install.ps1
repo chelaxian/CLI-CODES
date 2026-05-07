@@ -1,4 +1,4 @@
-# cloud-code-setup — Windows bootstrap (PowerShell)
+﻿# cloud-code-setup — Windows bootstrap (PowerShell)
 # Запуск: irm https://raw.githubusercontent.com/chelaxian/cloud-code-setup/main/install.ps1 | iex
 # Или: git clone + .\install.ps1
 

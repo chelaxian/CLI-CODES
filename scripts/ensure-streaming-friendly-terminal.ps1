@@ -1,7 +1,7 @@
-# Dot-source перед интерактивным Qwen Code / Claude Code:
+﻿# Dot-source перед интерактивным Qwen Code / Claude Code:
 #   . (Join-Path $PSScriptRoot 'ensure-streaming-friendly-terminal.ps1')
 #
-# Qwen Code (Ink + is-in-ci): любые CI_* / CI / CONTINUOUS_INTEGRATION дают «не CI-терминал» —
+# Qwen Code (Ink + is-in-ci): любые CI_* / CI / CONTINUOUS_INTEGRATION дают «не CI-терминал» -
 # страдает интерактив и по ощущениям стриминг (пакетная отрисовка).
 # Claude Code в обычном cmd /k тоже не должен видеть фальш-CI.
 

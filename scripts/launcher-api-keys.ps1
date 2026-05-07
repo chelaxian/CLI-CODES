@@ -1,4 +1,4 @@
-# Модуль для управления API ключами в лаунчерах Qwen/Claude
+﻿# Модуль для управления API ключами в лаунчерах Qwen/Claude
 
 function Get-ProviderHelpUrl {
   param(
@@ -178,7 +178,7 @@ function Show-ApiKeyChangeMenu {
     $newKey = Read-SecretText "Введите новый API ключ (или оставьте пустым для отмены): "
     
     if ([string]::IsNullOrWhiteSpace($newKey)) {
-      Write-Host "Отмена — ключ не изменён." -ForegroundColor Yellow
+      Write-Host "Отмена - ключ не изменён." -ForegroundColor Yellow
       Write-Host "Нажмите любую клавишу для продолжения..."
       $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
       continue

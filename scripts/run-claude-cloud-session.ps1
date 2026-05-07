@@ -1,4 +1,4 @@
-[CmdletBinding(DefaultParameterSetName = "Full")]
+﻿[CmdletBinding(DefaultParameterSetName = "Full")]
 param(
   [Parameter(ParameterSetName = "Full", Mandatory = $true)]
   [ValidateSet("zai", "nim", "nim-qwen", "openrouter")]
@@ -177,7 +177,7 @@ function Ensure-ClaudeMemWorker {
   if (-not $psExe) { $psExe = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" }
 
   try {
-    # 1) Тот же сценарий, что у вас вручную: bun в PATH + npx (не обрезать stdout у .cmd — иначе пустые логи и сбой джоба).
+    # 1) Тот же сценарий, что у вас вручную: bun в PATH + npx (не обрезать stdout у .cmd - иначе пустые логи и сбой джоба).
     if (Test-Path -LiteralPath $memStarter) {
       # Без перенаправления stdout/stderr: у npx.cmd + .cmd цепочек редирект в фоне часто даёт пустые логи и нестарт.
       Start-Process `
@@ -239,7 +239,7 @@ function Read-SecretText([string]$Prompt) {
 function Start-Obsidian([string]$Exe,[string]$Vault) {
   try {
     if (Get-Process -Name "Obsidian" -ErrorAction SilentlyContinue) {
-      Write-Host "Obsidian уже запущен — пропуск повторного старта." -ForegroundColor DarkGray
+      Write-Host "Obsidian уже запущен - пропуск повторного старта." -ForegroundColor DarkGray
       return
     }
   } catch {}
@@ -324,7 +324,7 @@ function Ensure-FreeClaudeCodeProxy {
   throw "free-claude-code proxy did not become ready on port $Port. Logs: $errLog ; $outLog"
 }
 
-# PATH до npx/node — до любых sidecar и до claude.cmd.
+# PATH до npx/node - до любых sidecar и до claude.cmd.
 Ensure-ClaudeSidecarPath
 
 if (-not $SkipCommonPreamble) {
@@ -332,7 +332,7 @@ if (-not $SkipCommonPreamble) {
 }
 
 # claude-mem и Obsidian нужны при каждом входе в сессию: при -SkipCommonPreamble раньше они не вызывались,
-# и если PrepareOnly не успел за 8 с — воркер так и не поднимался.
+# и если PrepareOnly не успел за 8 с - воркер так и не поднимался.
 Ensure-ClaudeMemWorker
 if ($OpenClaudeMemObserver -ne 0) {
   try {

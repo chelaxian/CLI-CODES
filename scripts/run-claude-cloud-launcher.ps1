@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
   [switch]$Quick
 )
@@ -77,47 +77,47 @@ $script:Profiles = @(
   }
   @{
     Id    = "claude-zai"
-    Label = "Z.AI — GLM-4.7 (paid, tool calling)"
+    Label = "Z.AI - GLM-4.7 (paid, tool calling)"
   }
   @{
     Id    = "claude-zai-glm51"
-    Label = "Z.AI — GLM-5.1 (paid, tool calling)"
+    Label = "Z.AI - GLM-5.1 (paid, tool calling)"
   }
   @{
     Id    = "claude-zai-flash47"
-    Label = "Z.AI — GLM-4.7-Flash (free, tool calling)"
+    Label = "Z.AI - GLM-4.7-Flash (free, tool calling)"
   }
   @{
     Id    = "claude-zai-flash45"
-    Label = "Z.AI — GLM-4.5-Flash (free, tool calling)"
+    Label = "Z.AI - GLM-4.5-Flash (free, tool calling)"
   }
   @{
     Id    = "claude-nim"
-    Label = "NVIDIA NIM — GLM-4.7 (free, tool calling)"
+    Label = "NVIDIA NIM - GLM-4.7 (free, tool calling)"
   }
   @{
     Id    = "claude-nim-qwen"
-    Label = "NVIDIA NIM — Qwen3.5-122B-A10B (free, tool calling)"
+    Label = "NVIDIA NIM - Qwen3.5-122B-A10B (free, tool calling)"
   }
   @{
     Id    = "claude-openrouter-sonnet"
-    Label = "OpenRouter — Claude Sonnet 4 (paid, tool calling)"
+    Label = "OpenRouter - Claude Sonnet 4 (paid, tool calling)"
   }
   @{
     Id    = "claude-openrouter-qwen-coder"
-    Label = "OpenRouter — Qwen3 Coder (free, tool calling)"
+    Label = "OpenRouter - Qwen3 Coder (free, tool calling)"
   }
   @{
     Id    = "claude-openrouter-hy3"
-    Label = "OpenRouter — Tencent Hy3 (free, tool calling)"
+    Label = "OpenRouter - Tencent Hy3 (free, tool calling)"
   }
   @{
     Id    = "claude-openrouter-nemotron"
-    Label = "OpenRouter — Nemotron 3 Super 120B (free, tool calling)"
+    Label = "OpenRouter - Nemotron 3 Super 120B (free, tool calling)"
   }
   @{
     Id    = "claude-openrouter-laguna"
-    Label = "OpenRouter — Poolside Laguna M.1 (free, tool calling, coding)"
+    Label = "OpenRouter - Poolside Laguna M.1 (free, tool calling, coding)"
   }
   @{
     Id    = "custom-model"
@@ -303,7 +303,7 @@ if ($lastId) {
 }
 
 while ($true) {
-  $choice = Show-TuiFramedMenu -AppBrand "Claude" -Title "Claude Code (облако) — провайдер" -Subtitle "Z.AI · NIM · OpenRouter (через free-claude-code)" -Items $items -InitialIndex $startIdx -MaxVisible 20
+  $choice = Show-TuiFramedMenu -AppBrand "Claude" -Title "Claude Code (облако) - провайдер" -Subtitle "Z.AI · NIM · OpenRouter (через free-claude-code)" -Items $items -InitialIndex $startIdx -MaxVisible 20
   if (-not $choice) {
     Write-Host "Отменено." -ForegroundColor Yellow
     exit 0
@@ -354,7 +354,7 @@ while ($true) {
       "claude-sub" {
         Clear-Host
         Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Cyan
-        Write-Host "  Claude OAuth — авторизация через браузер" -ForegroundColor Cyan
+        Write-Host "  Claude OAuth - авторизация через браузер" -ForegroundColor Cyan
         Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Cyan
         Write-Host ""
         Write-Host "  Откроется браузер. Завершите авторизацию в нём." -ForegroundColor Yellow
@@ -372,7 +372,7 @@ while ($true) {
       "anthropic-console" {
         Clear-Host
         Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Cyan
-        Write-Host "  Anthropic Console — авторизация через браузер" -ForegroundColor Cyan
+        Write-Host "  Anthropic Console - авторизация через браузер" -ForegroundColor Cyan
         Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Cyan
         Write-Host ""
         Write-Host "  Откроется браузер. Завершите авторизацию." -ForegroundColor Yellow

@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
   [string]$Model = "nim-glm-4.7-tools"
 )
@@ -150,7 +150,7 @@ $settingsJson = @{
     openai = @(
       @{
         id = $nimModelForProxy
-        name = "NVIDIA NIM — $nimModelForProxy (via LiteLLM proxy :4000)"
+        name = "NVIDIA NIM - $nimModelForProxy (via LiteLLM proxy :4000)"
         envKey = "OPENAI_API_KEY"
         baseUrl = "http://127.0.0.1:4000/v1"
         generationConfig = @{
@@ -189,7 +189,7 @@ if (-not $qwenExe) {
   throw "Qwen Code CLI not found. Reinstall with: npm install -g @qwen-code/qwen-code@latest"
 }
 
-Write-Host "Launching Qwen Code (NVIDIA NIM, $Model — tools + thinking via modelProviders) ..." -ForegroundColor Cyan
+Write-Host "Launching Qwen Code (NVIDIA NIM, $Model - tools + thinking via modelProviders) ..." -ForegroundColor Cyan
 
 Push-Location $sessionRoot
 try {

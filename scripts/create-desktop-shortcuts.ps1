@@ -1,4 +1,4 @@
-# Создаёт ярлыки на рабочем столе: Claude/Qwen Code (cloud), claude-mem Start/Viewer.
+﻿# Создаёт ярлыки на рабочем столе: Claude/Qwen Code (cloud), claude-mem Start/Viewer.
 # Запуск: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\create-desktop-shortcuts.ps1 -RepoRoot "D:\qwen-local-setup"
 
 [CmdletBinding()]
@@ -57,7 +57,7 @@ New-Shortcut `
   -Arguments ('/k chcp 65001 >nul & ' + $psExe + ' -NoProfile -ExecutionPolicy Bypass -File "' + $launcherClaude + '"') `
   -WorkingDirectory $RepoRoot `
   -Icon $IconLocation `
-  -Description "Claude Code: Z.AI или NIM через free-claude-code — меню. Пресеты NIM без изменений. Другая модель (NIM вне GLM-4.7/Qwen3.5-122B/DeepSeek Terminus): tool_choice=none + content как строка + в лаунчере --tools minimal. Qwen: для таких NIM отдельно локальный прокси string-content."
+  -Description "Claude Code: Z.AI или NIM через free-claude-code - меню. Пресеты NIM без изменений. Другая модель (NIM вне GLM-4.7/Qwen3.5-122B/DeepSeek Terminus): tool_choice=none + content как строка + в лаунчере --tools minimal. Qwen: для таких NIM отдельно локальный прокси string-content."
 
 New-Shortcut `
   -LinkPath (Join-Path $DesktopPath "Qwen Code (cloud).lnk") `
@@ -65,7 +65,7 @@ New-Shortcut `
   -Arguments ('/k chcp 65001 >nul & ' + $psExe + ' -NoProfile -ExecutionPolicy Bypass -File "' + $launcherQwen + '"') `
   -WorkingDirectory $RepoRoot `
   -Icon $IconLocation `
-  -Description "Qwen Code: Z.AI Coding / NVIDIA NIM — меню. Пресеты NIM без изменений. Другая модель NIM: локальный прокси string-content + минимальный режим. У Claude для таких NIM — free-claude-code и --tools minimal. Z.AI без ограничений."
+  -Description "Qwen Code: Z.AI Coding / NVIDIA NIM - меню. Пресеты NIM без изменений. Другая модель NIM: локальный прокси string-content + минимальный режим. У Claude для таких NIM - free-claude-code и --tools minimal. Z.AI без ограничений."
 
 New-Shortcut `
   -LinkPath (Join-Path $DesktopPath "Claude Mem Start.lnk") `

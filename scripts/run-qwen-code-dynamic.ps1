@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
   [Parameter(Mandatory = $true)]
   [ValidateSet("zai", "nim", "groq", "openrouter")]
@@ -51,7 +51,7 @@ function Build-QwenSettingsZai([string]$Mid) {
       openai = @(
         @{
           id           = $Mid
-          name         = ("Z.AI — {0} (dynamic)" -f $Mid)
+          name         = ("Z.AI - {0} (dynamic)" -f $Mid)
           description  = "Coding API; extra_body как у GLM-4.7"
           envKey       = "OPENAI_API_KEY"
           baseUrl      = "https://api.z.ai/api/coding/paas/v4"
@@ -99,7 +99,7 @@ function Build-QwenSettingsOpenAI {
       openai = @(
         @{
           id           = $Mid
-          name         = ("OpenAI-compat — {0}" -f $Mid)
+          name         = ("OpenAI-compat - {0}" -f $Mid)
           envKey       = "OPENAI_API_KEY"
           baseUrl      = $BaseUrl
           generationConfig = @{
@@ -163,7 +163,7 @@ function Wait-TcpListen {
 function Start-NimStringContentProxy {
   param([int]$Port)
   $node = Get-Command node -ErrorAction SilentlyContinue
-  if (-not $node) { throw "node не в PATH — нужен для nim-integrate-string-content-proxy.mjs" }
+  if (-not $node) { throw "node не в PATH - нужен для nim-integrate-string-content-proxy.mjs" }
   $scriptPath = Join-Path $PSScriptRoot "nim-integrate-string-content-proxy.mjs"
   if (-not (Test-Path -LiteralPath $scriptPath)) { throw "Не найден $scriptPath" }
   Start-Process -FilePath $node.Source -ArgumentList @("`"$scriptPath`"", "$Port") -WorkingDirectory $PSScriptRoot -WindowStyle Hidden | Out-Null
@@ -210,7 +210,7 @@ function Build-QwenSettingsNim {
     [hashtable]$CompatLimits = $null
   )
 
-  # Модели с нативным tool calling на NIM — полный путь (как пресеты): прямой integrate, эвристики thinking.
+  # Модели с нативным tool calling на NIM - полный путь (как пресеты): прямой integrate, эвристики thinking.
   # Остальные динамические NIM: MinimalCompat + локальный прокси (content → string), без стартового контекста, tool_choice=none.
   $nativeTools = Test-NvidiaNimOpenAiNativeToolCalling $Mid
 
@@ -258,7 +258,7 @@ function Build-QwenSettingsNim {
       openai = @(
         @{
           id           = $Mid
-          name         = ("NVIDIA NIM — {0} (dynamic)" -f $Mid)
+          name         = ("NVIDIA NIM - {0} (dynamic)" -f $Mid)
           description  = $desc
           envKey       = "OPENAI_API_KEY"
           baseUrl      = $BaseUrl
@@ -331,7 +331,7 @@ if ($Provider -eq "zai") {
       openai = @(
         @{
           id              = $mid
-          name            = "Z.AI General — $mid"
+          name            = "Z.AI General - $mid"
           envKey          = "OPENAI_API_KEY"
           baseUrl         = "https://api.z.ai/api/paas/v4"
           generationConfig = @{

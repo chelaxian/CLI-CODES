@@ -1,4 +1,4 @@
-# TUI-меню для лаунчеров Qwen / Claude (рамки, прокрутка, баннер).
+﻿# TUI-меню для лаунчеров Qwen / Claude (рамки, прокрутка, баннер).
 
 function Set-LauncherTuiConsole {
   try {
@@ -14,7 +14,7 @@ function Get-LauncherTuiBox {
   }
 }
 
-# В PowerShell нельзя писать [char] * N — только ([string][char]) * N
+# В PowerShell нельзя писать [char] * N - только ([string][char]) * N
 function Repeat-TuiChar {
   param(
     [char]$Ch,
@@ -153,7 +153,7 @@ function Show-TuiFramedMenu {
   $idx = [Math]::Max(0, [Math]::Min($InitialIndex, $n - 1))
   $heightCap = [Math]::Max(6, $win.Height - 12)
   $visible = [Math]::Max(4, [Math]::Min($MaxVisible, [Math]::Min($n, $heightCap)))
-  # При dot-source $script: — область вызывающего файла; скролл ломался. Hashtable — общий изменяемый объект.
+  # При dot-source $script: - область вызывающего файла; скролл ломался. Hashtable - общий изменяемый объект.
   $scroll = @{ Top = 0 }
 
   function Sync-TuiScroll {
@@ -198,8 +198,8 @@ function Show-TuiFramedMenu {
       Write-TuiRow -Text $row -InnerWidth $inner -Fg $fg
     }
     Write-TuiRow -Text ("".PadRight($inner)) -InnerWidth $inner
-    $escHint = if ($EscapeAction -eq "Back") { "Esc — назад" } else { "Esc — выход" }
-    $hint = ("  {0}{1}  выбор   Enter — OK   {2}   Home/End   PgUp/PgDn" -f [char]0x2191, [char]0x2193, $escHint)
+    $escHint = if ($EscapeAction -eq "Back") { "Esc - назад" } else { "Esc - выход" }
+    $hint = ("  {0}{1}  выбор   Enter - OK   {2}   Home/End   PgUp/PgDn" -f [char]0x2191, [char]0x2193, $escHint)
     Write-TuiRow -Text $hint -InnerWidth $inner -Fg DarkGray
     if ($n -gt $visible) {
       $pg = ("  строки {0}-{1} из {2}" -f ($scroll.Top + 1), ([Math]::Min($scroll.Top + $visible, $n)), $n)

@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
   [switch]$Quick
 )
@@ -63,45 +63,45 @@ $script:Profiles = @(
   }
   @{
     Id          = "nim-glm"
-    Label       = "NVIDIA NIM — GLM-4.7 (free, tool calling)"
+    Label       = "NVIDIA NIM - GLM-4.7 (free, tool calling)"
     NimModel    = "nim-glm-4.7-tools"
   }
   @{
     Id          = "nim-qwen"
-    Label       = "NVIDIA NIM — Qwen3.5-122B-A10B (free, tool calling)"
+    Label       = "NVIDIA NIM - Qwen3.5-122B-A10B (free, tool calling)"
     NimModel    = "nim-qwen3.5-122b-a10b-tools"
   }
   @{
     Id          = "zai-glm"
-    Label       = "Z.AI — GLM-4.7 (paid, tool calling)"
+    Label       = "Z.AI - GLM-4.7 (paid, tool calling)"
   }
   @{
     Id          = "zai-glm51"
-    Label       = "Z.AI — GLM-5.1 (paid, tool calling)"
+    Label       = "Z.AI - GLM-5.1 (paid, tool calling)"
   }
   @{
     Id          = "zai-flash47"
-    Label       = "Z.AI — GLM-4.7-Flash (free, tool calling)"
+    Label       = "Z.AI - GLM-4.7-Flash (free, tool calling)"
   }
   @{
     Id          = "zai-flash45"
-    Label       = "Z.AI — GLM-4.5-Flash (free, tool calling)"
+    Label       = "Z.AI - GLM-4.5-Flash (free, tool calling)"
   }
   @{
     Id          = "openrouter-qwen-coder"
-    Label       = "OpenRouter — Qwen3 Coder (free, tool calling)"
+    Label       = "OpenRouter - Qwen3 Coder (free, tool calling)"
   }
   @{
     Id          = "openrouter-hy3"
-    Label       = "OpenRouter — Tencent Hy3 (free, tool calling)"
+    Label       = "OpenRouter - Tencent Hy3 (free, tool calling)"
   }
   @{
     Id          = "openrouter-nemotron"
-    Label       = "OpenRouter — Nemotron 3 Super 120B (free, tool calling)"
+    Label       = "OpenRouter - Nemotron 3 Super 120B (free, tool calling)"
   }
   @{
     Id          = "openrouter-laguna"
-    Label       = "OpenRouter — Poolside Laguna M.1 (free, tool calling, coding)"
+    Label       = "OpenRouter - Poolside Laguna M.1 (free, tool calling, coding)"
   }
   @{
     Id          = "custom-model"
@@ -269,7 +269,7 @@ if ($lastId) {
 }
 
 while ($true) {
-  $choice = Show-TuiFramedMenu -AppBrand "Qwen" -Title "Qwen Code — выбор профиля" -Subtitle "OpenAI Coding (Z.AI / NIM) + пресеты" -Items $items -InitialIndex $startIdx -MaxVisible 20
+  $choice = Show-TuiFramedMenu -AppBrand "Qwen" -Title "Qwen Code - выбор профиля" -Subtitle "OpenAI Coding (Z.AI / NIM) + пресеты" -Items $items -InitialIndex $startIdx -MaxVisible 20
   if (-not $choice) {
     Write-Host "Отменено." -ForegroundColor Yellow
     exit 0
@@ -315,7 +315,7 @@ while ($true) {
       "qwen-oauth" {
         Clear-Host
         Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Cyan
-        Write-Host "  Qwen OAuth — авторизация через браузер" -ForegroundColor Cyan
+        Write-Host "  Qwen OAuth - авторизация через браузер" -ForegroundColor Cyan
         Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Cyan
         Write-Host ""
         Write-Host "  Откроется браузер. Завершите авторизацию в нём." -ForegroundColor Yellow

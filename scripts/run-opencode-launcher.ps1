@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
   [switch]$Quick
 )
@@ -34,43 +34,43 @@ $script:Profiles = @(
   }
   @{
     Id    = "zai-glm"
-    Label = "Z.AI — GLM-4.7 (paid, tool calling)"
+    Label = "Z.AI - GLM-4.7 (paid, tool calling)"
   }
   @{
     Id    = "zai-glm51"
-    Label = "Z.AI — GLM-5.1 (paid, tool calling)"
+    Label = "Z.AI - GLM-5.1 (paid, tool calling)"
   }
   @{
     Id    = "zai-flash47"
-    Label = "Z.AI — GLM-4.7-Flash (free, tool calling)"
+    Label = "Z.AI - GLM-4.7-Flash (free, tool calling)"
   }
   @{
     Id    = "zai-flash45"
-    Label = "Z.AI — GLM-4.5-Flash (free, tool calling)"
+    Label = "Z.AI - GLM-4.5-Flash (free, tool calling)"
   }
   @{
     Id    = "nim-glm"
-    Label = "NVIDIA NIM — GLM-4.7 (free, tool calling)"
+    Label = "NVIDIA NIM - GLM-4.7 (free, tool calling)"
   }
   @{
     Id    = "nim-qwen"
-    Label = "NVIDIA NIM — Qwen3.5-122B-A10B (free, tool calling)"
+    Label = "NVIDIA NIM - Qwen3.5-122B-A10B (free, tool calling)"
   }
   @{
     Id    = "openrouter-qwen-coder"
-    Label = "OpenRouter — Qwen3 Coder (free, tool calling)"
+    Label = "OpenRouter - Qwen3 Coder (free, tool calling)"
   }
   @{
     Id    = "openrouter-hy3"
-    Label = "OpenRouter — Tencent Hy3 (free, tool calling)"
+    Label = "OpenRouter - Tencent Hy3 (free, tool calling)"
   }
   @{
     Id    = "openrouter-nemotron"
-    Label = "OpenRouter — Nemotron 3 Super 120B (free, tool calling)"
+    Label = "OpenRouter - Nemotron 3 Super 120B (free, tool calling)"
   }
   @{
     Id    = "openrouter-laguna"
-    Label = "OpenRouter — Poolside Laguna M.1 (free, tool calling, coding)"
+    Label = "OpenRouter - Poolside Laguna M.1 (free, tool calling, coding)"
   }
   @{
     Id    = "custom-model"
@@ -128,7 +128,7 @@ function Resolve-OpenCodeExe {
     }
   }
 
-  # 1) .cmd — предпочтительный вариант (не завершает вызывающий скрипт через exit)
+  # 1) .cmd - предпочтительный вариант (не завершает вызывающий скрипт через exit)
   $cmd = Get-Command opencode.cmd -ErrorAction SilentlyContinue
   if ($cmd) { return $cmd.Source }
 
@@ -479,7 +479,7 @@ if ($lastId) {
 }
 
 while ($true) {
-  $choice = Show-TuiFramedMenu -AppBrand "OpenCode" -Title "OpenCode — выбор провайдера" -Subtitle "Z.AI · NIM · OpenRouter (OpenAI-compatible)" -Items $items -InitialIndex $startIdx -MaxVisible 20
+  $choice = Show-TuiFramedMenu -AppBrand "OpenCode" -Title "OpenCode - выбор провайдера" -Subtitle "Z.AI · NIM · OpenRouter (OpenAI-compatible)" -Items $items -InitialIndex $startIdx -MaxVisible 20
   if (-not $choice) {
     Write-Host "Отменено." -ForegroundColor Yellow
     exit 0
@@ -524,7 +524,7 @@ while ($true) {
       "providers-login" {
         Clear-Host
         Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Cyan
-        Write-Host "  OpenCode — вход через провайдера" -ForegroundColor Cyan
+        Write-Host "  OpenCode - вход через провайдера" -ForegroundColor Cyan
         Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Cyan
         Write-Host ""
         Write-Host "  Выберите провайдера и следуйте инструкциям." -ForegroundColor Yellow
@@ -538,7 +538,7 @@ while ($true) {
       "providers-list" {
         Clear-Host
         Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Cyan
-        Write-Host "  OpenCode — подключённые провайдеры" -ForegroundColor Cyan
+        Write-Host "  OpenCode - подключённые провайдеры" -ForegroundColor Cyan
         Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Cyan
         Write-Host ""
         Invoke-CliCommand -ExePath $opencodeExe -Arguments @("providers", "list")

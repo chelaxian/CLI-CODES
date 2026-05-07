@@ -117,7 +117,7 @@ if [ "$PROVIDER" = "zai" ]; then
     "openai": [
       {
         "id": "$MODEL_ID",
-        "name": "Z.AI — $MODEL_ID (dynamic)",
+        "name": "Z.AI - $MODEL_ID (dynamic)",
         "envKey": "OPENAI_API_KEY",
         "baseUrl": "https://api.z.ai/api/coding/paas/v4",
         "generationConfig": {
@@ -164,7 +164,7 @@ else
     "openai": [
       {
         "id": "$MODEL_ID",
-        "name": "$PROVIDER — $MODEL_ID (dynamic)",
+        "name": "$PROVIDER - $MODEL_ID (dynamic)",
         "envKey": "OPENAI_API_KEY",
         "baseUrl": "$BASE_URL",
         "generationConfig": {

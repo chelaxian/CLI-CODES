@@ -1,4 +1,4 @@
-# Dot-source из лаунчеров: списки моделей по API-ключу (Z.AI Coding, NVIDIA NIM).
+﻿# Dot-source из лаунчеров: списки моделей по API-ключу (Z.AI Coding, NVIDIA NIM).
 
 function Test-TcpPortListening([int]$Port) {
   try {
@@ -42,10 +42,10 @@ function Invoke-LauncherJsonGet {
 
 # У NVIDIA NIM (integrate OpenAI) нативный tool calling в Qwen Code имеет смысл только для моделей,
 # явно помеченных в каталоге как Tool Calling / strict function calling (по списку пользователя).
-# Для всех остальных NIM-моделей: в run-qwen-code-dynamic.ps1 — tool_choice=none, локальный прокси
+# Для всех остальных NIM-моделей: в run-qwen-code-dynamic.ps1 - tool_choice=none, локальный прокси
 # nim-integrate-string-content-proxy.mjs (content → string, trim messages по ctx tier), model.skipStartupContext; эвристика tier
 # micro/standard/large (contextWindowSize + max_tokens) в run-qwen-code-dynamic.ps1; в free-claude-code
-# providers/nvidia_nim/request.py — tool_choice=none, flatten content, cap max_tokens по тем же tier; custom Claude NIM —
+# providers/nvidia_nim/request.py - tool_choice=none, flatten content, cap max_tokens по тем же tier; custom Claude NIM -
 # в run-claude-cloud-launcher.ps1 --tools minimal. Префикс nvidia_nim/ учитывается в Test-NvidiaNimOpenAiNativeToolCalling.
 # чтобы не слать tool_choice=auto (ошибка vLLM 400 про --enable-auto-tool-choice).
 function Test-NvidiaNimOpenAiNativeToolCalling {
@@ -205,7 +205,7 @@ function Get-GroqModelIdsFromApi {
       return @($resp.data | Sort-Object -Property id | ForEach-Object { $_.id })
     }
   } catch {
-    # Groq API может быть заблокирован в РФ (403) — fallback на статический список
+    # Groq API может быть заблокирован в РФ (403) - fallback на статический список
     Write-Host "Groq API недоступен (возможно заблокирован в РФ). Используем встроенный каталог." -ForegroundColor Yellow
   }
   return @(Get-GroqBundledFreeModelIds)

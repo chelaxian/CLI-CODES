@@ -1,4 +1,4 @@
-# Dot-source после launcher-tui.ps1 и launcher-provider-models.ps1
+﻿# Dot-source после launcher-tui.ps1 и launcher-provider-models.ps1
 # Возврат: [pscustomobject]@{ Provider = 'zai'|'nim'; ModelId = '...'; ClaudeNimModel = 'nvidia_nim/...' }
 # NIM в мастере: полный API, пересечение с каталогом free/preview, или только встроенный статический список.
 
@@ -55,15 +55,15 @@ function Invoke-LauncherCustomModelWizard {
 
   $brand = $App
   $provItems = @(
-    [pscustomobject]@{ Id = "zai"; Label = "Z.AI — Coding endpoint (список моделей по вашему ключу)" }
-    [pscustomobject]@{ Id = "zai-general"; Label = "Z.AI — General endpoint (все модели, статический список)" }
-    [pscustomobject]@{ Id = "nim"; Label = "NVIDIA NIM — полный каталог (GET /v1/models, все ID)" }
-    [pscustomobject]@{ Id = "nim-bundled"; Label = "NVIDIA NIM — только free/preview (API ∩ встроенный список ~50)" }
-    [pscustomobject]@{ Id = "nim-free"; Label = "NVIDIA NIM — free/preview (только статический список, без API)" }
-    [pscustomobject]@{ Id = "groq"; Label = "Groq — полный каталог моделей (GET /v1/models)" }
-    [pscustomobject]@{ Id = "groq-free"; Label = "Groq — только бесплатные модели (статический список)" }
-    [pscustomobject]@{ Id = "openrouter"; Label = "OpenRouter — полный каталог моделей (GET /v1/models)" }
-    [pscustomobject]@{ Id = "openrouter-free"; Label = "OpenRouter — только бесплатные модели (статический список)" }
+    [pscustomobject]@{ Id = "zai"; Label = "Z.AI - Coding endpoint (список моделей по вашему ключу)" }
+    [pscustomobject]@{ Id = "zai-general"; Label = "Z.AI - General endpoint (все модели, статический список)" }
+    [pscustomobject]@{ Id = "nim"; Label = "NVIDIA NIM - полный каталог (GET /v1/models, все ID)" }
+    [pscustomobject]@{ Id = "nim-bundled"; Label = "NVIDIA NIM - только free/preview (API ∩ встроенный список ~50)" }
+    [pscustomobject]@{ Id = "nim-free"; Label = "NVIDIA NIM - free/preview (только статический список, без API)" }
+    [pscustomobject]@{ Id = "groq"; Label = "Groq - полный каталог моделей (GET /v1/models)" }
+    [pscustomobject]@{ Id = "groq-free"; Label = "Groq - только бесплатные модели (статический список)" }
+    [pscustomobject]@{ Id = "openrouter"; Label = "OpenRouter - полный каталог моделей (GET /v1/models)" }
+    [pscustomobject]@{ Id = "openrouter-free"; Label = "OpenRouter - только бесплатные модели (статический список)" }
   )
 
   # Groq не поддерживается для Claude Code (ограничение free-claude-code: nvidia_nim transport)
@@ -72,7 +72,7 @@ function Invoke-LauncherCustomModelWizard {
   }
 
   while ($true) {
-    $p1 = Show-TuiFramedMenu -AppBrand $brand -Title "Другая модель" -Subtitle "Шаг 1 из 2 — выберите провайдера" -Items $provItems -InitialIndex 0 -EscapeAction Back
+    $p1 = Show-TuiFramedMenu -AppBrand $brand -Title "Другая модель" -Subtitle "Шаг 1 из 2 - выберите провайдера" -Items $provItems -InitialIndex 0 -EscapeAction Back
     if ($null -eq $p1) { return $null }
     if ($true -eq $p1.__menuBack) { return [pscustomobject]@{ __menuBack = $true } }
     $provSource = [string]$p1.Id
@@ -163,7 +163,7 @@ function Invoke-LauncherCustomModelWizard {
       [pscustomobject]@{ Id = $id; Label = $id }
     }
 
-    $pick = Show-TuiFramedMenu -AppBrand $brand -Title "Другая модель" -Subtitle ("Шаг 2 из 2 — {0}, моделей: {1}" -f $provLabel, $ids.Count) -Items $modelItems -InitialIndex 0 -MaxVisible 14 -EscapeAction Back
+    $pick = Show-TuiFramedMenu -AppBrand $brand -Title "Другая модель" -Subtitle ("Шаг 2 из 2 - {0}, моделей: {1}" -f $provLabel, $ids.Count) -Items $modelItems -InitialIndex 0 -MaxVisible 14 -EscapeAction Back
     if ($null -eq $pick) { return $null }
     if ($pick.__menuBack) { continue }
 
