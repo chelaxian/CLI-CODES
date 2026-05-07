@@ -1,4 +1,4 @@
-# cloud-code-setup - Windows bootstrap (PowerShell)
+﻿# cloud-code-setup - Windows bootstrap (PowerShell)
 # 1-click: irm https://raw.githubusercontent.com/chelaxian/cloud-code-setup/main/install.ps1 | iex
 # Or: git clone https://github.com/chelaxian/cloud-code-setup.git && cd cloud-code-setup && .\install.ps1
 

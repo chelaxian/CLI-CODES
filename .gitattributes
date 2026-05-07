@@ -1,3 +1,4 @@
-# Prevent BOM in PowerShell scripts
-*.ps1 text eol=lf working-tree-encoding=utf-8
+# PowerShell 5.1: keep UTF-8 BOM for non-bootstrap scripts.
+# (Scripts without BOM may be interpreted as ANSI, corrupting Unicode.)
+*.ps1 text eol=lf
 *.sh text eol=lf
