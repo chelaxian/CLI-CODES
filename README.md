@@ -81,15 +81,9 @@ cd cloud-code-setup
 ### OpenRouter (free, tool calling)
 | Модель | Qwen Code | Claude Code | OpenCode |
 |--------|-----------|-------------|----------|
-| Qwen3 Coder | + | + | + |
 | Tencent Hy3 preview | + | + | + |
 | Nemotron 3 Super 120B | + | + | + |
 | Poolside Laguna M.1 (coding) | + | + | + |
-
-### OpenRouter (paid, tool calling)
-| Модель | Qwen Code | Claude Code | OpenCode |
-|--------|-----------|-------------|----------|
-| Claude Sonnet 4 | — | + | — |
 
 ### Groq (free, chat only — через «Другая модель»)
 | Заметка | Qwen Code | Claude Code | OpenCode |
