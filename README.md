@@ -179,8 +179,6 @@ cloud-code-setup/
 ### Опциональные (для продвинутых функций)
 - **LiteLLM** — для пресетов NIM с Qwen Code (порт 4000)
 - **free-claude-code** — для Claude Code через NIM
-- **claude-mem** — память для Claude Code
-- **Obsidian** — хранилище сессий Claude Code
 
 ---
 
