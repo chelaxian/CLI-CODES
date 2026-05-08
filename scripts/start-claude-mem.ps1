@@ -130,25 +130,23 @@ if (-not (Get-Command claude-mem -ErrorAction SilentlyContinue)) {
     }
     $cmSettingsFile = Join-Path $cmDataDir "settings.json"
     if (-not (Test-Path -LiteralPath $cmSettingsFile)) {
-      $existingOrKey = $env:OPENROUTER_API_KEY
-      if ([string]::IsNullOrWhiteSpace($existingOrKey)) {
-        $existingOrKey = [Environment]::GetEnvironmentVariable("OPENROUTER_API_KEY", "User")
-      }
       $cmSettings = @{
-        CLAUDE_MEM_PROVIDER       = "openrouter"
-        CLAUDE_MEM_OPENROUTER_MODEL = "xiaomi/mimo-v2-flash:free"
-        CLAUDE_MEM_OPENROUTER_API_KEY = if ($existingOrKey) { $existingOrKey } else { "" }
-        CLAUDE_MEM_MODEL          = "claude-haiku-4-5-20251001"
-        CLAUDE_MEM_CLAUDE_AUTH_METHOD = "subscription"
+        CLAUDE_MEM_PROVIDER       = "claude"
+        CLAUDE_MEM_CLAUDE_AUTH_METHOD = "api"
+        CLAUDE_MEM_MODEL          = "claude-sonnet-4-6"
+        CLAUDE_MEM_TIER_ROUTING_ENABLED = "true"
+        CLAUDE_MEM_TIER_SIMPLE_MODEL = "haiku"
         CLAUDE_MEM_WORKER_PORT    = "37777"
+        CLAUDE_MEM_WORKER_HOST    = "127.0.0.1"
+        CLAUDE_MEM_MODE           = "code"
       } | ConvertTo-Json -Depth 3
       [System.IO.File]::WriteAllText($cmSettingsFile, $cmSettings, (New-Object System.Text.UTF8Encoding($false)))
     }
 
-    & npx.cmd --yes claude-mem install --non-interactive --provider openrouter 2>$null
+    & npx.cmd --yes claude-mem install --non-interactive --provider claude 2>$null
     if ($LASTEXITCODE -ne 0) {
       & npm.cmd install -g claude-mem@latest 2>$null
-      & npx.cmd --yes claude-mem install --non-interactive --provider openrouter 2>$null
+      & npx.cmd --yes claude-mem install --non-interactive --provider claude 2>$null
     }
     if (-not (Test-Path -LiteralPath $workerScript)) {
       Write-Host "claude-mem: не удалось установить. Пропуск." -ForegroundColor Red

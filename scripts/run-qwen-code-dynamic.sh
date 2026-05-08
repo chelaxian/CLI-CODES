@@ -31,9 +31,25 @@ safe_dir_name() {
 
 get_api_key_interactive() {
   local prompt="$1"
-  echo -n "$prompt"
-  read -s key
-  echo
+  local key=""
+  local char=""
+  printf "%s" "$prompt"
+  while IFS= read -rsn1 char; do
+    if [[ $char == $'\0' ]]; then
+      continue
+    elif [[ $char == $'\177' || $char == $'\b' ]]; then
+      if [ -n "$key" ]; then
+        key="${key%?}"
+        printf '\b \b'
+      fi
+    elif [[ $char == $'\n' || $char == '' ]]; then
+      printf '\n'
+      break
+    else
+      key+="$char"
+      printf '*'
+    fi
+  done
   echo "$key"
 }
 
@@ -42,9 +58,25 @@ get_api_key_with_url() {
   local url="$2"
   echo -e "\033[33mAPI ключ не задан.\033[0m"
   echo -e "\033[36mПолучить ключ: $url\033[0m"
-  echo -n "$prompt"
-  read -s key
-  echo
+  local key=""
+  local char=""
+  printf "%s" "$prompt"
+  while IFS= read -rsn1 char; do
+    if [[ $char == $'\0' ]]; then
+      continue
+    elif [[ $char == $'\177' || $char == $'\b' ]]; then
+      if [ -n "$key" ]; then
+        key="${key%?}"
+        printf '\b \b'
+      fi
+    elif [[ $char == $'\n' || $char == '' ]]; then
+      printf '\n'
+      break
+    else
+      key+="$char"
+      printf '*'
+    fi
+  done
   echo "$key"
 }
 

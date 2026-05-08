@@ -243,13 +243,27 @@ function Ensure-ClaudeMemWorker {
 }
 
 function Read-SecretText([string]$Prompt) {
-  $s = Read-Host -Prompt $Prompt -AsSecureString
-  $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($s)
-  try {
-    return [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
-  } finally {
-    [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr)
+  Write-Host -NoNewline $Prompt
+  $key = ""
+  while ($true) {
+    $cki = $host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown,IncludeKeyUp")
+    if ($cki.Key -eq "Enter") {
+      Write-Host ""
+      break
+    } elseif ($cki.Key -eq "Backspace") {
+      if ($key.Length -gt 0) {
+        $key = $key.Substring(0, $key.Length - 1)
+        Write-Host -NoNewline "`b `b"
+      }
+    } elseif ($cki.Key -eq "Escape") {
+      Write-Host ""
+      return ""
+    } elseif (-not [string]::IsNullOrEmpty($cki.Character)) {
+      $key += $cki.Character
+      Write-Host -NoNewline "*"
+    }
   }
+  return $key
 }
 
 function Start-Obsidian([string]$Exe,[string]$Vault) {

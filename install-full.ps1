@@ -491,27 +491,21 @@ if ($installClaude) {
     }
     $claudeMemSettingsFile = Join-Path $claudeMemDataDir "settings.json"
 
-    # Build settings that work for FREE users:
-    #   - OpenRouter provider with xiaomi/mimo-v2-flash:free (no cost, no subscription)
-    #   - If user already has OPENROUTER_API_KEY env var, use it; otherwise leave placeholder
-    $existingOrKey = $env:OPENROUTER_API_KEY
-    if ([string]::IsNullOrWhiteSpace($existingOrKey)) {
-        $existingOrKey = [Environment]::GetEnvironmentVariable("OPENROUTER_API_KEY", "User")
-    }
-
     $claudeMemSettings = @{
-        CLAUDE_MEM_PROVIDER       = "openrouter"
-        CLAUDE_MEM_OPENROUTER_MODEL = "xiaomi/mimo-v2-flash:free"
-        CLAUDE_MEM_OPENROUTER_API_KEY = if ($existingOrKey) { $existingOrKey } else { "" }
-        CLAUDE_MEM_MODEL          = "claude-haiku-4-5-20251001"
-        CLAUDE_MEM_CLAUDE_AUTH_METHOD = "subscription"
+        CLAUDE_MEM_PROVIDER       = "claude"
+        CLAUDE_MEM_CLAUDE_AUTH_METHOD = "api"
+        CLAUDE_MEM_MODEL          = "claude-sonnet-4-6"
+        CLAUDE_MEM_TIER_ROUTING_ENABLED = "true"
+        CLAUDE_MEM_TIER_SIMPLE_MODEL = "haiku"
         CLAUDE_MEM_WORKER_PORT    = "37777"
+        CLAUDE_MEM_WORKER_HOST    = "127.0.0.1"
+        CLAUDE_MEM_MODE           = "code"
     } | ConvertTo-Json -Depth 3
 
     # Only write settings file if it doesn't already exist (preserve user's custom config)
     if (-not (Test-Path -LiteralPath $claudeMemSettingsFile)) {
         [System.IO.File]::WriteAllText($claudeMemSettingsFile, $claudeMemSettings, (New-Object System.Text.UTF8Encoding($false)))
-        Write-Status "  [OK] claude-mem settings pre-configured (OpenRouter free model)" "Green"
+        Write-Status "  [OK] claude-mem settings pre-configured (claude provider, api auth)" "Green"
     } else {
         Write-Status "  [OK] claude-mem settings already exist, keeping user config" "Green"
     }
@@ -678,9 +672,27 @@ Write-Status "Оставьте пустым чтобы пропустить. К�
 Write-Host ""
 
 function Read-Secret($Prompt) {
-    $sec = Read-Host -Prompt $Prompt -AsSecureString
-    $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($sec)
-    try { return [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr) } finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr) }
+    Write-Host -NoNewline $Prompt
+    $key = ""
+    while ($true) {
+        $cki = $host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown,IncludeKeyUp")
+        if ($cki.Key -eq "Enter") {
+            Write-Host ""
+            break
+        } elseif ($cki.Key -eq "Backspace") {
+            if ($key.Length -gt 0) {
+                $key = $key.Substring(0, $key.Length - 1)
+                Write-Host -NoNewline "`b `b"
+            }
+        } elseif ($cki.Key -eq "Escape") {
+            Write-Host ""
+            return ""
+        } elseif (-not [string]::IsNullOrEmpty($cki.Character)) {
+            $key += $cki.Character
+            Write-Host -NoNewline "*"
+        }
+    }
+    return $key
 }
 
 $nimKey = Read-Secret "NVIDIA NIM API key (Enter = пропустить): "

@@ -66,9 +66,25 @@ get_current_api_key() {
 
 read_secret_text() {
     local prompt="$1"
+    local key=""
+    local char=""
     printf "%s" "$prompt" >&3
-    IFS= read -rs key < /dev/tty
-    printf "\n" >&3
+    while IFS= read -rsn1 char < /dev/tty; do
+        if [[ $char == $'\0' ]]; then
+            continue
+        elif [[ $char == $'\177' || $char == $'\b' ]]; then
+            if [ -n "$key" ]; then
+                key="${key%?}"
+                printf '\b \b' >&3
+            fi
+        elif [[ $char == $'\n' || $char == '' ]]; then
+            printf '\n' >&3
+            break
+        else
+            key+="$char"
+            printf '*' >&3
+        fi
+    done
     echo "$key"
 }
 
