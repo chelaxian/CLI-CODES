@@ -344,11 +344,34 @@ fi
 
 step "НАСТРОЙКА API КЛЮЧЕЙ"
 
+read_api_key_stars() {
+    local prompt="$1"
+    local key=""
+    local char=""
+    printf "%s" "$prompt"
+    while IFS= read -rsn1 char; do
+        if [[ $char == $'\0' ]]; then
+            continue
+        elif [[ $char == $'\177' || $char == $'\b' ]]; then
+            if [ -n "$key" ]; then
+                key="${key%?}"
+                printf '\b \b'
+            fi
+        elif [[ $char == $'\n' || $char == '' ]]; then
+            printf '\n'
+            break
+        else
+            key+="$char"
+            printf '*'
+        fi
+    done
+    echo "$key"
+}
+
 echo -e "${YELLOW}Оставьте пустым, чтобы пропустить. Ключи можно изменить позже через меню лаунчера.${RESET}"
 echo ""
 
-read -s -p "NVIDIA NIM API ключ (Enter = пропуск): " nim_key
-echo ""
+nim_key=$(read_api_key_stars "NVIDIA NIM API ключ (Enter = пропуск): ")
 if [ -n "$nim_key" ]; then
     # Записываем в ~/.bashrc и ~/.zshrc
     for rc in "$HOME/.bashrc" "$HOME/.zshrc"; do
@@ -365,8 +388,7 @@ fi
 
 echo ""
 
-read -s -p "Z.AI API ключ (Enter = пропуск): " zai_key
-echo ""
+zai_key=$(read_api_key_stars "Z.AI API ключ (Enter = пропуск): ")
 if [ -n "$zai_key" ]; then
     for rc in "$HOME/.bashrc" "$HOME/.zshrc"; do
         if [ -f "$rc" ]; then
@@ -382,8 +404,7 @@ fi
 
 echo ""
 
-read -s -p "Groq API ключ (Enter = пропуск): " groq_key
-echo ""
+groq_key=$(read_api_key_stars "Groq API ключ (Enter = пропуск): ")
 if [ -n "$groq_key" ]; then
     for rc in "$HOME/.bashrc" "$HOME/.zshrc"; do
         if [ -f "$rc" ]; then
@@ -399,8 +420,7 @@ fi
 
 echo ""
 
-read -s -p "OpenRouter API ключ (Enter = пропуск): " or_key
-echo ""
+or_key=$(read_api_key_stars "OpenRouter API ключ (Enter = пропуск): ")
 if [ -n "$or_key" ]; then
     for rc in "$HOME/.bashrc" "$HOME/.zshrc"; do
         if [ -f "$rc" ]; then

@@ -416,6 +416,8 @@ if ($installChoice -eq "6") {
 $installQwen = $false
 $installClaude = $false
 $installOpenCode = $false
+$installClaudeMem = $false
+$installObsidian = $false
 
 switch ($installChoice) {
     "1" { $installQwen = $true }
@@ -424,6 +426,19 @@ switch ($installChoice) {
     "4" { $installQwen = $true; $installClaude = $true; $installOpenCode = $true }
     "0" { Write-Status "Выход." "Yellow"; return }
     default { Write-Status "Неверный выбор. Устанавливаем все три." "Yellow"; $installQwen = $true; $installClaude = $true; $installOpenCode = $true }
+}
+
+if ($installClaude) {
+    Write-Host ""
+    Write-Status "Дополнительные компоненты для Claude Code:" "Cyan"
+    $cmAnswer = Read-Host "Установить claude-mem (memory plugin для Claude Code)? [Y/n]"
+    if ([string]::IsNullOrWhiteSpace($cmAnswer) -or $cmAnswer.Trim().ToLower() -eq "y" -or $cmAnswer.Trim().ToLower() -eq "д") {
+        $installClaudeMem = $true
+    }
+    $obAnswer = Read-Host "Установить Obsidian (note-taking app для хранения сессий)? [Y/n]"
+    if ([string]::IsNullOrWhiteSpace($obAnswer) -or $obAnswer.Trim().ToLower() -eq "y" -or $obAnswer.Trim().ToLower() -eq "д") {
+        $installObsidian = $true
+    }
 }
 
 Write-Host ""
@@ -463,9 +478,44 @@ if ($installClaude) {
     }
 
     Write-Status "" "Cyan"
-    Write-Status "Claude: установка доп. компонентов (claude-mem, Obsidian)..." "Magenta"
+    if ($installClaudeMem -or $installObsidian) {
+        Write-Status "Claude: установка доп. компонентов..." "Magenta"
+    }
 
-    # claude-mem - полная установка
+    if ($installClaudeMem) {
+    # claude-mem - полная неинтерактивная установка
+    # Pre-create settings.json so the installer picks up defaults without prompting
+    $claudeMemDataDir = Join-Path $env:USERPROFILE ".claude-mem"
+    if (-not (Test-Path -LiteralPath $claudeMemDataDir)) {
+        New-Item -ItemType Directory -Path $claudeMemDataDir -Force | Out-Null
+    }
+    $claudeMemSettingsFile = Join-Path $claudeMemDataDir "settings.json"
+
+    # Build settings that work for FREE users:
+    #   - OpenRouter provider with xiaomi/mimo-v2-flash:free (no cost, no subscription)
+    #   - If user already has OPENROUTER_API_KEY env var, use it; otherwise leave placeholder
+    $existingOrKey = $env:OPENROUTER_API_KEY
+    if ([string]::IsNullOrWhiteSpace($existingOrKey)) {
+        $existingOrKey = [Environment]::GetEnvironmentVariable("OPENROUTER_API_KEY", "User")
+    }
+
+    $claudeMemSettings = @{
+        CLAUDE_MEM_PROVIDER       = "openrouter"
+        CLAUDE_MEM_OPENROUTER_MODEL = "xiaomi/mimo-v2-flash:free"
+        CLAUDE_MEM_OPENROUTER_API_KEY = if ($existingOrKey) { $existingOrKey } else { "" }
+        CLAUDE_MEM_MODEL          = "claude-haiku-4-5-20251001"
+        CLAUDE_MEM_CLAUDE_AUTH_METHOD = "subscription"
+        CLAUDE_MEM_WORKER_PORT    = "37777"
+    } | ConvertTo-Json -Depth 3
+
+    # Only write settings file if it doesn't already exist (preserve user's custom config)
+    if (-not (Test-Path -LiteralPath $claudeMemSettingsFile)) {
+        [System.IO.File]::WriteAllText($claudeMemSettingsFile, $claudeMemSettings, (New-Object System.Text.UTF8Encoding($false)))
+        Write-Status "  [OK] claude-mem settings pre-configured (OpenRouter free model)" "Green"
+    } else {
+        Write-Status "  [OK] claude-mem settings already exist, keeping user config" "Green"
+    }
+
     Write-Status "  Установка claude-mem через npm..." "Cyan"
     $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
     $npmOut = & npm.cmd install -g claude-mem@latest 2>&1
@@ -476,25 +526,25 @@ if ($installClaude) {
     $claudeMemCmd = Get-Command claude-mem -ErrorAction SilentlyContinue
     
     if (-not $claudeMemCmd -and $npmExit -ne 0) {
-        Write-Status "  npm install не удался (код: $npmExit). Пробуем npx claude-mem install..." "Yellow"
+        Write-Status "  npm install не удался (код: $npmExit). Пробуем npx..." "Yellow"
     }
     
-    # Even if npm install succeeded, run 'claude-mem install' to initialise plugin dirs
+    # Run 'claude-mem install --non-interactive' to initialise plugin dirs without prompts
     if ($claudeMemCmd) {
-        Write-Status "  Инициализация claude-mem..." "Cyan"
+        Write-Status "  Инициализация claude-mem (non-interactive)..." "Cyan"
         $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
-        & claude-mem install 2>$null
+        & claude-mem install --non-interactive --provider openrouter 2>$null
         if ($LASTEXITCODE -ne 0) {
-            & npx.cmd --yes claude-mem install 2>$null
+            & npx.cmd --yes claude-mem install --non-interactive --provider openrouter 2>$null
         }
         $ErrorActionPreference = $prevEAP
         Write-Status "  [OK] claude-mem установлен и инициализирован" "Green"
         $claudeMemInstalled = $true
     } else {
         # npm didn't create a binary — try npx to install and init
-        Write-Status "  Установка claude-mem через npx (полная инициализация)…" "Cyan"
+        Write-Status "  Установка claude-mem через npx (non-interactive)..." "Cyan"
         $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
-        & npx.cmd --yes claude-mem install 2>$null
+        & npx.cmd --yes claude-mem install --non-interactive --provider openrouter 2>$null
         $ErrorActionPreference = $prevEAP
         $claudeMemCmd = Get-Command claude-mem -ErrorAction SilentlyContinue
         if ($claudeMemCmd) {
@@ -510,9 +560,20 @@ if ($installClaude) {
     if (-not (Test-Path -LiteralPath $pluginDir)) {
         Write-Status "  Создание директории плагина claude-mem..." "Cyan"
         $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
-        & npx.cmd --yes claude-mem install 2>$null
+        & npx.cmd --yes claude-mem install --non-interactive --provider openrouter 2>$null
         $ErrorActionPreference = $prevEAP
     }
+
+    # Remind user to set OpenRouter API key for free model access
+    if ([string]::IsNullOrWhiteSpace($existingOrKey)) {
+        Write-Status "  [INFO] claude-mem использует OpenRouter free модель (xiaomi/mimo-v2-flash:free)." "Cyan"
+        Write-Status "         Для работы наблюдений необходим API ключ OpenRouter (бесплатно):" "Cyan"
+        Write-Status "         1. Зарегистрируйтесь: https://openrouter.ai/" "Cyan"
+        Write-Status "         2. Создайте ключ:    https://openrouter.ai/keys" "Cyan"
+        Write-Status "         3. Добавьте в settings: $claudeMemSettingsFile" "Cyan"
+        Write-Status "            или установите переменную OPENROUTER_API_KEY" "Cyan"
+    }
+    } # end if ($installClaudeMem)
 
     # uv (Python package manager for free-claude-code)
     Write-Status "  Установка uv (Python package manager)..." "Cyan"
@@ -567,6 +628,7 @@ if ($installClaude) {
     }
 
     # Obsidian (best-effort via winget)
+    if ($installObsidian) {
     if (-not (Test-Path -LiteralPath (Join-Path $env:LOCALAPPDATA "Programs\\Obsidian\\Obsidian.exe"))) {
         if (Get-Command winget -ErrorAction SilentlyContinue) {
             Write-Status "  Установка Obsidian через winget..." "Cyan"
@@ -590,6 +652,7 @@ if ($installClaude) {
         Write-Status "         Установите вручную: https://obsidian.md/download" "Cyan"
         Write-Status "         Или через PowerShell: Invoke-WebRequest -Uri 'https://github.com/obsidianmd/obsidian-releases/releases/download/v1.12.7/Obsidian-1.12.7.exe' -OutFile 'Obsidian.exe'; .\Obsidian.exe" "Cyan"
     }
+    } # end if ($installObsidian)
 }
 
 if ($installOpenCode) {
@@ -733,7 +796,10 @@ if ($installOpenCode) { New-LauncherShortcut -Name "OpenCode (cloud)"      -Scri
 try {
     $shortcutScript = Join-Path $scriptsDir "create-desktop-shortcuts.ps1"
     if (Test-Path -LiteralPath $shortcutScript) {
-        & $psExe -NoProfile -ExecutionPolicy Bypass -File $shortcutScript -RepoRoot $InstallDir 2>$null
+        $shortcutArgs = @("-RepoRoot", $InstallDir)
+        if ($installClaudeMem) { $shortcutArgs += "-IncludeClaudeMem" }
+        if ($installObsidian) { $shortcutArgs += "-IncludeObsidian" }
+        & $psExe -NoProfile -ExecutionPolicy Bypass -File $shortcutScript @shortcutArgs 2>$null
     }
 } catch { }
 

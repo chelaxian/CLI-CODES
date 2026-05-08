@@ -136,8 +136,8 @@ ensure_fcc_proxy() {
         }
     fi
 
-    # Update repo
-    (cd "$FCC_DIR" && git pull origin main 2>/dev/null) || true
+    # Update repo (suppress ALL output to avoid polluting stdout return value)
+    (cd "$FCC_DIR" && git pull origin main >/dev/null 2>&1) || true
 
     # Write .env
     local nim_key="${NVIDIA_NIM_API_KEY:-}"
