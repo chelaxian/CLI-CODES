@@ -18,7 +18,7 @@ function Read-SecretText([string]$Prompt) {
   $key = ""
   while ($true) {
     $cki = $host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-    if ($cki.Key -eq "Enter") {
+    if ($cki.Key -eq "Enter" -or [int]$cki.Character -eq 13 -or [int]$cki.Character -eq 10) {
       Write-Host ""
       break
     } elseif ($cki.Key -eq "Backspace") {
