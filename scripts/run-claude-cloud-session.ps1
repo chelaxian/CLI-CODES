@@ -383,29 +383,8 @@ if (-not $SkipCommonPreamble) {
   Ensure-ClaudeSettingsNoBom
 }
 
-# claude-mem и Obsidian нужны при каждом входе в сессию: при -SkipCommonPreamble раньше они не вызывались,
-# и если PrepareOnly не успел за 8 с - воркер так и не поднимался.
-Ensure-ClaudeMemWorker
-if ($OpenClaudeMemObserver -ne 0) {
-  try {
-    if (Test-ClaudeMemWorkerUp) {
-      Start-Process -FilePath "http://127.0.0.1:37777/" | Out-Null
-      Write-Host "Открыт claude-mem observer: http://127.0.0.1:37777/" -ForegroundColor DarkCyan
-    } else {
-      Start-Process -FilePath "http://127.0.0.1:37777/" | Out-Null
-      Write-Host "Открыт браузер на 37777 (воркер ещё может подниматься)." -ForegroundColor DarkYellow
-    }
-  } catch {}
-}
-# Only start Obsidian if it is actually installed
-if (-not (Test-Path -LiteralPath $ObsidianExe)) {
-  Write-Host "Obsidian не установлен — пропуск запуска." -ForegroundColor DarkGray
-} else {
-  Start-Obsidian -Exe $ObsidianExe -Vault $VaultPath
-}
-
 if ($PrepareOnly) {
-  Write-Host "Claude (облако): общая подготовка выполнена (settings, claude-mem, Obsidian, PATH npm)." -ForegroundColor Green
+  Write-Host "Claude (облако): подготовка выполнена." -ForegroundColor Green
   exit 0
 }
 

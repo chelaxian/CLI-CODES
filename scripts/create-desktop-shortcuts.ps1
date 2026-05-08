@@ -1,12 +1,10 @@
-﻿# Создаёт ярлыки на рабочем столе: Claude/Qwen Code (cloud), OpenCode, claude-mem Start/Viewer/Clear.
+﻿# Создаёт ярлыки на рабочем столе: Claude/Qwen Code (cloud), OpenCode.
 # Запуск: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\create-desktop-shortcuts.ps1 -RepoRoot "D:\qwen-local-setup"
 
 [CmdletBinding()]
 param(
   [string]$RepoRoot = "",
-  [string]$DesktopPath = "",
-  [switch]$IncludeClaudeMem,
-  [switch]$IncludeObsidian
+  [string]$DesktopPath = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -25,12 +23,8 @@ $ws = New-Object -ComObject WScript.Shell
 $launcherClaude  = Join-Path $RepoRoot "scripts\run-claude-cloud-launcher.ps1"
 $launcherQwen    = Join-Path $RepoRoot "scripts\run-qwen-code-launcher.ps1"
 $launcherOpenCode = Join-Path $RepoRoot "scripts\run-opencode-launcher.ps1"
-$memScript       = Join-Path $RepoRoot "scripts\start-claude-mem.ps1"
-$clearMemScript  = Join-Path $RepoRoot "scripts\clear-claude-mem.ps1"
 
-$filesToValidate = @($launcherClaude, $launcherQwen, $launcherOpenCode)
-if ($IncludeClaudeMem) { $filesToValidate += @($memScript, $clearMemScript) }
-foreach ($p in $filesToValidate) {
+foreach ($p in @($launcherClaude, $launcherQwen, $launcherOpenCode)) {
   if (-not (Test-Path -LiteralPath $p)) { throw "Не найден файл: $p" }
 }
 
@@ -76,33 +70,8 @@ New-Shortcut `
   -WorkingDirectory $RepoRoot `
   -Description "OpenCode: Z.AI / NIM / OpenRouter - меню выбора модели."
 
-if ($IncludeClaudeMem) {
-  New-Shortcut `
-    -LinkPath (Join-Path $DesktopPath "Claude Mem Start.lnk") `
-    -TargetPath $psExe `
-    -Arguments ('-NoProfile -ExecutionPolicy Bypass -File "' + $memScript + '" -OpenBrowser 0') `
-    -WorkingDirectory $env:USERPROFILE `
-    -Description "Старт claude-mem worker (127.0.0.1:37777)."
-
-  New-Shortcut `
-    -LinkPath (Join-Path $DesktopPath "Claude Mem Viewer.lnk") `
-    -TargetPath $psExe `
-    -Arguments ('-NoProfile -ExecutionPolicy Bypass -File "' + $memScript + '" -OpenBrowser 1') `
-    -WorkingDirectory $env:USERPROFILE `
-    -Description "claude-mem: старт при необходимости и открыть http://127.0.0.1:37777/"
-
-  New-Shortcut `
-    -LinkPath (Join-Path $DesktopPath "Claude Mem Clear.lnk") `
-    -TargetPath $psExe `
-    -Arguments ('-NoProfile -ExecutionPolicy Bypass -File "' + $clearMemScript + '" -Force') `
-    -WorkingDirectory $env:USERPROFILE `
-    -Description "Очистка памяти claude-mem (без подтверждения)."
-}
-
 # Hide the .ps1 script files referenced by shortcuts
-$filesToHide = @($launcherClaude, $launcherQwen, $launcherOpenCode)
-if ($IncludeClaudeMem) { $filesToHide += @($memScript, $clearMemScript) }
-foreach ($p in $filesToHide) {
+foreach ($p in @($launcherClaude, $launcherQwen, $launcherOpenCode)) {
   $item = Get-Item -LiteralPath $p
   $item.Attributes = $item.Attributes -bor [System.IO.FileAttributes]::Hidden
 }
@@ -113,6 +82,5 @@ Get-ChildItem -LiteralPath $DesktopPath -Filter "*.cmd" | ForEach-Object {
 }
 
 $shortcutNames = @("Claude Code (cloud)", "Qwen Code (cloud)", "OpenCode (cloud)")
-if ($IncludeClaudeMem) { $shortcutNames += @("Claude Mem Start", "Claude Mem Viewer", "Claude Mem Clear") }
 Write-Host ("Shortcuts created on desktop: " + ($shortcutNames -join ", ")) -ForegroundColor Green
 Write-Host "RepoRoot=$RepoRoot  Desktop=$DesktopPath" -ForegroundColor DarkGray

@@ -243,8 +243,7 @@ if ($installChoice -eq "5") {
     $pkgs = @(
         @{ Name = "qwen-code";  NpmPkg = "@qwen-code/qwen-code";      Fallback = "@anthropic-ai/qwen-code"; Cmd = "qwen" },
         @{ Name = "claude-code"; NpmPkg = "@anthropic-ai/claude-code"; Fallback = $null;                     Cmd = "claude" },
-        @{ Name = "opencode-ai"; NpmPkg = "opencode-ai";               Fallback = $null;                     Cmd = "opencode" },
-        @{ Name = "claude-mem";  NpmPkg = "claude-mem";                Fallback = $null;                     Cmd = "claude-mem" }
+        @{ Name = "opencode-ai"; NpmPkg = "opencode-ai";               Fallback = $null;                     Cmd = "opencode" }
     )
 
     foreach ($pkg in $pkgs) {
@@ -303,10 +302,8 @@ if ($installChoice -eq "6") {
     Write-Host "  - Repository: $InstallDir" -ForegroundColor Red
     Write-Host "  - Session directories (qwen/claude/opencode-sessions)" -ForegroundColor Red
     Write-Host "  - CLI configs (~/.claude, ~/.qwen)" -ForegroundColor Red
-    Write-Host "  - claude-mem (данные и npm пакет)" -ForegroundColor Red
     Write-Host "  - free-claude-code proxy (~/.free-claude-code)" -ForegroundColor Red
     Write-Host "  - uv (Python package manager, ~/.local/bin/uv)" -ForegroundColor Red
-    Write-Host "  - Obsidian (если установлен через winget)" -ForegroundColor Red
     Write-Host "  - API keys (user environment variables)" -ForegroundColor Red
     Write-Host "  - Desktop shortcuts (.cmd, .lnk)" -ForegroundColor Red
     Write-Host "  - Global npm packages (qwen-code, claude-code, opencode-ai)" -ForegroundColor Red
@@ -357,32 +354,13 @@ if ($installChoice -eq "6") {
         }
     }
 
-    Write-Status "Удаление данных claude-mem..." "Cyan"
-    $claudeMemDir = Join-Path $env:USERPROFILE ".claude-mem"
-    if (Test-Path -LiteralPath $claudeMemDir) {
-        Remove-Item -LiteralPath $claudeMemDir -Recurse -Force -ErrorAction SilentlyContinue
-        Write-Status "  [OK] Removed: $claudeMemDir" "Green"
-    } else {
-        Write-Status "  [SKIP] $claudeMemDir not found" "Yellow"
-    }
-
     Write-Status "Удаление глобальных npm пакетов..." "Cyan"
     $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
-    foreach ($pkg in @("@qwen-code/qwen-code", "@anthropic-ai/qwen-code", "@anthropic-ai/claude-code", "opencode-ai", "claude-mem")) {
+    foreach ($pkg in @("@qwen-code/qwen-code", "@anthropic-ai/qwen-code", "@anthropic-ai/claude-code", "opencode-ai")) {
         & npm.cmd uninstall -g $pkg 2>$null
         Write-Status "  [OK] Uninstalled: $pkg" "Green"
     }
     $ErrorActionPreference = $prevEAP
-
-    Write-Status "Удаление Obsidian..." "Cyan"
-    if (Get-Command winget -ErrorAction SilentlyContinue) {
-        $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
-        & winget uninstall -e --id Obsidian.Obsidian 2>$null
-        $ErrorActionPreference = $prevEAP
-        Write-Status "  [OK] Obsidian uninstall requested" "Green"
-    } else {
-        Write-Status "  [SKIP] winget не найден, Obsidian не удалён" "Yellow"
-    }
 
     Write-Status "Удаление free-claude-code proxy..." "Cyan"
     $fccDir = Join-Path $env:USERPROFILE ".free-claude-code"
@@ -416,8 +394,6 @@ if ($installChoice -eq "6") {
 $installQwen = $false
 $installClaude = $false
 $installOpenCode = $false
-$installClaudeMem = $false
-$installObsidian = $false
 
 switch ($installChoice) {
     "1" { $installQwen = $true }
@@ -426,19 +402,6 @@ switch ($installChoice) {
     "4" { $installQwen = $true; $installClaude = $true; $installOpenCode = $true }
     "0" { Write-Status "Выход." "Yellow"; return }
     default { Write-Status "Неверный выбор. Устанавливаем все три." "Yellow"; $installQwen = $true; $installClaude = $true; $installOpenCode = $true }
-}
-
-if ($installClaude) {
-    Write-Host ""
-    Write-Status "Дополнительные компоненты для Claude Code:" "Cyan"
-    $cmAnswer = Read-Host "Установить claude-mem (memory plugin для Claude Code)? [Y/n]"
-    if ([string]::IsNullOrWhiteSpace($cmAnswer) -or $cmAnswer.Trim().ToLower() -eq "y" -or $cmAnswer.Trim().ToLower() -eq "д") {
-        $installClaudeMem = $true
-    }
-    $obAnswer = Read-Host "Установить Obsidian (note-taking app для хранения сессий)? [Y/n]"
-    if ([string]::IsNullOrWhiteSpace($obAnswer) -or $obAnswer.Trim().ToLower() -eq "y" -or $obAnswer.Trim().ToLower() -eq "д") {
-        $installObsidian = $true
-    }
 }
 
 Write-Host ""
@@ -478,96 +441,6 @@ if ($installClaude) {
     }
 
     Write-Status "" "Cyan"
-    if ($installClaudeMem -or $installObsidian) {
-        Write-Status "Claude: установка доп. компонентов..." "Magenta"
-    }
-
-    if ($installClaudeMem) {
-    # claude-mem - полная неинтерактивная установка
-    # Pre-create settings.json so the installer picks up defaults without prompting
-    $claudeMemDataDir = Join-Path $env:USERPROFILE ".claude-mem"
-    if (-not (Test-Path -LiteralPath $claudeMemDataDir)) {
-        New-Item -ItemType Directory -Path $claudeMemDataDir -Force | Out-Null
-    }
-    $claudeMemSettingsFile = Join-Path $claudeMemDataDir "settings.json"
-
-    $claudeMemSettings = @{
-        CLAUDE_MEM_PROVIDER       = "claude"
-        CLAUDE_MEM_CLAUDE_AUTH_METHOD = "api"
-        CLAUDE_MEM_MODEL          = "claude-sonnet-4-6"
-        CLAUDE_MEM_TIER_ROUTING_ENABLED = "true"
-        CLAUDE_MEM_TIER_SIMPLE_MODEL = "haiku"
-        CLAUDE_MEM_WORKER_PORT    = "37777"
-        CLAUDE_MEM_WORKER_HOST    = "127.0.0.1"
-        CLAUDE_MEM_MODE           = "code"
-    } | ConvertTo-Json -Depth 3
-
-    # Only write settings file if it doesn't already exist (preserve user's custom config)
-    if (-not (Test-Path -LiteralPath $claudeMemSettingsFile)) {
-        [System.IO.File]::WriteAllText($claudeMemSettingsFile, $claudeMemSettings, (New-Object System.Text.UTF8Encoding($false)))
-        Write-Status "  [OK] claude-mem settings pre-configured (claude provider, api auth)" "Green"
-    } else {
-        Write-Status "  [OK] claude-mem settings already exist, keeping user config" "Green"
-    }
-
-    Write-Status "  Установка claude-mem через npm..." "Cyan"
-    $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
-    $npmOut = & npm.cmd install -g claude-mem@latest 2>&1
-    $npmExit = $LASTEXITCODE
-    $ErrorActionPreference = $prevEAP
-    
-    $claudeMemInstalled = $false
-    $claudeMemCmd = Get-Command claude-mem -ErrorAction SilentlyContinue
-    
-    if (-not $claudeMemCmd -and $npmExit -ne 0) {
-        Write-Status "  npm install не удался (код: $npmExit). Пробуем npx..." "Yellow"
-    }
-    
-    # Run 'claude-mem install --non-interactive' to initialise plugin dirs without prompts
-    if ($claudeMemCmd) {
-        Write-Status "  Инициализация claude-mem (non-interactive)..." "Cyan"
-        $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
-        & claude-mem install --non-interactive --provider claude 2>$null
-        if ($LASTEXITCODE -ne 0) {
-            & npx.cmd --yes claude-mem install --non-interactive --provider claude 2>$null
-        }
-        $ErrorActionPreference = $prevEAP
-        Write-Status "  [OK] claude-mem установлен и инициализирован" "Green"
-        $claudeMemInstalled = $true
-    } else {
-        # npm didn't create a binary — try npx to install and init
-        Write-Status "  Установка claude-mem через npx (non-interactive)..." "Cyan"
-        $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
-        & npx.cmd --yes claude-mem install --non-interactive --provider claude 2>$null
-        $ErrorActionPreference = $prevEAP
-        $claudeMemCmd = Get-Command claude-mem -ErrorAction SilentlyContinue
-        if ($claudeMemCmd) {
-            Write-Status "  [OK] claude-mem установлен через npx" "Green"
-            $claudeMemInstalled = $true
-        } else {
-            Write-Status "  [WARN] claude-mem не установлен глобально. Будет запускаться через npx (медленнее)." "Yellow"
-        }
-    }
-    
-    # Verify plugin directory exists (claude-mem needs this to run)
-    $pluginDir = Join-Path $env:USERPROFILE ".claude\plugins\marketplaces\thedotmack\plugin"
-    if (-not (Test-Path -LiteralPath $pluginDir)) {
-        Write-Status "  Создание директории плагина claude-mem..." "Cyan"
-        $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
-        & npx.cmd --yes claude-mem install --non-interactive --provider claude 2>$null
-        $ErrorActionPreference = $prevEAP
-    }
-
-    # Remind user to set OpenRouter API key for free model access
-    if ([string]::IsNullOrWhiteSpace($existingOrKey)) {
-        Write-Status "  [INFO] claude-mem использует OpenRouter free модель (xiaomi/mimo-v2-flash:free)." "Cyan"
-        Write-Status "         Для работы наблюдений необходим API ключ OpenRouter (бесплатно):" "Cyan"
-        Write-Status "         1. Зарегистрируйтесь: https://openrouter.ai/" "Cyan"
-        Write-Status "         2. Создайте ключ:    https://openrouter.ai/keys" "Cyan"
-        Write-Status "         3. Добавьте в settings: $claudeMemSettingsFile" "Cyan"
-        Write-Status "            или установите переменную OPENROUTER_API_KEY" "Cyan"
-    }
-    } # end if ($installClaudeMem)
 
     # uv (Python package manager for free-claude-code)
     Write-Status "  Установка uv (Python package manager)..." "Cyan"
@@ -620,33 +493,6 @@ if ($installClaude) {
     } else {
         Write-Status "  [OK] free-claude-code уже установлен" "Green"
     }
-
-    # Obsidian (best-effort via winget)
-    if ($installObsidian) {
-    if (-not (Test-Path -LiteralPath (Join-Path $env:LOCALAPPDATA "Programs\\Obsidian\\Obsidian.exe"))) {
-        if (Get-Command winget -ErrorAction SilentlyContinue) {
-            Write-Status "  Установка Obsidian через winget..." "Cyan"
-            $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
-            $wingetResult = & winget install -e --id Obsidian.Obsidian --accept-source-agreements --accept-package-agreements 2>&1
-            $wingetExitCode = $LASTEXITCODE
-            $ErrorActionPreference = $prevEAP
-            
-            if ($wingetExitCode -ne 0) {
-                Write-Status "  [WARN] Установка через winget не удалась (код: $wingetExitCode). Попробуйте вручную или проверьте соединение." "Yellow"
-                Write-Status "         Ссылка для ручной установки: https://obsidian.md/download" "Cyan"
-            }
-        } else {
-            Write-Status "  [WARN] winget не найден — Obsidian не установлен автоматически." "Yellow"
-        }
-    }
-    if (Test-Path -LiteralPath (Join-Path $env:LOCALAPPDATA "Programs\\Obsidian\\Obsidian.exe")) {
-        Write-Status "  [OK] Obsidian найден" "Green"
-    } else {
-        Write-Status "  [WARN] Obsidian.exe не найден" "Yellow"
-        Write-Status "         Установите вручную: https://obsidian.md/download" "Cyan"
-        Write-Status "         Или через PowerShell: Invoke-WebRequest -Uri 'https://github.com/obsidianmd/obsidian-releases/releases/download/v1.12.7/Obsidian-1.12.7.exe' -OutFile 'Obsidian.exe'; .\Obsidian.exe" "Cyan"
-    }
-    } # end if ($installObsidian)
 }
 
 if ($installOpenCode) {
@@ -809,8 +655,6 @@ try {
     $shortcutScript = Join-Path $scriptsDir "create-desktop-shortcuts.ps1"
     if (Test-Path -LiteralPath $shortcutScript) {
         $shortcutArgs = @("-RepoRoot", $InstallDir)
-        if ($installClaudeMem) { $shortcutArgs += "-IncludeClaudeMem" }
-        if ($installObsidian) { $shortcutArgs += "-IncludeObsidian" }
         & $psExe -NoProfile -ExecutionPolicy Bypass -File $shortcutScript @shortcutArgs 2>$null
     }
 } catch { }

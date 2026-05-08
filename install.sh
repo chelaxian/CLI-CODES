@@ -329,56 +329,6 @@ if $INSTALL_CLAUDE; then
         ok "free-claude-code: обновлён"
         (cd "$FCC_DIR" && uv sync &>/dev/null) || true
     fi
-
-    # claude-mem — non-interactive setup (uses current Claude session for compression)
-    if [ -z "$INSTALL_CLAUDE_MEM" ]; then
-        # Ask user if they want claude-mem
-        echo ""
-        read -p "Установить claude-mem (memory plugin для Claude Code)? [Y/n]: " cm_answer < /dev/tty
-        case "${cm_answer:-Y}" in
-            [YyДд]*) INSTALL_CLAUDE_MEM=true ;;
-            *) INSTALL_CLAUDE_MEM=false ;;
-        esac
-    fi
-
-    if [ "$INSTALL_CLAUDE_MEM" = "true" ]; then
-        echo -e "${CYAN}Установка claude-mem…${RESET}"
-        npm install -g claude-mem@latest 2>/dev/null || true
-
-        # Pre-create settings.json with provider=claude (uses current ANTHROPIC_AUTH_TOKEN)
-        CM_DIR="$HOME/.claude-mem"
-        mkdir -p "$CM_DIR" 2>/dev/null
-        CM_SETTINGS="$CM_DIR/settings.json"
-        if [ ! -f "$CM_SETTINGS" ]; then
-            cat > "$CM_SETTINGS" << 'CMEOF'
-{
-  "CLAUDE_MEM_PROVIDER": "claude",
-  "CLAUDE_MEM_CLAUDE_AUTH_METHOD": "api",
-  "CLAUDE_MEM_MODEL": "claude-sonnet-4-6",
-  "CLAUDE_MEM_TIER_ROUTING_ENABLED": "true",
-  "CLAUDE_MEM_TIER_SIMPLE_MODEL": "haiku",
-  "CLAUDE_MEM_WORKER_PORT": "37777",
-  "CLAUDE_MEM_WORKER_HOST": "127.0.0.1",
-  "CLAUDE_MEM_MODE": "code"
-}
-CMEOF
-            ok "claude-mem: settings созданы (provider=claude)"
-        else
-            ok "claude-mem: settings уже существуют"
-        fi
-
-        # Run install non-interactively by piping answers
-        if command -v claude-mem &>/dev/null; then
-            # Try with flags first
-            claude-mem install --non-interactive --provider claude 2>/dev/null || {
-                # Fallback: pipe default answers
-                printf 'claude-code\nWorker\nclaude\napi\nhaiku\n' | npx --yes claude-mem install 2>/dev/null || true
-            }
-        else
-            printf 'claude-code\nWorker\nclaude\napi\nhaiku\n' | npx --yes claude-mem install 2>/dev/null || true
-        fi
-        ok "claude-mem установлен"
-    fi
 fi
 
 if $INSTALL_OPENCODE; then
@@ -394,36 +344,12 @@ fi
 
 step "НАСТРОЙКА API КЛЮЧЕЙ"
 
-read_api_key_stars() {
-    local prompt="$1"
-    local key=""
-    local char=""
-    printf "%s" "$prompt"
-    while IFS= read -rsn1 char < /dev/tty; do
-        if [[ $char == $'\0' ]]; then
-            continue
-        elif [[ $char == $'\177' || $char == $'\b' ]]; then
-            if [ -n "$key" ]; then
-                key="${key%?}"
-                printf '\b \b'
-            fi
-        elif [[ $char == $'\n' || $char == '' ]]; then
-            printf '\n'
-            break
-        else
-            key+="$char"
-            printf '*'
-        fi
-    done
-    echo "$key"
-}
-
 echo -e "${YELLOW}Оставьте пустым, чтобы пропустить. Ключи можно изменить позже через меню лаунчера.${RESET}"
 echo ""
 
-nim_key=$(read_api_key_stars "NVIDIA NIM API ключ (Enter = пропуск): ")
+read -s -p "NVIDIA NIM API ключ (Enter = пропуск): " nim_key < /dev/tty
+echo ""
 if [ -n "$nim_key" ]; then
-    # Записываем в ~/.bashrc и ~/.zshrc
     for rc in "$HOME/.bashrc" "$HOME/.zshrc"; do
         if [ -f "$rc" ]; then
             sed -i '/^export NVIDIA_NIM_API_KEY=/d' "$rc"
@@ -438,7 +364,8 @@ fi
 
 echo ""
 
-zai_key=$(read_api_key_stars "Z.AI API ключ (Enter = пропуск): ")
+read -s -p "Z.AI API ключ (Enter = пропуск): " zai_key < /dev/tty
+echo ""
 if [ -n "$zai_key" ]; then
     for rc in "$HOME/.bashrc" "$HOME/.zshrc"; do
         if [ -f "$rc" ]; then
@@ -454,7 +381,8 @@ fi
 
 echo ""
 
-groq_key=$(read_api_key_stars "Groq API ключ (Enter = пропуск): ")
+read -s -p "Groq API ключ (Enter = пропуск): " groq_key < /dev/tty
+echo ""
 if [ -n "$groq_key" ]; then
     for rc in "$HOME/.bashrc" "$HOME/.zshrc"; do
         if [ -f "$rc" ]; then
@@ -470,7 +398,8 @@ fi
 
 echo ""
 
-or_key=$(read_api_key_stars "OpenRouter API ключ (Enter = пропуск): ")
+read -s -p "OpenRouter API ключ (Enter = пропуск): " or_key < /dev/tty
+echo ""
 if [ -n "$or_key" ]; then
     for rc in "$HOME/.bashrc" "$HOME/.zshrc"; do
         if [ -f "$rc" ]; then
