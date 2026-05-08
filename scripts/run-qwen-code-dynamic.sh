@@ -34,7 +34,7 @@ get_api_key_interactive() {
   local key=""
   local char=""
   printf "%s" "$prompt"
-  while IFS= read -rsn1 char; do
+  while IFS= read -rsn1 char < /dev/tty; do
     if [[ $char == $'\0' ]]; then
       continue
     elif [[ $char == $'\177' || $char == $'\b' ]]; then
@@ -61,7 +61,7 @@ get_api_key_with_url() {
   local key=""
   local char=""
   printf "%s" "$prompt"
-  while IFS= read -rsn1 char; do
+  while IFS= read -rsn1 char < /dev/tty; do
     if [[ $char == $'\0' ]]; then
       continue
     elif [[ $char == $'\177' || $char == $'\b' ]]; then
