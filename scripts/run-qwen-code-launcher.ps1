@@ -1,4 +1,4 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param(
   [switch]$Quick
 )
@@ -174,7 +174,7 @@ function Invoke-QwenProfile {
       return
     }
     "openrouter-hy3" {
-      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider openrouter -ModelId "tencent/hy3-preview:free"
+      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider openrouter -ModelId "nvidia/nemotron-3-super-120b-a12b:free"
       return
     }
     "openrouter-nemotron" {
