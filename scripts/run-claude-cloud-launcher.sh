@@ -11,13 +11,7 @@ SESSION_DIR="$SCRIPT_DIR/../claude-sessions/_shared"
 CLAUDE_SESSION_ROOT="${CLAUDE_SESSION_ROOT:-$SCRIPT_DIR/../claude-sessions/_shared}"
 
 # Настройки (можно изменить под свои пути)
-VAULT_PATH="${CLAUDE_VAULT_PATH:-$HOME/Documents/Obsidian\ Vault}"
-OBSIDIAN_EXE="${OBSIDIAN_EXE:-/usr/bin/obsidian}"
-
-# Загрузка модулей
-. "$SCRIPT_DIR/launcher-tui.sh"
 . "$SCRIPT_DIR/launcher-api-keys.sh"
-
 enter_claude_shared_dir() {
     mkdir -p "$CLAUDE_SESSION_ROOT"
     cd "$CLAUDE_SESSION_ROOT"
