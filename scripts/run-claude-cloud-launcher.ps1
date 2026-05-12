@@ -11,9 +11,6 @@ $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "launcher-custom-model-wizard.ps1")
 . (Join-Path $PSScriptRoot "launcher-api-keys.ps1")
 
-$VaultPath = Join-Path $env:USERPROFILE "Documents\Obsidian Vault"
-$ObsidianExe = Join-Path $env:LOCALAPPDATA "Programs\Obsidian\Obsidian.exe"
-
 $StatePath = Join-Path $PSScriptRoot "claude-cloud-launcher-state.json"
 $SessionScript = Join-Path $PSScriptRoot "run-claude-cloud-session.ps1"
 
@@ -162,52 +159,52 @@ function Invoke-ClaudeCloudProfile {
 
   Clear-Host
   Write-Host "Запуск сессии Claude Code (облако)…" -ForegroundColor Cyan
-  Write-Host "Профиль: $ProfileId   Vault: $VaultPath" -ForegroundColor DarkGray
+  Write-Host "Профиль: $ProfileId" -ForegroundColor DarkGray
   [Console]::Out.Flush()
 
   switch ($ProfileId) {
     "claude-zai" {
-      & $SessionScript -Provider zai -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
+      & $SessionScript -Provider zai -ClaudeTools default `
         -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
       return
     }
     "claude-zai-glm51" {
-      & $SessionScript -Provider zai -ZaiAnthropicModelId "glm-5.1" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
+      & $SessionScript -Provider zai -ZaiAnthropicModelId "glm-5.1" -ClaudeTools default `
         -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
       return
     }
     "claude-zai-flash47" {
-      & $SessionScript -Provider zai -ZaiAnthropicModelId "glm-4.7-flash" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
+      & $SessionScript -Provider zai -ZaiAnthropicModelId "glm-4.7-flash" -ClaudeTools default `
         -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
       return
     }
     "claude-zai-flash45" {
-      & $SessionScript -Provider zai -ZaiAnthropicModelId "glm-4.5-flash" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
+      & $SessionScript -Provider zai -ZaiAnthropicModelId "glm-4.5-flash" -ClaudeTools default `
         -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
       return
     }
     "claude-nim" {
-      & $SessionScript -Provider nim -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
+      & $SessionScript -Provider nim -ClaudeTools default `
         -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
       return
     }
     "claude-nim-qwen" {
-      & $SessionScript -Provider nim-qwen -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
+      & $SessionScript -Provider nim-qwen -ClaudeTools default `
         -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
       return
     }
     "claude-openrouter-hy3" {
-      & $SessionScript -Provider openrouter -ZaiAnthropicModelId "tencent/hy3-preview:free" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
+      & $SessionScript -Provider openrouter -ZaiAnthropicModelId "tencent/hy3-preview:free" -ClaudeTools default `
         -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
       return
     }
     "claude-openrouter-nemotron" {
-      & $SessionScript -Provider openrouter -ZaiAnthropicModelId "nvidia/nemotron-3-super-120b-a12b:free" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
+      & $SessionScript -Provider openrouter -ZaiAnthropicModelId "nvidia/nemotron-3-super-120b-a12b:free" -ClaudeTools default `
         -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
       return
     }
     "claude-openrouter-laguna" {
-      & $SessionScript -Provider openrouter -ZaiAnthropicModelId "poolside/laguna-m.1:free" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
+      & $SessionScript -Provider openrouter -ZaiAnthropicModelId "poolside/laguna-m.1:free" -ClaudeTools default `
         -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
       return
     }
@@ -217,7 +214,7 @@ function Invoke-ClaudeCloudProfile {
       if ([string]::IsNullOrWhiteSpace($mid)) {
         throw "Нет customModelId в claude-cloud-launcher-state.json. Выберите модель в «Другая модель»."
       }
-      & $SessionScript -Provider zai -ZaiAnthropicModelId $mid.Trim() -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
+      & $SessionScript -Provider zai -ZaiAnthropicModelId $mid.Trim() -ClaudeTools default `
         -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
       return
     }
@@ -233,7 +230,7 @@ function Invoke-ClaudeCloudProfile {
       }
       $claudeTools = if (Test-NvidiaNimOpenAiNativeToolCalling $catalog) { "default" } else { "minimal" }
       $port = Get-LauncherFreeTcpPort
-      & $SessionScript -Provider nim -NimModel $full.Trim() -ProxyPort $port -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools $claudeTools `
+      & $SessionScript -Provider nim -NimModel $full.Trim() -ProxyPort $port -ClaudeTools $claudeTools `
         -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
       return
     }
@@ -243,7 +240,7 @@ function Invoke-ClaudeCloudProfile {
       if ([string]::IsNullOrWhiteSpace($mid)) {
         throw "Нет customModelId для custom-claude-openrouter. Выберите модель в «Другая модель»."
       }
-      & $SessionScript -Provider openrouter -ZaiAnthropicModelId $mid.Trim() -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
+      & $SessionScript -Provider openrouter -ZaiAnthropicModelId $mid.Trim() -ClaudeTools default `
         -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
       return
     }

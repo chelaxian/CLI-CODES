@@ -11,9 +11,7 @@ param(
   [switch]$SkipCommonPreamble,
 
   [string]$VaultPath = "",
-  [string]$ObsidianExe = "",
   # 0 = don't open browser tab, 1 = open viewer
-  [int]$OpenClaudeMemObserver = 0,
   [int]$DryRun = 0,
 
   # Z.AI (Anthropic-compatible)
@@ -41,8 +39,7 @@ param(
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 
-if ([string]::IsNullOrWhiteSpace($VaultPath)) { $VaultPath = Join-Path $env:USERPROFILE "Documents\Obsidian Vault" }
-if ([string]::IsNullOrWhiteSpace($ObsidianExe)) { $ObsidianExe = Join-Path $env:LOCALAPPDATA "Programs\Obsidian\Obsidian.exe" }
+if ([string]::IsNullOrWhiteSpace($VaultPath)) { $VaultPath = $env:USERPROFILE }
 if ([string]::IsNullOrWhiteSpace($FreeClaudeCodeDir)) { $FreeClaudeCodeDir = Join-Path $env:USERPROFILE ".free-claude-code" }
 
 . (Join-Path $PSScriptRoot "ensure-streaming-friendly-terminal.ps1")
@@ -264,34 +261,6 @@ function Read-SecretText([string]$Prompt) {
     }
   }
   return $key
-}
-
-function Start-Obsidian([string]$Exe,[string]$Vault) {
-  try {
-    if (Get-Process -Name "Obsidian" -ErrorAction SilentlyContinue) {
-      Write-Host "Obsidian уже запущен - пропуск повторного старта." -ForegroundColor DarkGray
-      return
-    }
-  } catch {}
-  if (-not (Test-Path -LiteralPath $Exe)) {
-    Write-Host "Предупреждение: Obsidian.exe не найден: $Exe" -ForegroundColor DarkYellow
-    return
-  }
-  if (-not (Test-Path -LiteralPath $Vault)) {
-    Write-Host "Предупреждение: папка хранилища Obsidian не найдена: $Vault" -ForegroundColor DarkYellow
-  }
-  try {
-    $cmdLine = "start """" ""$Exe"" --vault ""$Vault"""
-    Start-Process -FilePath "cmd.exe" -ArgumentList @("/d", "/c", $cmdLine) -WindowStyle Hidden | Out-Null
-    Write-Host "Obsidian: запуск с хранилищем «$Vault»" -ForegroundColor DarkCyan
-  } catch {
-    try {
-      Start-Process -FilePath $Exe -ArgumentList @("--vault", $Vault) -WindowStyle Hidden | Out-Null
-      Write-Host "Obsidian: запуск (fallback)." -ForegroundColor DarkCyan
-    } catch {
-      Write-Host ("Предупреждение: не удалось запустить Obsidian: {0}" -f $_.Exception.Message) -ForegroundColor DarkYellow
-    }
-  }
 }
 
 function Ensure-FreeClaudeCodeProxy {

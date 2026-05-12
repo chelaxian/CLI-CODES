@@ -4,6 +4,13 @@ param(
 )
 $ErrorActionPreference = "Stop"
 
+# Map internal profile names to real NVIDIA NIM model IDs
+$nimModelMap = @{
+  "nim-glm-4.7-tools"        = "z-ai/glm4.7"
+  "nim-qwen3.5-122b-a10b-tools" = "qwen/qwen3.5-122b-a10b"
+}
+$nimModel = if ($nimModelMap.ContainsKey($Model)) { $nimModelMap[$Model] } else { $Model }
+
 $ProgressPreference = "SilentlyContinue"
 
 . (Join-Path $PSScriptRoot "ensure-streaming-friendly-terminal.ps1")
@@ -72,6 +79,7 @@ $env:OPENAI_API_KEY = $apiKey
 $env:OPENAI_BASE_URL = "https://integrate.api.nvidia.com/v1"
 
 Remove-Item Env:OPENAI_MODEL -ErrorAction SilentlyContinue
+$env:OPENAI_MODEL = $nimModel
 
 $sessionRoot = Resolve-QwenNimSessionRoot $Model
 $qwenDir = Join-Path $sessionRoot ".qwen"
@@ -82,7 +90,7 @@ $settingsJson = @{
     openai = @(
       @{
         id = $Model
-        name = "NVIDIA NIM - $($Model -replace '^nim-','')"
+        name = "NVIDIA NIM - $($nimModel -replace '.+/','')"
         envKey = "OPENAI_API_KEY"
         baseUrl = "https://integrate.api.nvidia.com/v1"
         generationConfig = @{
@@ -104,7 +112,7 @@ $settingsJson = @{
     }
   }
   model = @{
-    name = $Model
+    name = $nimModel
   }
   '$version' = 3
 } | ConvertTo-Json -Depth 10
