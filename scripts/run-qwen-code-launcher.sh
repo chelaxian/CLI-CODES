@@ -182,7 +182,7 @@ invoke_qwen_custom_model_wizard() {
         done
 
         local prov_choice
-        prov_choice="$(show_tui_framed_menu "$app_brand" "Другая модель" "Шаг 1 из 2 - выберите провайдера" "${prov_menu[@]}")"
+        prov_choice="$(show_tui_numbered_menu "$app_brand" "Другая модель" "Шаг 1 из 2 - выберите провайдера" "${prov_menu[@]}")"
 
         if [ "${prov_choice:-0}" -eq 0 ]; then
             return 1
@@ -261,7 +261,7 @@ invoke_qwen_custom_model_wizard() {
         done
 
         local model_choice
-        model_choice="$(show_tui_framed_menu "$app_brand" "Другая модель" "Шаг 2 из 2 - моделей: ${#ids[@]}" "${model_menu[@]}")"
+        model_choice="$(show_tui_numbered_menu "$app_brand" "Другая модель" "Шаг 2 из 2 - моделей: ${#ids[@]}" "${model_menu[@]}")"
 
         if [ "${model_choice:-0}" -eq 0 ]; then
             continue
@@ -420,7 +420,7 @@ while true; do
     done
     
     local choice
-    choice="$(show_tui_framed_menu "Qwen" "Qwen Code - выбор профиля" "OpenAI Coding (Z.AI / NIM) + пресеты" "${menu_items[@]}")"
+    choice="$(show_tui_numbered_menu "Qwen" "Qwen Code - выбор профиля" "OpenAI Coding (Z.AI / NIM) + пресеты" "${menu_items[@]}")"
     
     if [ "${choice:-0}" -eq 0 ]; then
         echo -e "${YELLOW}Отменено.${RESET}"
@@ -445,7 +445,7 @@ while true; do
             done
 
             local login_choice
-            login_choice="$(show_tui_framed_menu "Qwen" "Нативный логин Qwen Code" "Выберите способ авторизации" "${login_menu[@]}")"
+            login_choice="$(show_tui_numbered_menu "Qwen" "Нативный логин Qwen Code" "Выберите способ авторизации" "${login_menu[@]}")"
 
             if [ "${login_choice:-0}" -eq 0 ]; then
                 continue
