@@ -17,7 +17,7 @@ irm https://raw.githubusercontent.com/chelaxian/cloud-code-setup/main/install.ps
 ### Linux / macOS
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/chelaxian/cloud-code-setup/main/bootstrap.sh | bash
+sudo curl -fsSL https://raw.githubusercontent.com/chelaxian/cloud-code-setup/main/bootstrap.sh | bash
 ```
 
 Или вручную:
