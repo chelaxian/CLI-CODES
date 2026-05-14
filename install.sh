@@ -99,7 +99,6 @@ step "ЧТО УСТАНОВИТЬ?"
 echo -e "  ${GREEN}[1]${RESET} Qwen Code"
 echo -e "  ${GREEN}[2]${RESET} Claude Code"
 echo -e "  ${GREEN}[3]${RESET} OpenCode"
-echo ""
 echo -e "  ${GREEN}[4]${RESET} Freebuff"
 echo -e "  ${GREEN}[5]${RESET} OpenClaude"
 echo -e "  ${GREEN}[6]${RESET} Все инструменты"
@@ -108,8 +107,8 @@ echo -e "  ${RED}[8]${RESET} Полное удаление (uninstall)"
 echo -e "  ${GRAY}[0]${RESET} Выход"
 echo ""
 
-read -p "Ваш выбор [4]: " install_choice
-install_choice="${install_choice:-4}"
+read -p "Ваш выбор [6]: " install_choice
+install_choice="${install_choice:-6}"
 
 INSTALL_QWEN=false
 INSTALL_CLAUDE=false
@@ -143,7 +142,7 @@ if $DO_UPDATE; then
         ok "Репозиторий обновлён"
     else
         err "Репозиторий не найден: $INSTALL_DIR"
-        err "Сначала установите через пункт [4]"
+        err "Сначала установите через пункт [6]"
         read -p "Нажмите Enter для выхода…"
         exit 1
     fi

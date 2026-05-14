@@ -175,7 +175,6 @@ Write-Host ""
 Write-Status "  [1] Qwen Code" "Green"
 Write-Status "  [2] Claude Code" "Green"
 Write-Status "  [3] OpenCode" "Green"
-Write-Host ""
 Write-Status "  [4] Freebuff" "Green"
 Write-Status "  [5] OpenClaude" "Green"
 Write-Status "  [6] Все инструменты" "Green"
@@ -184,9 +183,9 @@ Write-Status "  [8] Полное удаление (uninstall)" "Red"
 Write-Status "  [0] Выход" "Gray"
 Write-Host ""
 
-$installChoice = Read-Host "Ваш выбор [4]"
+$installChoice = Read-Host "Ваш выбор [6]"
 
-if ([string]::IsNullOrWhiteSpace($installChoice)) { $installChoice = "4" }
+if ([string]::IsNullOrWhiteSpace($installChoice)) { $installChoice = "6" }
 
 # --- Update all components ---
 if ($installChoice -eq "7") {
