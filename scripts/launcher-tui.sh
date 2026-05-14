@@ -418,6 +418,5 @@ show_tui_wait_frame() {
 
 # Alias for backward compatibility
 show_tui_framed_menu() {
-    show_tui_numbered_menu
-\$@
+    show_tui_numbered_menu "$@"
 }
