@@ -153,7 +153,7 @@ draw_tui_banner_opencode() {
 # Prints selected index (1-based) to stdout. Prints 0 for Esc/exit.
 # All visual output goes to FD 3 (/dev/tty).
 # Always returns 0.
-show_tui_framed_menu() {
+show_tui_numbered_menu() {
     local app_brand="$1"
     local title="$2"
     local subtitle="$3"
@@ -414,4 +414,10 @@ show_tui_wait_frame() {
     printf "${banner_color}╚${RESET}" >&3
     draw_box_line '═' "$inner_width" >&3
     printf "${banner_color}╝${RESET}\n" >&3
+}
+
+# Alias for backward compatibility
+show_tui_framed_menu() {
+    show_tui_numbered_menu
+\$@
 }
