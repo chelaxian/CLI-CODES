@@ -55,7 +55,6 @@ function Test-NvidiaNimOpenAiNativeToolCalling {
     $norm = $norm.Substring("nvidia_nim/".Length)
   }
   foreach ($id in @(
-      "z-ai/glm4.7"
       "qwen/qwen3.5-122b-a10b"
       "deepseek-ai/deepseek-v3.1-terminus"
     )) {
@@ -68,7 +67,6 @@ function Test-NvidiaNimOpenAiNativeToolCalling {
 # Обновляйте при необходимости: https://build.nvidia.com/models?filters=nimType%3Anim_type_preview
 function Get-NvidiaNimBundledFreeModelIds {
   $raw = @(
-    "z-ai/glm4.7"
     "z-ai/glm5"
     "z-ai/glm-5.1"
     "nvidia/nemotron-3-content-safety"

@@ -1,12 +1,12 @@
 ﻿[CmdletBinding()]
 param(
-  [string]$Model = "nim-glm-4.7-tools"
+  [string]$Model = "nim-qwen3.5-122b-a10b-tools"
 )
 $ErrorActionPreference = "Stop"
 
 # Map internal profile names to real NVIDIA NIM model IDs
 $nimModelMap = @{
-  "nim-glm-4.7-tools"        = "z-ai/glm4.7"
+  "nim-glm-4.7-tools"        = "qwen/qwen3.5-122b-a10b"
   "nim-qwen3.5-122b-a10b-tools" = "qwen/qwen3.5-122b-a10b"
 }
 $nimModel = if ($nimModelMap.ContainsKey($Model)) { $nimModelMap[$Model] } else { $Model }

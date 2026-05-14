@@ -49,12 +49,8 @@ $script:Profiles = @(
     Label = "Z.AI - GLM-4.5-Flash (free, tool calling)"
   }
   @{
-    Id    = "nim-glm"
-    Label = "NVIDIA NIM - GLM-4.7 (free, tool calling)"
-  }
-  @{
     Id    = "nim-qwen"
-    Label = "NVIDIA NIM - Qwen3.5-122B-A10B (free, tool calling)"
+    Label = "NVIDIA NIM - Qwen3.5-122B-A10B (tool calling)"
   }
   @{
     Id    = "openrouter-hy3"
@@ -305,10 +301,10 @@ function Invoke-OpenCodeProfile {
         $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "NVIDIA NIM" -HelpUrl "https://build.nvidia.com/api-key"
       }
 
-      $configPath = Write-OpenCodeConfig -Provider "nvidia-nim" -Model "z-ai/glm4.7" -BaseURL "https://integrate.api.nvidia.com/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
+      $configPath = Write-OpenCodeConfig -Provider "nvidia-nim" -Model "qwen/qwen3.5-122b-a10b" -BaseURL "https://integrate.api.nvidia.com/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
 
       $env:OPENCODE_CONFIG = $configPath
-      Write-Host "Запуск OpenCode (NVIDIA NIM GLM-4.7)…" -ForegroundColor Cyan
+      Write-Host "Запуск OpenCode (NVIDIA NIM Qwen3.5-122B-A10B)…" -ForegroundColor Cyan
       & $opencodeExe
       return
     }

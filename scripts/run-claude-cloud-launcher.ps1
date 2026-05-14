@@ -82,12 +82,8 @@ $script:Profiles = @(
     Label = "Z.AI - GLM-4.5-Flash (free, tool calling)"
   }
   @{
-    Id    = "claude-nim"
-    Label = "NVIDIA NIM - GLM-4.7 (free, tool calling)"
-  }
-  @{
     Id    = "claude-nim-qwen"
-    Label = "NVIDIA NIM - Qwen3.5-122B-A10B (free, tool calling)"
+    Label = "NVIDIA NIM - Qwen3.5-122B-A10B (tool calling)"
   }
   @{
     Id    = "claude-openrouter-hy3"
@@ -184,7 +180,7 @@ function Invoke-ClaudeCloudProfile {
       return
     }
     "claude-nim" {
-      & $SessionScript -Provider nim -ClaudeTools default `
+      & $SessionScript -Provider nim-qwen -ClaudeTools default `
         -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
       return
     }

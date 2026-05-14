@@ -34,7 +34,7 @@ echo -e "${CYAN}  ╚██████╗███████╗██║     
 echo -e "${CYAN}   ╚═════╝╚══════╝╚═╝         ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝${RESET}"
 echo -e "${CYAN}${RESET}"
 echo -e "${YELLOW}              C L O U D   S E T U P  -  1-click install${RESET}"
-echo -e "${YELLOW}  Qwen Code + Claude Code + OpenCode${RESET}"
+echo -e "${YELLOW}  Qwen Code + Claude Code + OpenCode + Freebuff + OpenClaude${RESET}"
 echo -e "${CYAN}════════════════════════════════════════════════════════════════════════════════${RESET}"
 echo ""
 
@@ -99,7 +99,9 @@ step "ЧТО УСТАНОВИТЬ?"
 echo -e "  ${GREEN}[1]${RESET} Qwen Code (cloud)"
 echo -e "  ${GREEN}[2]${RESET} Claude Code (cloud)"
 echo -e "  ${GREEN}[3]${RESET} OpenCode (cloud)"
-echo -e "  ${GREEN}[4]${RESET} Все три"
+echo -e "  ${GREEN}[4]${RESET} Все инструменты"
+echo -e "  ${GREEN}[7]${RESET} Freebuff"
+echo -e "  ${GREEN}[8]${RESET} OpenClaude"
 echo -e "  ${CYAN}[5]${RESET} Обновление всех компонентов"
 echo -e "  ${RED}[6]${RESET} Полное удаление (uninstall)"
 echo -e "  ${GRAY}[0]${RESET} Выход"
@@ -111,6 +113,8 @@ install_choice="${install_choice:-4}"
 INSTALL_QWEN=false
 INSTALL_CLAUDE=false
 INSTALL_OPENCODE=false
+INSTALL_FREEBUFF=false
+INSTALL_OPENCLAUDE=false
 DO_UNINSTALL=false
 DO_UPDATE=false
 
@@ -118,11 +122,13 @@ case "$install_choice" in
     1) INSTALL_QWEN=true ;;
     2) INSTALL_CLAUDE=true ;;
     3) INSTALL_OPENCODE=true ;;
-    4) INSTALL_QWEN=true; INSTALL_CLAUDE=true; INSTALL_OPENCODE=true ;;
+    4) INSTALL_QWEN=true; INSTALL_CLAUDE=true; INSTALL_OPENCODE=true; INSTALL_FREEBUFF=true; INSTALL_OPENCLAUDE=true ;;
     5) DO_UPDATE=true ;;
     6) DO_UNINSTALL=true ;;
+    7) INSTALL_FREEBUFF=true ;;
+    8) INSTALL_OPENCLAUDE=true ;;
     0) echo -e "${YELLOW}Выход.${RESET}"; exit 0 ;;
-    *) warn "Неверный выбор. Устанавливаем все три."; INSTALL_QWEN=true; INSTALL_CLAUDE=true; INSTALL_OPENCODE=true ;;
+    *) warn "Неверный выбор. Устанавливаем все инструменты."; INSTALL_QWEN=true; INSTALL_CLAUDE=true; INSTALL_OPENCODE=true; INSTALL_FREEBUFF=true; INSTALL_OPENCLAUDE=true ;;
 esac
 
 # --- Update ---
@@ -149,7 +155,7 @@ if $DO_UPDATE; then
     echo -e "${CYAN}Версии ДО обновления:${RESET}"
 
     pkg_updated=0
-    for pkg_info in "qwen-code:@qwen-code/qwen-code" "claude-code:@anthropic-ai/claude-code" "opencode-ai:opencode-ai"; do
+    for pkg_info in "qwen-code:@qwen-code/qwen-code" "claude-code:@anthropic-ai/claude-code" "opencode-ai:opencode-ai" "freebuff:freebuff" "openclaude:@gitlawb/openclaude"; do
         pkg_name="${pkg_info%%:*}"
         npm_name="${pkg_info##*:}"
         before="не установлен"
@@ -199,9 +205,9 @@ if $DO_UNINSTALL; then
     echo -e "${RED}  - Все сессии (qwen/claude/opencode-sessions)${RESET}"
     echo -e "${RED}  - Конфиги CLI (~/.claude, ~/.qwen)${RESET}"
     echo -e "${RED}  - API ключи из ~/.bashrc и ~/.zshrc${RESET}"
-    echo -e "${RED}  - Лаунчеры ~/qwen-code-cloud.sh, ~/claude-code-cloud.sh, ~/opencode-cloud.sh${RESET}"
+    echo -e "${RED}  - Лаунчеры ~/qwen-code-cloud.sh, ~/claude-code-cloud.sh, ~/opencode-cloud.sh, ~/freebuff-cloud.sh, ~/openclaude-cloud.sh${RESET}"
     echo -e "${RED}  - Desktop ярлыки (.desktop)${RESET}"
-    echo -e "${RED}  - Глобальные npm пакеты (qwen-code, claude-code, opencode-ai)${RESET}"
+    echo -e "${RED}  - Глобальные npm пакеты (qwen-code, claude-code, opencode-ai, freebuff, openclaude)${RESET}"
     echo ""
     echo -e "${YELLOW}Введите 'yes' для подтверждения удаления: ${RESET}"
     read -r confirm
@@ -247,7 +253,7 @@ if $DO_UNINSTALL; then
     done
 
     echo -e "${CYAN}Удаление лаунчеров...${RESET}"
-    for launcher in "$HOME/qwen-code-cloud.sh" "$HOME/claude-code-cloud.sh" "$HOME/opencode-cloud.sh"; do
+    for launcher in "$HOME/qwen-code-cloud.sh" "$HOME/claude-code-cloud.sh" "$HOME/opencode-cloud.sh" "$HOME/freebuff-cloud.sh" "$HOME/openclaude-cloud.sh"; do
         if [ -f "$launcher" ]; then
             rm -f "$launcher"
             ok "Удалён: $launcher"
@@ -257,7 +263,7 @@ if $DO_UNINSTALL; then
     echo -e "${CYAN}Удаление desktop ярлыков...${RESET}"
     for d in "$HOME/Desktop" "$HOME/Рабочий стол"; do
         if [ -d "$d" ]; then
-            for f in "$d/Qwen Code (cloud).desktop" "$d/Claude Code (cloud).desktop" "$d/OpenCode (cloud).desktop"; do
+            for f in "$d/Qwen Code (cloud).desktop" "$d/Claude Code (cloud).desktop" "$d/OpenCode (cloud).desktop" "$d/Freebuff (cloud).desktop" "$d/OpenClaude (cloud).desktop"; do
                 if [ -f "$f" ]; then
                     rm -f "$f"
                     ok "Удалён: $f"
@@ -267,7 +273,7 @@ if $DO_UNINSTALL; then
     done
 
     echo -e "${CYAN}Удаление глобальных npm пакетов...${RESET}"
-    for pkg in @qwen-code/qwen-code @anthropic-ai/qwen-code @anthropic-ai/claude-code opencode-ai; do
+    for pkg in @qwen-code/qwen-code @anthropic-ai/qwen-code @anthropic-ai/claude-code opencode-ai freebuff @gitlawb/openclaude; do
         if npm ls -g "$pkg" &>/dev/null; then
             npm uninstall -g "$pkg" 2>/dev/null && ok "Удалён npm: $pkg" || warn "Не удалось удалить: $pkg"
         else
@@ -337,6 +343,24 @@ if $INSTALL_OPENCODE; then
         ok "OpenCode CLI: $(which opencode 2>/dev/null)"
     else
         warn "Не удалось установить OpenCode CLI. Установите вручную: npm i -g opencode-ai@latest"
+    fi
+fi
+
+if $INSTALL_FREEBUFF; then
+    echo -e "${CYAN}Установка/обновление Freebuff CLI…${RESET}"
+    if npm install -g freebuff@latest 2>/dev/null; then
+        ok "Freebuff CLI: $(which freebuff 2>/dev/null)"
+    else
+        warn "Не удалось установить Freebuff CLI. Установите вручную: npm i -g freebuff"
+    fi
+fi
+
+if $INSTALL_OPENCLAUDE; then
+    echo -e "${CYAN}Установка/обновление OpenClaude CLI…${RESET}"
+    if npm install -g @gitlawb/openclaude@latest 2>/dev/null; then
+        ok "OpenClaude CLI: $(which openclaude 2>/dev/null)"
+    else
+        warn "Не удалось установить OpenClaude CLI. Установите вручную: npm i -g @gitlawb/openclaude"
     fi
 fi
 
@@ -423,11 +447,11 @@ if $INSTALL_QWEN; then
     ok "qwen-sessions/_shared/"
 fi
 if $INSTALL_CLAUDE; then
-    mkdir -p "$REPO_DIR/claude-sessions/_shared"
+    mkdir -p "$INSTALL_DIR/claude-sessions/_shared"
     ok "claude-sessions/_shared/"
 fi
 if $INSTALL_OPENCODE; then
-    mkdir -p "$REPO_DIR/opencode-sessions/_shared"
+    mkdir -p "$INSTALL_DIR/opencode-sessions/_shared"
     ok "opencode-sessions/_shared/"
 fi
 
@@ -513,6 +537,26 @@ if $INSTALL_OPENCODE; then
     fi
 fi
 
+if $INSTALL_FREEBUFF; then
+    LAUNCHER="$SCRIPTS_DIR/run-freebuff-launcher.sh"
+    if [ -f "$LAUNCHER" ]; then
+        if [ -n "$DESKTOP" ]; then
+            make_desktop_entry "Freebuff (cloud)" "$LAUNCHER"
+        fi
+        make_sh_launcher "freebuff-cloud" "$LAUNCHER"
+    fi
+fi
+
+if $INSTALL_OPENCLAUDE; then
+    LAUNCHER="$SCRIPTS_DIR/run-openclaude-launcher.sh"
+    if [ -f "$LAUNCHER" ]; then
+        if [ -n "$DESKTOP" ]; then
+            make_desktop_entry "OpenClaude (cloud)" "$LAUNCHER"
+        fi
+        make_sh_launcher "openclaude-cloud" "$LAUNCHER"
+    fi
+fi
+
 # ─── Итоги ───────────────────────────────────────────────────────────────────
 
 echo ""
@@ -526,6 +570,8 @@ echo -e "${CYAN}Команды для запуска:${RESET}"
 if $INSTALL_QWEN;     then echo -e "${GREEN}  ~/qwen-code-cloud.sh${RESET}"; fi
 if $INSTALL_CLAUDE;   then echo -e "${GREEN}  ~/claude-code-cloud.sh${RESET}"; fi
 if $INSTALL_OPENCODE; then echo -e "${GREEN}  ~/opencode-cloud.sh${RESET}"; fi
+if $INSTALL_FREEBUFF; then echo -e "${GREEN}  ~/freebuff-cloud.sh${RESET}"; fi
+if $INSTALL_OPENCLAUDE; then echo -e "${GREEN}  ~/openclaude-cloud.sh${RESET}"; fi
 echo ""
 echo -e "${YELLOW}Перезапустите терминал для применения API ключей. Запускайте через команды выше!${RESET}"
 echo ""

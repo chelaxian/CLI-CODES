@@ -127,9 +127,45 @@ function Write-TuiBannerOpenCode {
   }
 }
 
+function Write-TuiBannerFreebuff {
+  param([int]$InnerWidth)
+  $lines = @(
+    "███████╗██████╗ ███████╗███████╗██████╗ ██╗   ██╗███████╗███████╗",
+    "██╔════╝██╔══██╗██╔════╝██╔════╝██╔══██╗██║   ██║██╔════╝██╔════╝",
+    "█████╗  ██████╔╝█████╗  █████╗  ██████╔╝██║   ██║█████╗  █████╗  ",
+    "██╔══╝  ██╔══██╗██╔══╝  ██╔══╝  ██╔══██╗██║   ██║██╔══╝  ██╔══╝  ",
+    "██║     ██║  ██║███████╗███████╗██████╔╝╚██████╔╝██║     ██║     ",
+    "╚═╝     ╚═╝  ╚═╝╚══════╝╚══════╝╚═════╝  ╚═════╝ ╚═╝     ╚═╝     "
+  )
+  foreach ($ln in $lines) {
+    Write-TuiRow -Text $ln -InnerWidth $InnerWidth -Fg White
+  }
+}
+
+function Write-TuiBannerOpenClaude {
+  param([int]$InnerWidth)
+  $lines = @(
+    " ██████╗ ██████╗ ███████╗███╗   ██╗",
+    "██╔═══██╗██╔══██╗██╔════╝████╗  ██║",
+    "██║   ██║██████╔╝█████╗  ██╔██╗ ██║",
+    "██║   ██║██╔═══╝ ██╔══╝  ██║╚██╗██║",
+    "╚██████╔╝██║     ███████╗██║ ╚████║",
+    " ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝",
+    " ██████╗██╗      █████╗ ██╗   ██╗██████╗ ███████╗",
+    "██╔════╝██║     ██╔══██╗██║   ██║██╔══██╗██╔════╝",
+    "██║     ██║     ███████║██║   ██║██║  ██║█████╗  ",
+    "██║     ██║     ██╔══██║██║   ██║██║  ██║██╔══╝  ",
+    "╚██████╗███████╗██║  ██║╚██████╔╝██████╔╝███████╗",
+    " ╚═════╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚══════╝"
+  )
+  foreach ($ln in $lines) {
+    Write-TuiRow -Text $ln -InnerWidth $InnerWidth -Fg DarkGreen
+  }
+}
+
 function Show-TuiFramedMenu {
   param(
-    [ValidateSet("Qwen", "Claude", "LlamaCpp", "LMStudio", "OpenCode")]
+    [ValidateSet("Qwen", "Claude", "LlamaCpp", "LMStudio", "OpenCode", "Freebuff", "OpenClaude")]
     [string]$AppBrand,
     [Parameter(Mandatory = $true)][string]$Title,
     [string]$Subtitle = "",
@@ -175,6 +211,8 @@ function Show-TuiFramedMenu {
       "LlamaCpp" { Write-TuiBannerLlamaCpp -InnerWidth $inner }
       "LMStudio" { Write-TuiBannerLMStudio -InnerWidth $inner }
       "OpenCode" { Write-TuiBannerOpenCode -InnerWidth $inner }
+      "Freebuff" { Write-TuiBannerFreebuff -InnerWidth $inner }
+      "OpenClaude" { Write-TuiBannerOpenClaude -InnerWidth $inner }
       default { Write-TuiBannerClaude -InnerWidth $inner }
     }
     Write-TuiRow -Text ("".PadRight($inner)) -InnerWidth $inner
@@ -256,7 +294,7 @@ function Show-TuiFramedMenu {
 
 function Show-TuiWaitFrame {
   param(
-    [ValidateSet("Qwen", "Claude", "LlamaCpp", "LMStudio", "OpenCode")]
+    [ValidateSet("Qwen", "Claude", "LlamaCpp", "LMStudio", "OpenCode", "Freebuff", "OpenClaude")]
     [string]$AppBrand,
     [Parameter(Mandatory = $true)][string]$Message
   )
@@ -274,6 +312,8 @@ function Show-TuiWaitFrame {
     "LlamaCpp" { Write-TuiBannerLlamaCpp -InnerWidth $inner }
     "LMStudio" { Write-TuiBannerLMStudio -InnerWidth $inner }
     "OpenCode" { Write-TuiBannerOpenCode -InnerWidth $inner }
+    "Freebuff" { Write-TuiBannerFreebuff -InnerWidth $inner }
+    "OpenClaude" { Write-TuiBannerOpenClaude -InnerWidth $inner }
     default { Write-TuiBannerClaude -InnerWidth $inner }
   }
   Write-TuiRow -Text ("".PadRight($inner)) -InnerWidth $inner

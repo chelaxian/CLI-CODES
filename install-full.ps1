@@ -32,7 +32,7 @@ Write-Status "   ╚═════╝╚══════╝╚═╝         
 Write-Status "" "Cyan"
 Write-Status "              C L O U D   C O D E  -  1-click install" "Yellow"
 Write-Status "" "Cyan"
-Write-Status "  Qwen Code + Claude Code + OpenCode" "Yellow"
+Write-Status "  Qwen Code + Claude Code + OpenCode + Freebuff + OpenClaude" "Yellow"
 Write-Status "" "Cyan"
 Write-Status "======================================================================" "Cyan"
 Write-Host ""
@@ -175,9 +175,11 @@ Write-Host ""
 Write-Status "  [1] Qwen Code (cloud)" "Green"
 Write-Status "  [2] Claude Code (cloud)" "Green"
 Write-Status "  [3] OpenCode (cloud)" "Green"
-Write-Status "  [4] Все три" "Green"
+Write-Status "  [4] Все инструменты" "Green"
 Write-Status "  [5] Обновление всех компонентов" "Green"
 Write-Status "  [6] Полное удаление (удалить всё)" "Red"
+Write-Status "  [7] Freebuff" "Green"
+Write-Status "  [8] OpenClaude" "Green"
 Write-Status "  [0] Выход" "Gray"
 Write-Host ""
 
@@ -243,7 +245,9 @@ if ($installChoice -eq "5") {
     $pkgs = @(
         @{ Name = "qwen-code";  NpmPkg = "@qwen-code/qwen-code";      Fallback = "@anthropic-ai/qwen-code"; Cmd = "qwen" },
         @{ Name = "claude-code"; NpmPkg = "@anthropic-ai/claude-code"; Fallback = $null;                     Cmd = "claude" },
-        @{ Name = "opencode-ai"; NpmPkg = "opencode-ai";               Fallback = $null;                     Cmd = "opencode" }
+        @{ Name = "opencode-ai"; NpmPkg = "opencode-ai";               Fallback = $null;                     Cmd = "opencode" },
+        @{ Name = "freebuff";    NpmPkg = "freebuff";                  Fallback = $null;                     Cmd = "freebuff" },
+        @{ Name = "openclaude";  NpmPkg = "@gitlawb/openclaude";       Fallback = $null;                     Cmd = "openclaude" }
     )
 
     foreach ($pkg in $pkgs) {
@@ -306,7 +310,7 @@ if ($installChoice -eq "6") {
     Write-Host "  - uv (Python package manager, ~/.local/bin/uv)" -ForegroundColor Red
     Write-Host "  - API keys (user environment variables)" -ForegroundColor Red
     Write-Host "  - Desktop shortcuts (.cmd, .lnk)" -ForegroundColor Red
-    Write-Host "  - Global npm packages (qwen-code, claude-code, opencode-ai)" -ForegroundColor Red
+    Write-Host "  - Global npm packages (qwen-code, claude-code, opencode-ai, freebuff, openclaude)" -ForegroundColor Red
     Write-Host ""
     $confirm = Read-Host "Введите 'yes' для подтверждения удаления"
     if ($confirm -ne "yes") {
@@ -344,7 +348,7 @@ if ($installChoice -eq "6") {
     Write-Status "Удаляю ярлыки на рабочем столе..." "Cyan"
     $desktop = [Environment]::GetFolderPath("Desktop")
     if (-not $desktop) { $desktop = Join-Path $env:USERPROFILE "Desktop" }
-    foreach ($name in @("Qwen Code (cloud)", "Claude Code (cloud)", "OpenCode (cloud)", "Claude Mem Start", "Claude Mem Viewer", "Claude Mem Clear", "Obsidian")) {
+    foreach ($name in @("Qwen Code (cloud)", "Claude Code (cloud)", "OpenCode (cloud)", "Freebuff (cloud)", "OpenClaude (cloud)", "Claude Mem Start", "Claude Mem Viewer", "Claude Mem Clear", "Obsidian")) {
         foreach ($ext in @(".cmd", ".lnk")) {
             $f = Join-Path $desktop "$name$ext"
             if (Test-Path -LiteralPath $f) {
@@ -356,7 +360,7 @@ if ($installChoice -eq "6") {
 
     Write-Status "Удаление глобальных npm пакетов..." "Cyan"
     $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
-    foreach ($pkg in @("@qwen-code/qwen-code", "@anthropic-ai/qwen-code", "@anthropic-ai/claude-code", "opencode-ai")) {
+    foreach ($pkg in @("@qwen-code/qwen-code", "@anthropic-ai/qwen-code", "@anthropic-ai/claude-code", "opencode-ai", "freebuff", "@gitlawb/openclaude")) {
         & npm.cmd uninstall -g $pkg 2>$null
         Write-Status "  [OK] Uninstalled: $pkg" "Green"
     }
@@ -394,14 +398,18 @@ if ($installChoice -eq "6") {
 $installQwen = $false
 $installClaude = $false
 $installOpenCode = $false
+$installFreebuff = $false
+$installOpenClaude = $false
 
 switch ($installChoice) {
     "1" { $installQwen = $true }
     "2" { $installClaude = $true }
     "3" { $installOpenCode = $true }
-    "4" { $installQwen = $true; $installClaude = $true; $installOpenCode = $true }
+    "4" { $installQwen = $true; $installClaude = $true; $installOpenCode = $true; $installFreebuff = $true; $installOpenClaude = $true }
+    "7" { $installFreebuff = $true }
+    "8" { $installOpenClaude = $true }
     "0" { Write-Status "Выход." "Yellow"; return }
-    default { Write-Status "Неверный выбор. Устанавливаем все три." "Yellow"; $installQwen = $true; $installClaude = $true; $installOpenCode = $true }
+    default { Write-Status "Неверный выбор. Устанавливаем все инструменты." "Yellow"; $installQwen = $true; $installClaude = $true; $installOpenCode = $true; $installFreebuff = $true; $installOpenClaude = $true }
 }
 
 Write-Host ""
@@ -506,6 +514,34 @@ if ($installOpenCode) {
     } else {
         Write-Status "  [WARN] OpenCode CLI not found. Install manually:" "Yellow"
         Write-Status "         npm i -g opencode-ai@latest" "Yellow"
+    }
+}
+
+if ($installFreebuff) {
+    Write-Status "Установка Freebuff CLI..." "Cyan"
+    $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+    & npm.cmd install -g freebuff@latest 2>$null
+    $ErrorActionPreference = $prevEAP
+    $fbCmd = Get-Command freebuff -ErrorAction SilentlyContinue
+    if ($fbCmd) {
+        Write-Status "  [OK] Freebuff CLI: $($fbCmd.Source)" "Green"
+    } else {
+        Write-Status "  [WARN] Freebuff CLI not found. Install manually:" "Yellow"
+        Write-Status "         npm i -g freebuff" "Yellow"
+    }
+}
+
+if ($installOpenClaude) {
+    Write-Status "Установка OpenClaude CLI..." "Cyan"
+    $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+    & npm.cmd install -g @gitlawb/openclaude@latest 2>$null
+    $ErrorActionPreference = $prevEAP
+    $oclaudeCmd = Get-Command openclaude -ErrorAction SilentlyContinue
+    if ($oclaudeCmd) {
+        Write-Status "  [OK] OpenClaude CLI: $($oclaudeCmd.Source)" "Green"
+    } else {
+        Write-Status "  [WARN] OpenClaude CLI not found. Install manually:" "Yellow"
+        Write-Status "         npm i -g @gitlawb/openclaude" "Yellow"
     }
 }
 
@@ -649,6 +685,8 @@ function New-LauncherShortcut {
 if ($installQwen)     { New-LauncherShortcut -Name "Qwen Code (cloud)"     -ScriptFile "run-qwen-code-launcher.ps1" }
 if ($installClaude)   { New-LauncherShortcut -Name "Claude Code (cloud)"   -ScriptFile "run-claude-cloud-launcher.ps1" }
 if ($installOpenCode) { New-LauncherShortcut -Name "OpenCode (cloud)"      -ScriptFile "run-opencode-launcher.ps1" }
+if ($installFreebuff) { New-LauncherShortcut -Name "Freebuff (cloud)"      -ScriptFile "run-freebuff-launcher.ps1" }
+if ($installOpenClaude) { New-LauncherShortcut -Name "OpenClaude (cloud)"  -ScriptFile "run-openclaude-launcher.ps1" }
 
 # Also (re)create shortcuts via the dedicated helper script (keeps them in sync)
 try {
@@ -670,6 +708,8 @@ Write-Status "Ярлыки на рабочем столе:" "Cyan"
 if ($installQwen)  { Write-Status "  * Qwen Code (cloud)" "Green" }
 if ($installClaude) { Write-Status "  * Claude Code (cloud)" "Green" }
 if ($installOpenCode) { Write-Status "  * OpenCode (cloud)" "Green" }
+if ($installFreebuff) { Write-Status "  * Freebuff (cloud)" "Green" }
+if ($installOpenClaude) { Write-Status "  * OpenClaude (cloud)" "Green" }
 Write-Host ""
 Write-Status "Перезапустите терминал, чтобы API ключи применились. Запускайте через ярлыки!" "Yellow"
 Write-Host ""

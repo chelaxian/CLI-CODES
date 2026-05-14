@@ -62,13 +62,8 @@ $script:Profiles = @(
     Description = "Пропуск меню: последний выбранный профиль"
   }
   @{
-    Id          = "nim-glm"
-    Label       = "NVIDIA NIM - GLM-4.7 (free, tool calling)"
-    NimModel    = "nim-glm-4.7-tools"
-  }
-  @{
     Id          = "nim-qwen"
-    Label       = "NVIDIA NIM - Qwen3.5-122B-A10B (free, tool calling)"
+    Label       = "NVIDIA NIM - Qwen3.5-122B-A10B (tool calling)"
     NimModel    = "nim-qwen3.5-122b-a10b-tools"
   }
   @{
@@ -150,7 +145,7 @@ function Invoke-QwenProfile {
 
   switch ($ProfileId) {
     "nim-glm" {
-      & (Join-Path $PSScriptRoot "run-qwen-code-nvidia-nim.ps1") -Model "nim-glm-4.7-tools"
+      & (Join-Path $PSScriptRoot "run-qwen-code-nvidia-nim.ps1") -Model "nim-qwen3.5-122b-a10b-tools"
       return
     }
     "nim-qwen" {

@@ -25,7 +25,7 @@ param(
   [int]$ProxyPort = 8082,
   [string]$ProxyAuthToken = "freecc",
   # Для -Provider nim-qwen значение ниже не используется (жёстко nvidia_nim/qwen/qwen3.5-122b-a10b); порт по умолчанию 8083.
-  [string]$NimModel = "nvidia_nim/z-ai/glm4.7",
+  [string]$NimModel = "nvidia_nim/qwen/qwen3.5-122b-a10b",
 
   # Claude Code knobs
   [string]$ClaudeTools = "default",
@@ -370,6 +370,7 @@ if ($Provider -eq "zai") {
     $ZaiApiKey = Read-SecretText "Введите Z.AI API key"
   }
   $env:ANTHROPIC_AUTH_TOKEN = $ZaiApiKey
+  $env:ANTHROPIC_API_KEY = $ZaiApiKey
   $env:ANTHROPIC_BASE_URL = "https://api.z.ai/api/anthropic"
   $env:API_TIMEOUT_MS = "3000000"
   $zModel = "glm-4.7"
@@ -418,6 +419,7 @@ if ($Provider -in @("nim", "nim-qwen")) {
   }
   Ensure-FreeClaudeCodeProxy -Dir $FreeClaudeCodeDir -Port $proxyPortResolved -NimKey $NvidiaNimApiKey -Model $nimModelResolved -AuthToken $ProxyAuthToken
   $env:ANTHROPIC_AUTH_TOKEN = $ProxyAuthToken
+  $env:ANTHROPIC_API_KEY = $ProxyAuthToken
   $env:ANTHROPIC_BASE_URL = ("http://127.0.0.1:{0}" -f $proxyPortResolved)
   $env:API_TIMEOUT_MS = "3000000"
 
@@ -453,6 +455,7 @@ if ($Provider -eq "openrouter") {
   Ensure-FreeClaudeCodeProxy -Dir $FreeClaudeCodeDir -Port $orPort -NimKey $orKey -Model $orModel -AuthToken $ProxyAuthToken -ExtraEnv @{ OPENROUTER_API_KEY = $orKey }
   $env:OPENROUTER_API_KEY = $orKey
   $env:ANTHROPIC_AUTH_TOKEN = $ProxyAuthToken
+  $env:ANTHROPIC_API_KEY = $ProxyAuthToken
   $env:ANTHROPIC_BASE_URL = ("http://127.0.0.1:{0}" -f $orPort)
   $env:API_TIMEOUT_MS = "3000000"
 
@@ -488,4 +491,3 @@ try {
 } finally {
   Pop-Location
 }
-

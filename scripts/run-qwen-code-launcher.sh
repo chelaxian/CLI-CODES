@@ -24,8 +24,7 @@ resolve_qwen_exe() {
 
 PROFILES=(
     "last|Запустить с последними настройками (быстрый старт)"
-    "nim-glm|NVIDIA NIM - GLM-4.7 (free, tool calling)"
-    "nim-qwen|NVIDIA NIM - Qwen3.5-122B-A10B (free, tool calling)"
+    "nim-qwen|NVIDIA NIM - Qwen3.5-122B-A10B (tool calling)"
     "zai-glm|Z.AI - GLM-4.7 (paid, tool calling)"
     "zai-glm51|Z.AI - GLM-5.1 (paid, tool calling)"
     "zai-flash47|Z.AI - GLM-4.7-Flash (free, tool calling)"
@@ -306,7 +305,7 @@ invoke_qwen_profile() {
     
     case "$profile_id" in
         "nim-glm")
-            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider nim -ModelId "z-ai/glm4.7"
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider nim -ModelId "qwen/qwen3.5-122b-a10b"
             ;;
         "nim-qwen")
             bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider nim -ModelId "qwen/qwen3.5-122b-a10b"

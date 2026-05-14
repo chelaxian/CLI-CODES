@@ -148,6 +148,58 @@ draw_tui_banner_opencode() {
     done
 }
 
+draw_tui_banner_freebuff() {
+    local inner_width="$1"
+    local lines=(
+        "███████╗██████╗ ███████╗███████╗██████╗ ██╗   ██╗███████╗███████╗"
+        "██╔════╝██╔══██╗██╔════╝██╔════╝██╔══██╗██║   ██║██╔════╝██╔════╝"
+        "█████╗  ██████╔╝█████╗  █████╗  ██████╔╝██║   ██║█████╗  █████╗  "
+        "██╔══╝  ██╔══██╗██╔══╝  ██╔══╝  ██╔══██╗██║   ██║██╔══╝  ██╔══╝  "
+        "██║     ██║  ██║███████╗███████╗██████╔╝╚██████╔╝██║     ██║     "
+        "╚═╝     ╚═╝  ╚═╝╚══════╝╚══════╝╚═════╝  ╚═════╝ ╚═╝     ╚═╝     "
+    )
+    for line in "${lines[@]}"; do
+        local len=${#line}
+        if [ $len -gt $inner_width ]; then
+            line="${line:0:$((inner_width-1))}…"
+        else
+            local pad_left=$(( (inner_width - len) / 2 ))
+            local pad_right=$((inner_width - len - pad_left))
+            line=$(printf '%*s%s%*s' "$pad_left" '' "$line" "$pad_right" '')
+        fi
+        printf "${WHITE}║${line}║${RESET}\n" >&3
+    done
+}
+
+draw_tui_banner_openclaude() {
+    local inner_width="$1"
+    local lines=(
+        " ██████╗ ██████╗ ███████╗███╗   ██╗"
+        "██╔═══██╗██╔══██╗██╔════╝████╗  ██║"
+        "██║   ██║██████╔╝█████╗  ██╔██╗ ██║"
+        "██║   ██║██╔═══╝ ██╔══╝  ██║╚██╗██║"
+        "╚██████╔╝██║     ███████╗██║ ╚████║"
+        " ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝"
+        " ██████╗██╗      █████╗ ██╗   ██╗██████╗ ███████╗"
+        "██╔════╝██║     ██╔══██╗██║   ██║██╔══██╗██╔════╝"
+        "██║     ██║     ███████║██║   ██║██║  ██║█████╗  "
+        "██║     ██║     ██╔══██║██║   ██║██║  ██║██╔══╝  "
+        "╚██████╗███████╗██║  ██║╚██████╔╝██████╔╝███████╗"
+        " ╚═════╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚══════╝"
+    )
+    for line in "${lines[@]}"; do
+        local len=${#line}
+        if [ $len -gt $inner_width ]; then
+            line="${line:0:$((inner_width-1))}…"
+        else
+            local pad_left=$(( (inner_width - len) / 2 ))
+            local pad_right=$((inner_width - len - pad_left))
+            line=$(printf '%*s%s%*s' "$pad_left" '' "$line" "$pad_right" '')
+        fi
+        printf "${GREEN}║${line}║${RESET}\n" >&3
+    done
+}
+
 # Main TUI menu with arrow-key navigation
 # Args: app_brand title subtitle item1 item2 item3 ...
 # Prints selected index (1-based) to stdout. Prints 0 for Esc/exit.
@@ -174,6 +226,10 @@ show_tui_numbered_menu() {
     if [ "$app_brand" = "Claude" ]; then
         banner_color="$MAGENTA"
     elif [ "$app_brand" = "OpenCode" ]; then
+        banner_color="$GREEN"
+    elif [ "$app_brand" = "Freebuff" ]; then
+        banner_color="$WHITE"
+    elif [ "$app_brand" = "OpenClaude" ]; then
         banner_color="$GREEN"
     fi
 
@@ -219,6 +275,8 @@ show_tui_numbered_menu() {
             "Qwen")   draw_tui_banner_qwen "$inner_width" ;;
             "Claude") draw_tui_banner_claude "$inner_width" ;;
             "OpenCode") draw_tui_banner_opencode "$inner_width" ;;
+            "Freebuff") draw_tui_banner_freebuff "$inner_width" ;;
+            "OpenClaude") draw_tui_banner_openclaude "$inner_width" ;;
         esac
 
         printf "${banner_color}║${RESET}" >&3
@@ -378,7 +436,9 @@ show_tui_wait_frame() {
 
     local banner_color="$CYAN"
     if [ "$app_brand" = "Claude" ]; then banner_color="$MAGENTA"
-    elif [ "$app_brand" = "OpenCode" ]; then banner_color="$GREEN"; fi
+    elif [ "$app_brand" = "OpenCode" ]; then banner_color="$GREEN"
+    elif [ "$app_brand" = "Freebuff" ]; then banner_color="$WHITE"
+    elif [ "$app_brand" = "OpenClaude" ]; then banner_color="$GREEN"; fi
 
     clear >&3
     printf "${banner_color}╔${RESET}" >&3
@@ -393,6 +453,8 @@ show_tui_wait_frame() {
         "Qwen")   draw_tui_banner_qwen "$inner_width" ;;
         "Claude") draw_tui_banner_claude "$inner_width" ;;
         "OpenCode") draw_tui_banner_opencode "$inner_width" ;;
+        "Freebuff") draw_tui_banner_freebuff "$inner_width" ;;
+        "OpenClaude") draw_tui_banner_openclaude "$inner_width" ;;
     esac
 
     printf "${banner_color}║${RESET}" >&3

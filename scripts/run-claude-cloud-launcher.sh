@@ -24,8 +24,7 @@ PROFILES=(
     "claude-zai-glm51|Z.AI - GLM-5.1 (paid, tool calling)"
     "claude-zai-flash47|Z.AI - GLM-4.7-Flash (free, tool calling)"
     "claude-zai-flash45|Z.AI - GLM-4.5-Flash (free, tool calling)"
-    "claude-nim|NVIDIA NIM - GLM-4.7 (free, tool calling)"
-    "claude-nim-qwen|NVIDIA NIM - Qwen3.5-122B-A10B (free, tool calling)"
+    "claude-nim-qwen|NVIDIA NIM - Qwen3.5-122B-A10B (tool calling)"
     "claude-openrouter-hy3|OpenRouter - Tencent Hy3 (free, tool calling)"
     "claude-openrouter-nemotron|OpenRouter - Nemotron 3 Super 120B (free, tool calling)"
     "claude-openrouter-laguna|OpenRouter - Poolside Laguna M.1 (free, tool calling, coding)"
@@ -265,6 +264,7 @@ invoke_claude_cloud_profile() {
             local key="${ZAI_API_KEY:-}"
             if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then key="${OPENAI_API_KEY:-}"; fi
             export ANTHROPIC_AUTH_TOKEN="$key"
+            export ANTHROPIC_API_KEY="$key"
             export ANTHROPIC_BASE_URL="https://api.z.ai/api/anthropic"
             export ANTHROPIC_DEFAULT_OPUS_MODEL="$model"
             export ANTHROPIC_DEFAULT_SONNET_MODEL="$model"
@@ -272,7 +272,7 @@ invoke_claude_cloud_profile() {
             export API_TIMEOUT_MS="3000000"
             ;;
         claude-nim*|custom-claude-nim*)
-            local fcc_model="nvidia_nim/z-ai/glm4.7"
+            local fcc_model="nvidia_nim/qwen/qwen3.5-122b-a10b"
             case "$profile_id" in
                 "claude-nim-qwen") fcc_model="nvidia_nim/qwen/qwen3.5-122b-a10b" ;;
                 "custom-claude-nim")
@@ -295,6 +295,7 @@ invoke_claude_cloud_profile() {
                 return 1
             fi
             export ANTHROPIC_AUTH_TOKEN="freecc"
+            export ANTHROPIC_API_KEY="freecc"
             export ANTHROPIC_BASE_URL="http://127.0.0.1:${proxy_port}"
             export ANTHROPIC_DEFAULT_OPUS_MODEL="$fcc_model"
             export ANTHROPIC_DEFAULT_SONNET_MODEL="$fcc_model"
@@ -328,6 +329,7 @@ invoke_claude_cloud_profile() {
                 return 1
             fi
             export ANTHROPIC_AUTH_TOKEN="freecc"
+            export ANTHROPIC_API_KEY="freecc"
             export ANTHROPIC_BASE_URL="http://127.0.0.1:${proxy_port}"
             export ANTHROPIC_DEFAULT_OPUS_MODEL="$fcc_model"
             export ANTHROPIC_DEFAULT_SONNET_MODEL="$fcc_model"

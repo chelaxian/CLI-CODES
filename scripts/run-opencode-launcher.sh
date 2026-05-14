@@ -18,8 +18,7 @@ PROFILES=(
     "zai-glm51|Z.AI - GLM-5.1 (paid, tool calling)"
     "zai-flash47|Z.AI - GLM-4.7-Flash (free, tool calling)"
     "zai-flash45|Z.AI - GLM-4.5-Flash (free, tool calling)"
-    "nim-glm|NVIDIA NIM - GLM-4.7 (free, tool calling)"
-    "nim-qwen|NVIDIA NIM - Qwen3.5-122B-A10B (free, tool calling)"
+    "nim-qwen|NVIDIA NIM - Qwen3.5-122B-A10B (tool calling)"
     "openrouter-hy3|OpenRouter - Tencent Hy3 (free, tool calling)"
     "openrouter-nemotron|OpenRouter - Nemotron 3 Super 120B (free, tool calling)"
     "openrouter-laguna|OpenRouter - Poolside Laguna M.1 (free, tool calling, coding)"
@@ -289,9 +288,9 @@ invoke_opencode_profile() {
             local api_key
             api_key=$(get_nim_api_key) || true
             local config_path
-            config_path=$(write_opencode_config "nvidia-nim" "z-ai/glm4.7" "https://integrate.api.nvidia.com/v1" "$api_key")
+            config_path=$(write_opencode_config "nvidia-nim" "qwen/qwen3.5-122b-a10b" "https://integrate.api.nvidia.com/v1" "$api_key")
             export OPENCODE_CONFIG="$config_path"
-            echo -e "${CYAN}Запуск OpenCode (NVIDIA NIM GLM-4.7)…${RESET}"
+            echo -e "${CYAN}Запуск OpenCode (NVIDIA NIM Qwen3.5-122B-A10B)…${RESET}"
             "$opencode_exe"
             ;;
         "nim-qwen")
