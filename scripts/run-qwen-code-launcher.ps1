@@ -62,13 +62,53 @@ $script:Profiles = @(
     Description = "Пропуск меню: последний выбранный профиль"
   }
   @{
-    Id          = "nim-qwen"
-    Label       = "NVIDIA NIM - Qwen3.5-122B-A10B (tool calling)"
-    NimModel    = "nim-qwen3.5-122b-a10b-tools"
-  }
-  @{
     Id          = "zai-glm"
     Label       = "Z.AI - GLM-4.7 (paid, tool calling)"
+  }
+  @{
+    Id          = "nim-mistral-medium"
+    Label       = "NIM - Mistral Medium 3.5 128B (free, tool calling)"
+    NimModel    = "nim-mistral-medium-3.5-128b"
+  }
+  @{
+    Id          = "nim-glm51"
+    Label       = "NIM - Z.AI GLM-5.1 (free, tool calling)"
+    NimModel    = "nim-glm-5.1"
+  }
+  @{
+    Id          = "nim-step-3.5-flash"
+    Label       = "NIM - Step 3.5 Flash (free, tool calling)"
+    NimModel    = "nim-step-3.5-flash"
+  }
+  @{
+    Id          = "nim-mistral-large-3"
+    Label       = "NIM - Mistral Large 3 675B (free, tool calling)"
+    NimModel    = "nim-mistral-large-3-675b"
+  }
+  @{
+    Id          = "nim-deepseek-v4-flash"
+    Label       = "NIM - DeepSeek V4 Flash 284B MoE (free)"
+    NimModel    = "nim-deepseek-v4-flash"
+  }
+  @{
+    Id          = "nim-gemma-4-31b"
+    Label       = "NIM - Google Gemma-4 31B (free)"
+    NimModel    = "nim-gemma-4-31b"
+  }
+  @{
+    Id          = "nim-qwen3.5-397b"
+    Label       = "NIM - Qwen 3.5 397B A17B (free)"
+    NimModel    = "nim-qwen3.5-397b-a17b"
+  }
+  @{
+    Id          = "nim-qwen3-next-80b"
+    Label       = "NIM - Qwen 3 Next 80B A3B (free)"
+    NimModel    = "nim-qwen3-next-80b-a3b"
+  }
+  @{
+    Id          = "nim-qwen3-coder-480b"
+    Label       = "NIM - Qwen 3 Coder 480B A35B (free)"
+    NimModel    = "nim-qwen3-coder-480b-a35b"
   }
   @{
     Id          = "zai-glm51"
@@ -140,7 +180,7 @@ function Save-LauncherState {
 function Resolve-ProfileFromState($state) {
   if (-not $state -or [string]::IsNullOrWhiteSpace($state.profileId)) { return $null }
   $id = [string]$state.profileId
-  if ($id -in @("nim-glm", "nim-qwen", "zai-glm", "zai-glm51", "zai-flash47", "zai-flash45", "openrouter-hy3", "openrouter-deepseek-v4-flash", "openrouter-qwen3-coder", "openrouter-nemotron", "openrouter-laguna", "custom-qwen-zai", "custom-qwen-zai-general", "custom-qwen-nim", "custom-qwen-groq", "custom-qwen-openrouter")) { return $id }
+  if ($id -in @("nim-mistral-medium", "nim-glm51", "nim-step-3.5-flash", "nim-mistral-large-3", "nim-deepseek-v4-flash", "nim-gemma-4-31b", "nim-qwen3.5-397b", "nim-qwen3-next-80b", "nim-qwen3-coder-480b", "zai-glm", "zai-glm51", "zai-flash47", "zai-flash45", "openrouter-hy3", "openrouter-nemotron", "openrouter-laguna", "custom-qwen-zai", "custom-qwen-zai-general", "custom-qwen-nim", "custom-qwen-groq", "custom-qwen-openrouter")) { return $id }
   return $null
 }
 
@@ -148,12 +188,40 @@ function Invoke-QwenProfile {
   param([string]$ProfileId)
 
   switch ($ProfileId) {
-    "nim-glm" {
-      & (Join-Path $PSScriptRoot "run-qwen-code-nvidia-nim.ps1") -Model "nim-qwen3.5-122b-a10b-tools"
+    "nim-mistral-medium" {
+      & (Join-Path $PSScriptRoot "run-qwen-code-nvidia-nim.ps1") -Model "mistralai/mistral-medium-3.5-128b"
       return
     }
-    "nim-qwen" {
-      & (Join-Path $PSScriptRoot "run-qwen-code-nvidia-nim.ps1") -Model "nim-qwen3.5-122b-a10b-tools"
+    "nim-glm51" {
+      & (Join-Path $PSScriptRoot "run-qwen-code-nvidia-nim.ps1") -Model "z-ai/glm-5.1"
+      return
+    }
+    "nim-step-3.5-flash" {
+      & (Join-Path $PSScriptRoot "run-qwen-code-nvidia-nim.ps1") -Model "stepfun-ai/step-3.5-flash"
+      return
+    }
+    "nim-mistral-large-3" {
+      & (Join-Path $PSScriptRoot "run-qwen-code-nvidia-nim.ps1") -Model "mistralai/mistral-large-3-675b-instruct-2512"
+      return
+    }
+    "nim-deepseek-v4-flash" {
+      & (Join-Path $PSScriptRoot "run-qwen-code-nvidia-nim.ps1") -Model "deepseek-ai/deepseek-v4-flash"
+      return
+    }
+    "nim-gemma-4-31b" {
+      & (Join-Path $PSScriptRoot "run-qwen-code-nvidia-nim.ps1") -Model "google/gemma-4-31b-it"
+      return
+    }
+    "nim-qwen3.5-397b" {
+      & (Join-Path $PSScriptRoot "run-qwen-code-nvidia-nim.ps1") -Model "qwen/qwen3.5-397b-a17b"
+      return
+    }
+    "nim-qwen3-next-80b" {
+      & (Join-Path $PSScriptRoot "run-qwen-code-nvidia-nim.ps1") -Model "qwen/qwen3-next-80b-a3b-instruct"
+      return
+    }
+    "nim-qwen3-coder-480b" {
+      & (Join-Path $PSScriptRoot "run-qwen-code-nvidia-nim.ps1") -Model "qwen/qwen3-coder-480b-a35b-instruct"
       return
     }
     "zai-glm" {

@@ -55,8 +55,10 @@ function Test-NvidiaNimOpenAiNativeToolCalling {
     $norm = $norm.Substring("nvidia_nim/".Length)
   }
   foreach ($id in @(
-      "qwen/qwen3.5-122b-a10b"
-      "deepseek-ai/deepseek-v3.1-terminus"
+      "mistralai/mistral-medium-3.5-128b"
+      "z-ai/glm-5.1"
+      "stepfun-ai/step-3.5-flash"
+      "mistralai/mistral-large-3-675b-instruct-2512"
     )) {
     if ($norm -eq $id) { return $true }
   }

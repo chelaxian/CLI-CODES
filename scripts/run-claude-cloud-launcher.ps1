@@ -82,8 +82,40 @@ $script:Profiles = @(
     Label = "Z.AI - GLM-4.5-Flash (free, tool calling)"
   }
   @{
-    Id    = "claude-nim-qwen"
-    Label = "NVIDIA NIM - Qwen3.5-122B-A10B (tool calling)"
+    Id    = "claude-nim-mistral-medium"
+    Label = "NIM - Mistral Medium 3.5 128B (free, tool calling)"
+  }
+  @{
+    Id    = "claude-nim-glm51"
+    Label = "NIM - Z.AI GLM-5.1 (free, tool calling)"
+  }
+  @{
+    Id    = "claude-nim-step-3.5-flash"
+    Label = "NIM - Step 3.5 Flash (free, tool calling)"
+  }
+  @{
+    Id    = "claude-nim-mistral-large-3"
+    Label = "NIM - Mistral Large 3 675B (free, tool calling)"
+  }
+  @{
+    Id    = "claude-nim-deepseek-v4-flash"
+    Label = "NIM - DeepSeek V4 Flash 284B MoE (free)"
+  }
+  @{
+    Id    = "claude-nim-gemma-4-31b"
+    Label = "NIM - Google Gemma-4 31B (free)"
+  }
+  @{
+    Id    = "claude-nim-qwen3.5-397b"
+    Label = "NIM - Qwen 3.5 397B A17B (free)"
+  }
+  @{
+    Id    = "claude-nim-qwen3-next-80b"
+    Label = "NIM - Qwen 3 Next 80B A3B (free)"
+  }
+  @{
+    Id    = "claude-nim-qwen3-coder-480b"
+    Label = "NIM - Qwen 3 Coder 480B A35B (free)"
   }
   @{
     Id    = "claude-openrouter-deepseek-v4-flash"
@@ -143,8 +175,11 @@ function Resolve-ProfileFromState($state) {
   if (-not $state -or [string]::IsNullOrWhiteSpace($state.profileId)) { return $null }
   $id = [string]$state.profileId
   if ($id -in @(
-      "claude-zai", "claude-zai-glm51", "claude-zai-flash47", "claude-zai-flash45", "claude-nim", "claude-nim-qwen",
-      "claude-openrouter-hy3", "claude-openrouter-deepseek-v4-flash", "claude-openrouter-qwen3-coder", "claude-openrouter-nemotron", "claude-openrouter-laguna",
+      "claude-zai", "claude-zai-glm51", "claude-zai-flash47", "claude-zai-flash45",
+      "claude-nim-mistral-medium", "claude-nim-glm51", "claude-nim-step-3.5-flash",
+      "claude-nim-mistral-large-3", "claude-nim-deepseek-v4-flash", "claude-nim-gemma-4-31b",
+      "claude-nim-qwen3.5-397b", "claude-nim-qwen3-next-80b", "claude-nim-qwen3-coder-480b",
+      "claude-openrouter-hy3", "claude-openrouter-nemotron", "claude-openrouter-laguna",
       "custom-claude-zai", "custom-claude-nim", "custom-claude-openrouter"
     )) { return $id }
   return $null
@@ -183,13 +218,48 @@ function Invoke-ClaudeCloudProfile {
         -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
       return
     }
-    "claude-nim" {
-      & $SessionScript -Provider nim-qwen -ClaudeTools default `
+    "claude-nim-mistral-medium" {
+      & $SessionScript -Provider nim -NimModel "mistralai/mistral-medium-3.5-128b" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
         -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
       return
     }
-    "claude-nim-qwen" {
-      & $SessionScript -Provider nim-qwen -ClaudeTools default `
+    "claude-nim-glm51" {
+      & $SessionScript -Provider nim -NimModel "z-ai/glm-5.1" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
+        -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+      return
+    }
+    "claude-nim-step-3.5-flash" {
+      & $SessionScript -Provider nim -NimModel "stepfun-ai/step-3.5-flash" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
+        -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+      return
+    }
+    "claude-nim-mistral-large-3" {
+      & $SessionScript -Provider nim -NimModel "mistralai/mistral-large-3-675b-instruct-2512" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
+        -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+      return
+    }
+    "claude-nim-deepseek-v4-flash" {
+      & $SessionScript -Provider nim -NimModel "deepseek-ai/deepseek-v4-flash" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools minimal `
+        -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+      return
+    }
+    "claude-nim-gemma-4-31b" {
+      & $SessionScript -Provider nim -NimModel "google/gemma-4-31b-it" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools minimal `
+        -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+      return
+    }
+    "claude-nim-qwen3.5-397b" {
+      & $SessionScript -Provider nim -NimModel "qwen/qwen3.5-397b-a17b" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools minimal `
+        -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+      return
+    }
+    "claude-nim-qwen3-next-80b" {
+      & $SessionScript -Provider nim -NimModel "qwen/qwen3-next-80b-a3b-instruct" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools minimal `
+        -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+      return
+    }
+    "claude-nim-qwen3-coder-480b" {
+      & $SessionScript -Provider nim -NimModel "qwen/qwen3-coder-480b-a35b-instruct" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools minimal `
         -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
       return
     }

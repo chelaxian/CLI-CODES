@@ -49,8 +49,40 @@ $script:Profiles = @(
     Label = "Z.AI - GLM-4.5-Flash (free, tool calling)"
   }
   @{
-    Id    = "nim-qwen"
-    Label = "NVIDIA NIM - Qwen3.5-122B-A10B (tool calling)"
+    Id    = "nim-mistral-medium"
+    Label = "NIM - Mistral Medium 3.5 128B (free, tool calling)"
+  }
+  @{
+    Id    = "nim-glm51"
+    Label = "NIM - Z.AI GLM-5.1 (free, tool calling)"
+  }
+  @{
+    Id    = "nim-step-3.5-flash"
+    Label = "NIM - Step 3.5 Flash (free, tool calling)"
+  }
+  @{
+    Id    = "nim-mistral-large-3"
+    Label = "NIM - Mistral Large 3 675B (free, tool calling)"
+  }
+  @{
+    Id    = "nim-deepseek-v4-flash"
+    Label = "NIM - DeepSeek V4 Flash 284B MoE (free)"
+  }
+  @{
+    Id    = "nim-gemma-4-31b"
+    Label = "NIM - Google Gemma-4 31B (free)"
+  }
+  @{
+    Id    = "nim-qwen3.5-397b"
+    Label = "NIM - Qwen 3.5 397B A17B (free)"
+  }
+  @{
+    Id    = "nim-qwen3-next-80b"
+    Label = "NIM - Qwen 3 Next 80B A3B (free)"
+  }
+  @{
+    Id    = "nim-qwen3-coder-480b"
+    Label = "NIM - Qwen 3 Coder 480B A35B (free)"
   }
   @{
     Id    = "openrouter-deepseek-v4-flash"
@@ -110,7 +142,11 @@ function Save-LauncherState {
 function Resolve-ProfileFromState($state) {
   if (-not $state -or [string]::IsNullOrWhiteSpace($state.profileId)) { return $null }
   $id = [string]$state.profileId
-  if ($id -in @("zai-glm", "zai-glm51", "zai-flash47", "zai-flash45", "nim-glm", "nim-qwen", "openrouter-hy3", "openrouter-deepseek-v4-flash", "openrouter-qwen3-coder", "openrouter-nemotron", "openrouter-laguna", "custom-opencode-zai", "custom-opencode-nim", "custom-opencode-groq", "custom-opencode-openrouter")) { return $id }
+  if ($id -in @("zai-glm", "zai-glm51", "zai-flash47", "zai-flash45",
+      "nim-mistral-medium", "nim-glm51", "nim-step-3.5-flash", "nim-mistral-large-3",
+      "nim-deepseek-v4-flash", "nim-gemma-4-31b", "nim-qwen3.5-397b", "nim-qwen3-next-80b", "nim-qwen3-coder-480b",
+      "openrouter-hy3", "openrouter-nemotron", "openrouter-laguna",
+      "custom-opencode-zai", "custom-opencode-nim", "custom-opencode-groq", "custom-opencode-openrouter")) { return $id }
   return $null
 }
 
@@ -296,35 +332,111 @@ function Invoke-OpenCodeProfile {
       & $opencodeExe
       return
     }
-    "nim-glm" {
+    "nim-mistral-medium" {
       $apiKey = [Environment]::GetEnvironmentVariable("NVIDIA_NIM_API_KEY", "User")
-      if ([string]::IsNullOrWhiteSpace($apiKey)) {
-        $apiKey = $env:NVIDIA_NIM_API_KEY
-      }
+      if ([string]::IsNullOrWhiteSpace($apiKey)) { $apiKey = $env:NVIDIA_NIM_API_KEY }
       if ([string]::IsNullOrWhiteSpace($apiKey)) {
         $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "NVIDIA NIM" -HelpUrl "https://build.nvidia.com/api-key"
       }
-
-      $configPath = Write-OpenCodeConfig -Provider "nvidia-nim" -Model "qwen/qwen3.5-122b-a10b" -BaseURL "https://integrate.api.nvidia.com/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
-
+      $configPath = Write-OpenCodeConfig -Provider "nvidia-nim" -Model "mistralai/mistral-medium-3.5-128b" -BaseURL "https://integrate.api.nvidia.com/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
       $env:OPENCODE_CONFIG = $configPath
-      Write-Host "Запуск OpenCode (NVIDIA NIM Qwen3.5-122B-A10B)…" -ForegroundColor Cyan
+      Write-Host "Запуск OpenCode (NVIDIA NIM Mistral Medium 3.5 128B)…" -ForegroundColor Cyan
       & $opencodeExe
       return
     }
-    "nim-qwen" {
+    "nim-glm51" {
       $apiKey = [Environment]::GetEnvironmentVariable("NVIDIA_NIM_API_KEY", "User")
-      if ([string]::IsNullOrWhiteSpace($apiKey)) {
-        $apiKey = $env:NVIDIA_NIM_API_KEY
-      }
+      if ([string]::IsNullOrWhiteSpace($apiKey)) { $apiKey = $env:NVIDIA_NIM_API_KEY }
       if ([string]::IsNullOrWhiteSpace($apiKey)) {
         $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "NVIDIA NIM" -HelpUrl "https://build.nvidia.com/api-key"
       }
-
-      $configPath = Write-OpenCodeConfig -Provider "nvidia-nim" -Model "qwen/qwen3.5-122b-a10b" -BaseURL "https://integrate.api.nvidia.com/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
-
+      $configPath = Write-OpenCodeConfig -Provider "nvidia-nim" -Model "z-ai/glm-5.1" -BaseURL "https://integrate.api.nvidia.com/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
       $env:OPENCODE_CONFIG = $configPath
-      Write-Host "Запуск OpenCode (NVIDIA NIM Qwen3.5-122B-A10B)…" -ForegroundColor Cyan
+      Write-Host "Запуск OpenCode (NVIDIA NIM Z.AI GLM-5.1)…" -ForegroundColor Cyan
+      & $opencodeExe
+      return
+    }
+    "nim-step-3.5-flash" {
+      $apiKey = [Environment]::GetEnvironmentVariable("NVIDIA_NIM_API_KEY", "User")
+      if ([string]::IsNullOrWhiteSpace($apiKey)) { $apiKey = $env:NVIDIA_NIM_API_KEY }
+      if ([string]::IsNullOrWhiteSpace($apiKey)) {
+        $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "NVIDIA NIM" -HelpUrl "https://build.nvidia.com/api-key"
+      }
+      $configPath = Write-OpenCodeConfig -Provider "nvidia-nim" -Model "stepfun-ai/step-3.5-flash" -BaseURL "https://integrate.api.nvidia.com/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
+      $env:OPENCODE_CONFIG = $configPath
+      Write-Host "Запуск OpenCode (NVIDIA NIM Step 3.5 Flash)…" -ForegroundColor Cyan
+      & $opencodeExe
+      return
+    }
+    "nim-mistral-large-3" {
+      $apiKey = [Environment]::GetEnvironmentVariable("NVIDIA_NIM_API_KEY", "User")
+      if ([string]::IsNullOrWhiteSpace($apiKey)) { $apiKey = $env:NVIDIA_NIM_API_KEY }
+      if ([string]::IsNullOrWhiteSpace($apiKey)) {
+        $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "NVIDIA NIM" -HelpUrl "https://build.nvidia.com/api-key"
+      }
+      $configPath = Write-OpenCodeConfig -Provider "nvidia-nim" -Model "mistralai/mistral-large-3-675b-instruct-2512" -BaseURL "https://integrate.api.nvidia.com/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
+      $env:OPENCODE_CONFIG = $configPath
+      Write-Host "Запуск OpenCode (NVIDIA NIM Mistral Large 3 675B)…" -ForegroundColor Cyan
+      & $opencodeExe
+      return
+    }
+    "nim-deepseek-v4-flash" {
+      $apiKey = [Environment]::GetEnvironmentVariable("NVIDIA_NIM_API_KEY", "User")
+      if ([string]::IsNullOrWhiteSpace($apiKey)) { $apiKey = $env:NVIDIA_NIM_API_KEY }
+      if ([string]::IsNullOrWhiteSpace($apiKey)) {
+        $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "NVIDIA NIM" -HelpUrl "https://build.nvidia.com/api-key"
+      }
+      $configPath = Write-OpenCodeConfig -Provider "nvidia-nim" -Model "deepseek-ai/deepseek-v4-flash" -BaseURL "https://integrate.api.nvidia.com/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
+      $env:OPENCODE_CONFIG = $configPath
+      Write-Host "Запуск OpenCode (NVIDIA NIM DeepSeek V4 Flash)…" -ForegroundColor Cyan
+      & $opencodeExe
+      return
+    }
+    "nim-gemma-4-31b" {
+      $apiKey = [Environment]::GetEnvironmentVariable("NVIDIA_NIM_API_KEY", "User")
+      if ([string]::IsNullOrWhiteSpace($apiKey)) { $apiKey = $env:NVIDIA_NIM_API_KEY }
+      if ([string]::IsNullOrWhiteSpace($apiKey)) {
+        $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "NVIDIA NIM" -HelpUrl "https://build.nvidia.com/api-key"
+      }
+      $configPath = Write-OpenCodeConfig -Provider "nvidia-nim" -Model "google/gemma-4-31b-it" -BaseURL "https://integrate.api.nvidia.com/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
+      $env:OPENCODE_CONFIG = $configPath
+      Write-Host "Запуск OpenCode (NVIDIA NIM Gemma-4 31B)…" -ForegroundColor Cyan
+      & $opencodeExe
+      return
+    }
+    "nim-qwen3.5-397b" {
+      $apiKey = [Environment]::GetEnvironmentVariable("NVIDIA_NIM_API_KEY", "User")
+      if ([string]::IsNullOrWhiteSpace($apiKey)) { $apiKey = $env:NVIDIA_NIM_API_KEY }
+      if ([string]::IsNullOrWhiteSpace($apiKey)) {
+        $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "NVIDIA NIM" -HelpUrl "https://build.nvidia.com/api-key"
+      }
+      $configPath = Write-OpenCodeConfig -Provider "nvidia-nim" -Model "qwen/qwen3.5-397b-a17b" -BaseURL "https://integrate.api.nvidia.com/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
+      $env:OPENCODE_CONFIG = $configPath
+      Write-Host "Запуск OpenCode (NVIDIA NIM Qwen 3.5 397B)…" -ForegroundColor Cyan
+      & $opencodeExe
+      return
+    }
+    "nim-qwen3-next-80b" {
+      $apiKey = [Environment]::GetEnvironmentVariable("NVIDIA_NIM_API_KEY", "User")
+      if ([string]::IsNullOrWhiteSpace($apiKey)) { $apiKey = $env:NVIDIA_NIM_API_KEY }
+      if ([string]::IsNullOrWhiteSpace($apiKey)) {
+        $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "NVIDIA NIM" -HelpUrl "https://build.nvidia.com/api-key"
+      }
+      $configPath = Write-OpenCodeConfig -Provider "nvidia-nim" -Model "qwen/qwen3-next-80b-a3b-instruct" -BaseURL "https://integrate.api.nvidia.com/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
+      $env:OPENCODE_CONFIG = $configPath
+      Write-Host "Запуск OpenCode (NVIDIA NIM Qwen 3 Next 80B)…" -ForegroundColor Cyan
+      & $opencodeExe
+      return
+    }
+    "nim-qwen3-coder-480b" {
+      $apiKey = [Environment]::GetEnvironmentVariable("NVIDIA_NIM_API_KEY", "User")
+      if ([string]::IsNullOrWhiteSpace($apiKey)) { $apiKey = $env:NVIDIA_NIM_API_KEY }
+      if ([string]::IsNullOrWhiteSpace($apiKey)) {
+        $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "NVIDIA NIM" -HelpUrl "https://build.nvidia.com/api-key"
+      }
+      $configPath = Write-OpenCodeConfig -Provider "nvidia-nim" -Model "qwen/qwen3-coder-480b-a35b-instruct" -BaseURL "https://integrate.api.nvidia.com/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
+      $env:OPENCODE_CONFIG = $configPath
+      Write-Host "Запуск OpenCode (NVIDIA NIM Qwen 3 Coder 480B)…" -ForegroundColor Cyan
       & $opencodeExe
       return
     }
