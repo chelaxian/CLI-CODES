@@ -58,6 +58,16 @@ get_current_api_key() {
             fi
             if [ -z "$key" ]; then echo "" ; else echo "$key" | xargs ; fi
             ;;
+        "BAI")
+            local key="${BAI_API_KEY:-}"
+            if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then
+                key=$(grep "^export BAI_API_KEY=" "$HOME/.bashrc" 2>/dev/null | cut -d'"' -f2)
+            fi
+            if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then
+                key=$(grep "^export BAI_API_KEY=" "$HOME/.zshrc" 2>/dev/null | cut -d'"' -f2)
+            fi
+            if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then echo "" ; else echo "$key" | xargs ; fi
+            ;;
         *)
             echo ""
             ;;
@@ -91,6 +101,7 @@ set_provider_api_key() {
         "ZAI") env_var="ZAI_API_KEY" ;;
         "GROQ") env_var="GROQ_API_KEY" ;;
         "OPENROUTER") env_var="OPENROUTER_API_KEY" ;;
+        "BAI") env_var="BAI_API_KEY" ;;
         *) printf "${RED}Неизвестный провайдер: $provider${RESET}\n" >&3; return 1 ;;
     esac
     
@@ -162,6 +173,7 @@ show_api_key_change_menu() {
         "Z.AI API ключ (https://console.z.ai/)"
         "Groq API ключ (https://console.groq.com/keys)"
         "OpenRouter API ключ (https://openrouter.ai/settings/keys)"
+        "B.AI API ключ (https://chat.b.ai/key)"
     )
     
     local choice
@@ -181,6 +193,7 @@ show_api_key_change_menu() {
         2) provider_name="Z.AI"; env_var_name="ZAI"; provider_url="https://console.z.ai/" ;;
         3) provider_name="Groq"; env_var_name="GROQ"; provider_url="https://console.groq.com/keys" ;;
         4) provider_name="OpenRouter"; env_var_name="OPENROUTER"; provider_url="https://openrouter.ai/settings/keys" ;;
+        5) provider_name="B.AI"; env_var_name="BAI"; provider_url="https://chat.b.ai/key" ;;
         *) return 0 ;;
     esac
     

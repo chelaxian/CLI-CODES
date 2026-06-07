@@ -180,12 +180,114 @@ Write-Status "  [5] OpenClaude" "Green"
 Write-Status "  [6] Все инструменты" "Green"
 Write-Status "  [7] Обновление всех компонентов" "Green"
 Write-Status "  [8] Полное удаление (uninstall)" "Red"
+Write-Status "  [9] Добавить недостающие ярлыки (без переустановки)" "Cyan"
 Write-Status "  [0] Выход" "Gray"
 Write-Host ""
 
 $installChoice = Read-Host "Ваш выбор [6]"
 
 if ([string]::IsNullOrWhiteSpace($installChoice)) { $installChoice = "6" }
+
+# ─── Helper: синхронизация ярлыков для уже установленных CLI ────────────────
+# Проверяет наличие CLI на диске (через npm-bin в PATH или жёсткий путь %APPDATA%\npm)
+# и создаёт недостающие ярлыки на рабочем столе для каждого найденного инструмента.
+function Sync-LauncherShortcuts {
+    param([string]$RepoDir)
+
+    $desktop = [Environment]::GetFolderPath("Desktop")
+    if (-not $desktop -or -not (Test-Path -LiteralPath $desktop)) {
+        $desktop = Join-Path $env:USERPROFILE "Desktop"
+        if (-not (Test-Path -LiteralPath $desktop)) { $desktop = $env:USERPROFILE }
+    }
+
+    $npmBin = Join-Path $env:APPDATA "npm"
+    $scriptsDir = Join-Path $RepoDir "scripts"
+    $psExe = (Get-Command powershell.exe -ErrorAction SilentlyContinue).Source
+    if (-not $psExe) { $psExe = "powershell.exe" }
+
+    function Test-CliInstalled([string]$CmdName) {
+        $c = Get-Command $CmdName -ErrorAction SilentlyContinue
+        if ($c) { return $true }
+        foreach ($p in @(
+            (Join-Path $env:APPDATA "npm\$CmdName.cmd"),
+            (Join-Path $env:APPDATA "npm\$CmdName.ps1"),
+            (Join-Path $env:APPDATA "npm\$CmdName")
+        )) {
+            if (Test-Path -LiteralPath $p) { return $true }
+        }
+        return $false
+    }
+
+    function New-LauncherShortcutSync {
+        param([string]$Name, [string]$ScriptFile)
+        $launcher = Join-Path $scriptsDir $ScriptFile
+        if (-not (Test-Path -LiteralPath $launcher)) { return $false }
+        $lnkPath = Join-Path $desktop "$Name.lnk"
+        $cmdPath = Join-Path $desktop "$Name.cmd"
+        $created = $false
+        if (-not (Test-Path -LiteralPath $cmdPath)) {
+            $cmdContent = "@echo off`r`nchcp 65001 >nul 2>`&1`r`npowershell -NoProfile -ExecutionPolicy Bypass -Command `"& '$launcher'`"`r`nif ($LASTEXITCODE -ne 0) pause"
+            [System.IO.File]::WriteAllText($cmdPath, $cmdContent, (New-Object System.Text.UTF8Encoding($false)))
+            $created = $true
+        }
+        if (-not (Test-Path -LiteralPath $lnkPath)) {
+            try {
+                $cmdExe = (Get-Command cmd.exe -ErrorAction SilentlyContinue).Source
+                if (-not $cmdExe) { $cmdExe = "$env:SystemRoot\System32\cmd.exe" }
+                $shell = New-Object -ComObject WScript.Shell -ErrorAction Stop
+                $lnk = $shell.CreateShortcut($lnkPath)
+                $lnk.TargetPath = $cmdExe
+                $lnk.Arguments = "/k chcp 65001 >nul & `"$psExe`" -NoProfile -ExecutionPolicy Bypass -File `"$launcher`""
+                $lnk.WorkingDirectory = $RepoDir
+                $lnk.WindowStyle = 1
+                $lnk.Save()
+                $created = $true
+            } catch {}
+        }
+        return $created
+    }
+
+    $map = @(
+        @{ Cli = "qwen";       Name = "Qwen Code (cloud)";   Script = "run-qwen-code-launcher.ps1" }
+        @{ Cli = "claude";     Name = "Claude Code (cloud)"; Script = "run-claude-cloud-launcher.ps1" }
+        @{ Cli = "opencode";   Name = "OpenCode (cloud)";    Script = "run-opencode-launcher.ps1" }
+        @{ Cli = "freebuff";   Name = "Freebuff (cloud)";    Script = "run-freebuff-launcher.ps1" }
+        @{ Cli = "openclaude"; Name = "OpenClaude (cloud)";  Script = "run-openclaude-launcher.ps1" }
+    )
+
+    $added = 0
+    $present = 0
+    foreach ($entry in $map) {
+        if (-not (Test-CliInstalled -CmdName $entry.Cli)) {
+            Write-Status ("  [SKIP] {0} CLI не установлен — ярлык пропущен" -f $entry.Cli) "DarkGray"
+            continue
+        }
+        if (Test-Path -LiteralPath (Join-Path $desktop "$($entry.Name).lnk")) {
+            $present++
+            continue
+        }
+        if (Test-Path -LiteralPath (Join-Path $desktop "$($entry.Name).cmd")) {
+            $present++
+            continue
+        }
+        $created = New-LauncherShortcutSync -Name $entry.Name -ScriptFile $entry.Script
+        if ($created) {
+            Write-Status ("  [+] {0}" -f $entry.Name) "Green"
+            $added++
+        }
+    }
+
+    # Также вызовем dedicated helper script для консистентности (не падает если что-то не так)
+    $shortcutScript = Join-Path $scriptsDir "create-desktop-shortcuts.ps1"
+    if (Test-Path -LiteralPath $shortcutScript) {
+        try {
+            & $psExe -NoProfile -ExecutionPolicy Bypass -File $shortcutScript -RepoRoot $RepoDir 2>$null | Out-Null
+        } catch {}
+    }
+
+    Write-Host ""
+    Write-Status ("Ярлыки: уже на месте = {0}, добавлено новых = {1}" -f $present, $added) "Cyan"
+}
 
 # --- Update all components ---
 if ($installChoice -eq "7") {
@@ -194,8 +296,6 @@ if ($installChoice -eq "7") {
     Write-Status "ОБНОВЛЕНИЕ ВСЕХ КОМПОНЕНТОВ" "Magenta"
     Write-Status "======================================================================" "Cyan"
     Write-Host ""
-
-    # git pull
     if (Test-Path -LiteralPath (Join-Path $InstallDir ".git")) {
         Write-Status "Обновление репозитория..." "Cyan"
         Push-Location $InstallDir
@@ -286,9 +386,42 @@ if ($installChoice -eq "7") {
 
     $ErrorActionPreference = $prevEAP
 
+    # Синхронизация ярлыков: после обновления проверяем, что для всех установленных
+    # CLI ярлыки на рабочем столе присутствуют (создаём недостающие).
+    Write-Host ""
+    Write-Status "Проверка ярлыков на рабочем столе..." "Cyan"
+    Sync-LauncherShortcuts -RepoDir $InstallDir
+
     Write-Host ""
     Write-Status "======================================================================" "Green"
     Write-Status "ОБНОВЛЕНИЕ ЗАВЕРШЕНО!" "Green"
+    Write-Status "======================================================================" "Green"
+    Write-Host ""
+    Read-Host "Нажмите Enter для выхода"
+    return
+}
+
+# --- Sync shortcuts only (no npm update) ---
+if ($installChoice -eq "9") {
+    Write-Host ""
+    Write-Status "======================================================================" "Cyan"
+    Write-Status "СИНХРОНИЗАЦИЯ ЯРЛЫКОВ" "Magenta"
+    Write-Status "======================================================================" "Cyan"
+    Write-Host ""
+
+    if (-not (Test-Path -LiteralPath $InstallDir)) {
+        Write-Status "Репозиторий не найден: $InstallDir" "Red"
+        Write-Status "Сначала установите инструменты через пункт [6]." "Yellow"
+        Read-Host "Нажмите Enter для выхода"
+        return
+    }
+
+    Write-Status "Проверка ярлыков для установленных CLI..." "Cyan"
+    Sync-LauncherShortcuts -RepoDir $InstallDir
+
+    Write-Host ""
+    Write-Status "======================================================================" "Green"
+    Write-Status "ЯРЛЫКИ ОБНОВЛЕНЫ" "Green"
     Write-Status "======================================================================" "Green"
     Write-Host ""
     Read-Host "Нажмите Enter для выхода"
@@ -337,7 +470,7 @@ if ($installChoice -eq "8") {
     }
 
     Write-Status "Удаляю API ключи из переменных окружения пользователя..." "Cyan"
-    foreach ($var in @("NVIDIA_NIM_API_KEY", "ZAI_API_KEY", "OPENAI_API_KEY", "GROQ_API_KEY", "OPENROUTER_API_KEY")) {
+    foreach ($var in @("NVIDIA_NIM_API_KEY", "ZAI_API_KEY", "OPENAI_API_KEY", "GROQ_API_KEY", "OPENROUTER_API_KEY", "BAI_API_KEY")) {
         $existing = [Environment]::GetEnvironmentVariable($var, "User")
         if ($existing) {
             [Environment]::SetEnvironmentVariable($var, $null, "User")
@@ -613,6 +746,16 @@ if (-not [string]::IsNullOrWhiteSpace($orKey)) {
     Write-Status "  [OK] OPENROUTER_API_KEY saved" "Green"
 } else {
     Write-Status "  [SKIP] OPENROUTER_API_KEY" "Yellow"
+}
+
+Write-Host ""
+
+$baiKey = Read-Secret "B.AI API key (Enter = пропустить): "
+if (-not [string]::IsNullOrWhiteSpace($baiKey)) {
+    [Environment]::SetEnvironmentVariable("BAI_API_KEY", $baiKey.Trim(), "User")
+    Write-Status "  [OK] BAI_API_KEY saved" "Green"
+} else {
+    Write-Status "  [SKIP] BAI_API_KEY" "Yellow"
 }
 
 Write-Host ""

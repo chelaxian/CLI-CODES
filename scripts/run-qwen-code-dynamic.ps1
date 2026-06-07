@@ -1,7 +1,7 @@
 ﻿[CmdletBinding()]
 param(
   [Parameter(Mandatory = $true)]
-  [ValidateSet("zai", "nim", "groq", "openrouter")]
+  [ValidateSet("zai", "zai-general", "nim", "groq", "openrouter", "bai")]
   [string]$Provider,
 
   [Parameter(Mandatory = $true)]
@@ -395,6 +395,18 @@ if ($Provider -eq "zai") {
   $orMid = $ModelId.Trim().ToLowerInvariant()
   $cfg = Build-QwenSettingsOpenAI -Mid $ModelId.Trim() -BaseUrl "https://openrouter.ai/api/v1" -ContextWindowSize $orCtx -MaxTokens $orMaxTok -SkipStartupContext
   $script:OpenRouterMaxOutput = $orMaxOut
+} elseif ($Provider -eq "bai") {
+  $key = [Environment]::GetEnvironmentVariable("BAI_API_KEY", "User")
+  if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") { $key = $env:BAI_API_KEY }
+  if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") {
+    Write-Host "B.AI API ключ не задан." -ForegroundColor Yellow
+    Write-Host "Получить ключ: https://chat.b.ai/key" -ForegroundColor DarkCyan
+    $key = Read-SecretText "Введите B.AI API key"
+  }
+  $env:OPENAI_API_KEY = $key.Trim()
+  # B.AI - OpenAI-compatible endpoint. Большинство моделей имеют ctx 128k+ и support tool calling.
+  $cfg = Build-QwenSettingsOpenAI -Mid $ModelId.Trim() -BaseUrl "https://api.b.ai/v1" -ContextWindowSize 131072 -MaxTokens 8192
+  $script:BaiMaxOutput = 8192
 } else {
   $key = [Environment]::GetEnvironmentVariable("NVIDIA_NIM_API_KEY", "User")
   if ([string]::IsNullOrWhiteSpace($key)) { $key = $env:NVIDIA_NIM_API_KEY }
@@ -432,6 +444,9 @@ if ($Provider -eq "nim" -and $script:NimDynamicCompat -and $script:NimCompatLimi
   $env:QWEN_CODE_EMIT_TOOL_USE_SUMMARIES = "0"
 } elseif ($Provider -eq "openrouter" -and $script:OpenRouterMaxOutput) {
   $env:QWEN_CODE_MAX_OUTPUT_TOKENS = [string]$script:OpenRouterMaxOutput
+  $env:QWEN_CODE_EMIT_TOOL_USE_SUMMARIES = "0"
+} elseif ($Provider -eq "bai" -and $script:BaiMaxOutput) {
+  $env:QWEN_CODE_MAX_OUTPUT_TOKENS = [string]$script:BaiMaxOutput
   $env:QWEN_CODE_EMIT_TOOL_USE_SUMMARIES = "0"
 } else {
   $env:QWEN_CODE_MAX_OUTPUT_TOKENS = "81920"

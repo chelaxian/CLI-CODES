@@ -18,21 +18,59 @@ enter_claude_shared_dir() {
     cd "$CLAUDE_SESSION_ROOT"
 }
 
+# Top-level menu: provider groups + utility entries
 PROFILES=(
     "last|Запустить с последними настройками (быстрый старт)"
-    "claude-zai|Z.AI - GLM-4.7 (paid, tool calling)"
-    "claude-zai-glm51|Z.AI - GLM-5.1 (paid, tool calling)"
-    "claude-zai-flash47|Z.AI - GLM-4.7-Flash (free, tool calling)"
-    "claude-zai-flash45|Z.AI - GLM-4.5-Flash (free, tool calling)"
-    "claude-nim-qwen|NVIDIA NIM - Qwen3.5-122B-A10B (tool calling)"
-    "claude-openrouter-deepseek-v4-flash|OpenRouter - DeepSeek V4 Flash (free, tool calling)"
-    "claude-openrouter-qwen3-coder|OpenRouter - Qwen3 Coder (free, tool calling)"
-    "claude-openrouter-nemotron|OpenRouter - Nemotron 3 Super 120B (free, tool calling)"
-    "claude-openrouter-laguna|OpenRouter - Poolside Laguna M.1 (free, tool calling, coding)"
+    "group:zai|Z.AI - модели (GLM-5.1 / GLM-4.7 / GLM-4.7-Flash)"
+    "group:nim|NVIDIA NIM - 9 бесплатных agentic моделей"
+    "group:openrouter|OpenRouter - бесплатные agentic модели"
+    "group:bai|B.AI - DeepSeek/MiniMax/GLM/Kimi/GPT (Anthropic-compatible)"
     "custom-model|Другая модель… → выбор провайдера и модели"
     "native-login|Нативный логин (Anthropic OAuth / Console)"
     "change-api-key|Сменить ключ API провайдера"
 )
+
+# Per-provider submenu items (id|Label)
+ZAI_MODELS=(
+    "claude-zai-glm51|Z.AI - GLM-5.1 (paid, tool calling)"
+    "claude-zai|Z.AI - GLM-4.7 (paid, tool calling)"
+    "claude-zai-flash47|Z.AI - GLM-4.7-Flash (free, tool calling)"
+)
+
+NIM_MODELS=(
+    "claude-nim-mistral-medium|NIM - Mistral Medium 3.5 128B (free, tool calling)"
+    "claude-nim-glm51|NIM - Z.AI GLM-5.1 (free, tool calling)"
+    "claude-nim-step-3.5-flash|NIM - Step 3.5 Flash (free, tool calling)"
+    "claude-nim-mistral-large-3|NIM - Mistral Large 3 675B (free, tool calling)"
+    "claude-nim-deepseek-v4-flash|NIM - DeepSeek V4 Flash 284B MoE (free)"
+    "claude-nim-gemma-4-31b|NIM - Google Gemma-4 31B (free)"
+    "claude-nim-qwen3.5-397b|NIM - Qwen 3.5 397B A17B (free)"
+    "claude-nim-qwen3-next-80b|NIM - Qwen 3 Next 80B A3B (free)"
+    "claude-nim-qwen3-coder-480b|NIM - Qwen 3 Coder 480B A35B (free)"
+)
+
+OPENROUTER_MODELS=(
+    "claude-openrouter-deepseek-v4-flash|OpenRouter - DeepSeek V4 Flash (free, tool calling)"
+    "claude-openrouter-qwen3-coder|OpenRouter - Qwen3 Coder (free, tool calling)"
+    "claude-openrouter-nemotron|OpenRouter - Nemotron 3 Super 120B (free, tool calling)"
+    "claude-openrouter-laguna|OpenRouter - Poolside Laguna M.1 (free, tool calling, coding)"
+)
+
+BAI_MODELS=(
+    "claude-bai-deepseek-v4-pro|B.AI - DeepSeek V4 Pro (agentic)"
+    "claude-bai-deepseek-v4-flash|B.AI - DeepSeek V4 Flash (agentic)"
+    "claude-bai-minimax-m3|B.AI - MiniMax M3 (agentic)"
+    "claude-bai-minimax-m2.7|B.AI - MiniMax M2.7 (fast)"
+    "claude-bai-glm-5|B.AI - GLM-5 (Z.AI)"
+    "claude-bai-kimi-k2.6|B.AI - Kimi K2.6 (Moonshot)"
+    "claude-bai-gpt-5.5|B.AI - GPT-5.5 (OpenAI)"
+)
+
+# Submenu subtitles per group
+GROUP_SUBTITLE_ZAI="Z.AI Coding (paid) + GLM-4.7-Flash (free)"
+GROUP_SUBTITLE_NIM="NVIDIA NIM - 9 бесплатных agentic моделей"
+GROUP_SUBTITLE_OPENROUTER="OpenRouter - бесплатные agentic модели"
+GROUP_SUBTITLE_BAI="B.AI - https://api.b.ai/v1 (OpenAI-compatible)"
 
 get_launcher_state() {
     if [ ! -f "$STATE_FILE" ]; then
@@ -62,7 +100,18 @@ resolve_profile_from_state() {
     local profile_id=$(echo "$state" | grep -o '"profileId":"[^"]*"' | cut -d'"' -f4)
 
     case "$profile_id" in
-        "claude-zai"|"claude-zai-glm51"|"claude-zai-flash47"|"claude-zai-flash45"|"claude-nim"|"claude-nim-qwen"|"claude-openrouter-hy3"|"claude-openrouter-deepseek-v4-flash"|"claude-openrouter-qwen3-coder"|"claude-openrouter-nemotron"|"claude-openrouter-laguna"|"custom-claude-zai"|"custom-claude-zai-general"|"custom-claude-nim"|"custom-claude-openrouter")
+        "claude-zai"|"claude-zai-glm51"|"claude-zai-flash47"|"claude-zai-flash45"| \
+        "claude-nim"|"claude-nim-qwen"| \
+        "claude-nim-mistral-medium"|"claude-nim-glm51"|"claude-nim-step-3.5-flash"| \
+        "claude-nim-mistral-large-3"|"claude-nim-deepseek-v4-flash"|"claude-nim-gemma-4-31b"| \
+        "claude-nim-qwen3.5-397b"|"claude-nim-qwen3-next-80b"|"claude-nim-qwen3-coder-480b"| \
+        "claude-openrouter-hy3"|"claude-openrouter-nemotron"|"claude-openrouter-laguna"| \
+        "claude-openrouter-deepseek-v4-flash"|"claude-openrouter-qwen3-coder"| \
+        "claude-bai-deepseek-v4-pro"|"claude-bai-deepseek-v4-flash"| \
+        "claude-bai-minimax-m3"|"claude-bai-minimax-m2.7"|"claude-bai-glm-5"| \
+        "claude-bai-kimi-k2.6"|"claude-bai-gpt-5.5"| \
+        "custom-claude-zai"|"custom-claude-zai-general"|"custom-claude-nim"| \
+        "custom-claude-openrouter"|"custom-claude-bai")
             echo "$profile_id"
             return 0
             ;;
@@ -96,6 +145,8 @@ ensure_fcc_proxy() {
     local provider="$1"
     local model="$2"
     local port="${3:-8082}"
+    # Optional extra .env lines (e.g. OPENAI_BASE_URL for B.AI routing)
+    local extra_env="${4:-}"
 
     # Check if proxy already running on this port AND responding to HTTP.
     # Restart when .env points at another model; otherwise a stale proxy can keep
@@ -146,6 +197,10 @@ ensure_fcc_proxy() {
     # Write .env
     local nim_key="${NVIDIA_NIM_API_KEY:-}"
     local or_key="${OPENROUTER_API_KEY:-}"
+    # B.AI rides the open_router transport but needs its own API key + base URL override.
+    if [ "$provider" = "bai" ]; then
+        or_key="${BAI_API_KEY:-}"
+    fi
     local env_file="$FCC_DIR/.env"
     cat > "$env_file" << ENVEOF
 NVIDIA_NIM_API_KEY="${nim_key}"
@@ -159,6 +214,7 @@ PROVIDER_MAX_CONCURRENCY=5
 HTTP_READ_TIMEOUT=300
 MESSAGING_PLATFORM="none"
 ENABLE_WEB_SERVER_TOOLS=false
+${extra_env}
 ENVEOF
 
     # Warm deps once (prevents long first-run hang) — timeout-safe
@@ -230,6 +286,7 @@ invoke_claude_cloud_profile() {
         "custom-claude-zai-general") env_var="ZAI"; provider_name="Z.AI General"; provider_url="https://console.z.ai/" ;;
         claude-nim*|custom-claude-nim*) env_var="NVIDIA_NIM"; provider_name="NVIDIA NIM"; provider_url="https://build.nvidia.com/api-key" ;;
         claude-openrouter*|custom-claude-openrouter*) env_var="OPENROUTER"; provider_name="OpenRouter"; provider_url="https://openrouter.ai/settings/keys" ;;
+        claude-bai*|custom-claude-bai*) env_var="BAI"; provider_name="B.AI"; provider_url="https://chat.b.ai/key" ;;
     esac
     if [ -n "$env_var" ]; then
         if ! ensure_api_key_or_prompt "$env_var" "$provider_name" "$provider_url"; then
@@ -262,7 +319,7 @@ invoke_claude_cloud_profile() {
                 return 1
             fi
             ;;
-        claude-nim*|claude-openrouter*|custom-claude-nim|custom-claude-openrouter)
+        claude-nim*|claude-openrouter*|claude-bai*|custom-claude-nim|custom-claude-openrouter|custom-claude-bai)
             # Model determined in env-vars block below (via proxy)
             ;;
         *) model="" ;;
@@ -285,9 +342,18 @@ invoke_claude_cloud_profile() {
             local fcc_model="nvidia_nim/qwen/qwen3.5-122b-a10b"
             case "$profile_id" in
                 "claude-nim-qwen") fcc_model="nvidia_nim/qwen/qwen3.5-122b-a10b" ;;
+                "claude-nim-mistral-medium") fcc_model="nvidia_nim/mistralai/mistral-medium-3.5-128b" ;;
+                "claude-nim-glm51") fcc_model="nvidia_nim/z-ai/glm-5.1" ;;
+                "claude-nim-step-3.5-flash") fcc_model="nvidia_nim/stepfun-ai/step-3.5-flash" ;;
+                "claude-nim-mistral-large-3") fcc_model="nvidia_nim/mistralai/mistral-large-3-675b-instruct-2512" ;;
+                "claude-nim-deepseek-v4-flash") fcc_model="nvidia_nim/deepseek-ai/deepseek-v4-flash" ;;
+                "claude-nim-gemma-4-31b") fcc_model="nvidia_nim/google/gemma-4-31b-it" ;;
+                "claude-nim-qwen3.5-397b") fcc_model="nvidia_nim/qwen/qwen3.5-397b-a17b" ;;
+                "claude-nim-qwen3-next-80b") fcc_model="nvidia_nim/qwen/qwen3-next-80b-a3b-instruct" ;;
+                "claude-nim-qwen3-coder-480b") fcc_model="nvidia_nim/qwen/qwen3-coder-480b-a35b-instruct" ;;
                 "custom-claude-nim")
                     local st=$(get_launcher_state)
-                    local cm=$(echo "$st" | grep -o '"customModelId":"[^"]*"' | cut -d'"' -f4)
+                    local cm=$(echo "$st" | grep -o '"customNimModel":"[^"]*"' | cut -d'"' -f4)
                     if [ -n "$cm" ]; then fcc_model="nvidia_nim/$cm"; fi
                     ;;
             esac
@@ -342,6 +408,47 @@ invoke_claude_cloud_profile() {
                 printf "${YELLOW}Логи: $FCC_DIR/fcc-${proxy_port}.log${RESET}\n" >&3
                 return 1
             fi
+            export ANTHROPIC_AUTH_TOKEN="freecc"
+            unset ANTHROPIC_API_KEY
+            export ANTHROPIC_BASE_URL="http://127.0.0.1:${proxy_port}"
+            export ANTHROPIC_DEFAULT_OPUS_MODEL="$fcc_model"
+            export ANTHROPIC_DEFAULT_SONNET_MODEL="$fcc_model"
+            export ANTHROPIC_DEFAULT_HAIKU_MODEL="$fcc_model"
+            export API_TIMEOUT_MS="3000000"
+            ;;
+        claude-bai*|custom-claude-bai*)
+            # B.AI rides the open_router transport but routes to https://api.b.ai/v1 via OPENAI_BASE_URL.
+            local fcc_model="open_router/deepseek-v4-flash"
+            case "$profile_id" in
+                "claude-bai-deepseek-v4-pro")   fcc_model="open_router/deepseek-v4-pro" ;;
+                "claude-bai-deepseek-v4-flash") fcc_model="open_router/deepseek-v4-flash" ;;
+                "claude-bai-minimax-m3")        fcc_model="open_router/minimax-m3" ;;
+                "claude-bai-minimax-m2.7")      fcc_model="open_router/minimax-m2.7" ;;
+                "claude-bai-glm-5")             fcc_model="open_router/glm-5" ;;
+                "claude-bai-kimi-k2.6")         fcc_model="open_router/kimi-k2.6" ;;
+                "claude-bai-gpt-5.5")           fcc_model="open_router/gpt-5.5" ;;
+                "custom-claude-bai")
+                    local st=$(get_launcher_state)
+                    local cm=$(echo "$st" | grep -o '"customModelId":"[^"]*"' | cut -d'"' -f4)
+                    if [ -n "$cm" ]; then fcc_model="open_router/$cm"; fi
+                    ;;
+            esac
+            local bai_extra_env='OPENAI_BASE_URL="https://api.b.ai/v1"'
+            local proxy_port
+            proxy_port=$(ensure_fcc_proxy "bai" "$fcc_model" "8085" "$bai_extra_env") || {
+                printf "${RED}Не удалось запустить free-claude-code proxy.${RESET}\n" >&3
+                return 1
+            }
+            # Final HTTP sanity check before launching Claude Code
+            local precheck_code
+            precheck_code=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:${proxy_port}/v1/models" 2>/dev/null) || true
+            if [ -z "$precheck_code" ] || [ "$precheck_code" = "000" ]; then
+                printf "${RED}Proxy на порту ${proxy_port} не отвечает на HTTP-запросы.${RESET}\n" >&3
+                printf "${YELLOW}Логи: $FCC_DIR/fcc-${proxy_port}.log${RESET}\n" >&3
+                return 1
+            fi
+            export OPENROUTER_API_KEY="${BAI_API_KEY:-}"
+            export OPENAI_BASE_URL="https://api.b.ai/v1"
             export ANTHROPIC_AUTH_TOKEN="freecc"
             unset ANTHROPIC_API_KEY
             export ANTHROPIC_BASE_URL="http://127.0.0.1:${proxy_port}"
@@ -450,6 +557,27 @@ get_claude_openrouter_api_key() {
     fi
 }
 
+get_claude_bai_api_key() {
+    local key="${BAI_API_KEY:-}"
+    if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then
+        key=$(get_current_api_key "BAI")
+    fi
+    if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then
+        printf "${YELLOW}B.AI API ключ не задан.${RESET}\n" >&3
+        printf "${CYAN}Получить ключ: https://chat.b.ai/key${RESET}\n" >&3
+        local input
+        input=$(read_secret_text "B.AI API key: ")
+        if [ -n "$input" ]; then
+            set_provider_api_key "BAI" "$input"
+            echo "$input"
+        else
+            return 1
+        fi
+    else
+        echo "$key"
+    fi
+}
+
 # ── Мастер выбора модели ─────────────────────────────────────────────────────
 invoke_claude_custom_model_wizard() {
     local app_brand="$1"
@@ -458,6 +586,7 @@ invoke_claude_custom_model_wizard() {
         "zai|Z.AI - Coding / Anthropic (GET /models по вашему ключу)"
         "nim|NVIDIA NIM - полный каталог (GET /v1/models)"
         "openrouter|OpenRouter - полный каталог моделей (GET /v1/models)"
+        "bai|B.AI - https://api.b.ai/v1 (OpenAI-compatible)"
     )
 
     while true; do
@@ -513,6 +642,16 @@ invoke_claude_custom_model_wizard() {
             if [ -n "$response" ]; then
                 ids=($(echo "$response" | grep -o '"id":"[^"]*"' | cut -d'"' -f4 | sort -u))
             fi
+        elif [ "$prov_source" = "bai" ]; then
+            show_tui_wait_frame "$app_brand" "Загрузка каталога B.AI…"
+            key=$(get_claude_bai_api_key) || true
+
+            local response
+            response=$(curl -s -H "Authorization: Bearer $key" -H "Content-Type: application/json" "https://api.b.ai/v1/models" 2>/dev/null) || true
+
+            if [ -n "$response" ]; then
+                ids=($(echo "$response" | grep -o '"id":"[^"]*"' | cut -d'"' -f4 | sort -u))
+            fi
         fi
 
         if [ ${#ids[@]} -eq 0 ]; then
@@ -539,6 +678,8 @@ invoke_claude_custom_model_wizard() {
             prov="zai"
         elif [ "$prov_source" = "openrouter" ]; then
             prov="openrouter"
+        elif [ "$prov_source" = "bai" ]; then
+            prov="bai"
         fi
 
         echo "$prov|$model_id"
@@ -560,8 +701,7 @@ if [ "${CLAUDE_CLOUD_LAUNCHER_QUICK:-0}" = "1" ]; then
     exit 2
 fi
 
-# Главное меню
-# Главное меню
+# Main menu loop
 main() {
 while true; do
     local state=$(get_launcher_state 2>/dev/null || true)
@@ -576,7 +716,7 @@ while true; do
     done
     
     local choice
-    choice="$(show_tui_numbered_menu "Claude" "Claude Code (облако) - провайдер" "Z.AI Anthropic · NVIDIA NIM через free-claude-code" "${menu_items[@]}")"
+    choice="$(show_tui_numbered_menu "Claude" "Claude Code (облако) - провайдер" "Z.AI · NIM · OpenRouter · B.AI (через free-claude-code)" "${menu_items[@]}")"
     
     if [ "${choice:-0}" -eq 0 ]; then
         echo -e "${YELLOW}Отменено.${RESET}"
@@ -584,6 +724,56 @@ while true; do
     fi
     
     local profile_id=$(echo "${PROFILES[$((choice-1))]}" | cut -d'|' -f1)
+    
+    # Provider group submenu
+    case "$profile_id" in
+        group:*)
+            local group_key="${profile_id#group:}"
+            local group_items=()
+            local group_subtitle=""
+            case "$group_key" in
+                zai)
+                    group_items=("${ZAI_MODELS[@]}")
+                    group_subtitle="$GROUP_SUBTITLE_ZAI"
+                    ;;
+                nim)
+                    group_items=("${NIM_MODELS[@]}")
+                    group_subtitle="$GROUP_SUBTITLE_NIM"
+                    ;;
+                openrouter)
+                    group_items=("${OPENROUTER_MODELS[@]}")
+                    group_subtitle="$GROUP_SUBTITLE_OPENROUTER"
+                    ;;
+                bai)
+                    group_items=("${BAI_MODELS[@]}")
+                    group_subtitle="$GROUP_SUBTITLE_BAI"
+                    ;;
+                *)
+                    echo -e "${RED}Неизвестная группа: $group_key${RESET}"
+                    sleep 2
+                    continue
+                    ;;
+            esac
+            
+            local sub_menu=()
+            for item in "${group_items[@]}"; do
+                sub_menu+=("${item##*|}")
+            done
+            
+            local upper_key=$(echo "$group_key" | tr '[:lower:]' '[:upper:]')
+            local sub_choice
+            sub_choice="$(show_tui_numbered_menu "Claude" "Claude Code - $upper_key" "$group_subtitle" "${sub_menu[@]}")"
+            
+            if [ "${sub_choice:-0}" -eq 0 ]; then
+                continue
+            fi
+            
+            profile_id=$(echo "${group_items[$((sub_choice-1))]}" | cut -d'|' -f1)
+            save_launcher_state "$profile_id"
+            invoke_claude_cloud_profile "$profile_id"
+            exit $?
+            ;;
+    esac
     
     case "$profile_id" in
         "native-login")
@@ -683,6 +873,9 @@ while true; do
                 extra="\"customModelId\":\"$wiz_model\""
             elif [ "$wiz_provider" = "openrouter" ]; then
                 new_id="custom-claude-openrouter"
+                extra="\"customModelId\":\"$wiz_model\""
+            elif [ "$wiz_provider" = "bai" ]; then
+                new_id="custom-claude-bai"
                 extra="\"customModelId\":\"$wiz_model\""
             fi
             

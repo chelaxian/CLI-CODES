@@ -112,6 +112,7 @@ echo -e "  ${GREEN}[5]${RESET} OpenClaude"
 echo -e "  ${GREEN}[6]${RESET} Все инструменты"
 echo -e "  ${CYAN}[7]${RESET} Обновление всех компонентов"
 echo -e "  ${RED}[8]${RESET} Полное удаление (uninstall)"
+echo -e "  ${CYAN}[9]${RESET} Добавить недостающие ярлыки (без переустановки)"
 echo -e "  ${GRAY}[0]${RESET} Выход"
 echo ""
 
@@ -125,6 +126,7 @@ INSTALL_FREEBUFF=false
 INSTALL_OPENCLAUDE=false
 DO_UNINSTALL=false
 DO_UPDATE=false
+DO_SYNC_SHORTCUTS=false
 
 case "$install_choice" in
     1) INSTALL_QWEN=true ;;
@@ -135,9 +137,122 @@ case "$install_choice" in
     6) INSTALL_QWEN=true; INSTALL_CLAUDE=true; INSTALL_OPENCODE=true; INSTALL_FREEBUFF=true; INSTALL_OPENCLAUDE=true ;;
     7) DO_UPDATE=true ;;
     8) DO_UNINSTALL=true ;;
+    9) DO_SYNC_SHORTCUTS=true ;;
     0) echo -e "${YELLOW}Выход.${RESET}"; exit 0 ;;
     *) warn "Неверный выбор. Устанавливаем все инструменты."; INSTALL_QWEN=true; INSTALL_CLAUDE=true; INSTALL_OPENCODE=true; INSTALL_FREEBUFF=true; INSTALL_OPENCLAUDE=true ;;
 esac
+
+# ─── Helper: синхронизация ярлыков ──────────────────────────────────────────
+# Создаёт недостающие .desktop и ~/.sh лаунчеры для уже установленных CLI.
+sync_launcher_shortcuts() {
+    local install_dir="$1"
+    local scripts_dir="$install_dir/scripts"
+
+    # Определяем каталог рабочего стола
+    local desktop=""
+    for d in "$HOME/Desktop" "$HOME/Рабочий стол"; do
+        if [ -d "$d" ]; then
+            desktop="$d"
+            break
+        fi
+    done
+
+    chmod +x "$scripts_dir"/*.sh 2>/dev/null || true
+
+    # Список: CLI-binary, имя ярлыка, лаунчер .sh
+    local entries=(
+        "qwen|Qwen Code (cloud)|$scripts_dir/run-qwen-code-launcher.sh"
+        "claude|Claude Code (cloud)|$scripts_dir/run-claude-cloud-launcher.sh"
+        "opencode|OpenCode (cloud)|$scripts_dir/run-opencode-launcher.sh"
+        "freebuff|Freebuff (cloud)|$scripts_dir/run-freebuff-launcher.sh"
+        "openclaude|OpenClaude (cloud)|$scripts_dir/run-openclaude-launcher.sh"
+    )
+
+    local added=0
+    local present=0
+    for entry in "${entries[@]}"; do
+        local cli="${entry%%|*}"
+        local rest="${entry#*|}"
+        local name="${rest%%|*}"
+        local script="${rest##*|}"
+
+        # Пропускаем если CLI не установлен
+        if ! command -v "$cli" >/dev/null 2>&1; then
+            echo -e "${GRAY}  [SKIP] $cli CLI не установлен — ярлык пропущен${RESET}"
+            continue
+        fi
+        if [ ! -f "$script" ]; then
+            echo -e "${GRAY}  [SKIP] $script не найден${RESET}"
+            continue
+        fi
+
+        local safe_name=$(echo "$name" | tr ' ' '-' | tr '[:upper:]' '[:lower:]')
+        local sh_path="$HOME/${safe_name}.sh"
+
+        # .sh launcher (для серверов без GUI)
+        if [ ! -f "$sh_path" ]; then
+            cat > "$sh_path" << EOF
+#!/bin/bash
+# Запуск лаунчера $name
+exec bash "$script" "\$@"
+EOF
+            chmod +x "$sh_path"
+            echo -e "${GREEN}  [+] $safe_name.sh → $sh_path${RESET}"
+            added=$((added + 1))
+        else
+            present=$((present + 1))
+        fi
+
+        # .desktop file (для desktop сред)
+        if [ -n "$desktop" ]; then
+            local entry_path="$desktop/${name}.desktop"
+            if [ ! -f "$entry_path" ]; then
+                cat > "$entry_path" << EOF
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=$name
+Exec=bash "$script"
+Path=$install_dir
+Terminal=true
+StartupNotify=true
+Categories=Development;
+EOF
+                chmod +x "$entry_path"
+                echo -e "${GREEN}  [+] ${name}.desktop → $entry_path${RESET}"
+                added=$((added + 1))
+            else
+                present=$((present + 1))
+            fi
+        fi
+    done
+
+    echo ""
+    echo -e "${CYAN}Ярлыки: уже на месте = $present, добавлено новых = $added${RESET}"
+}
+
+# --- Sync shortcuts only ---
+if $DO_SYNC_SHORTCUTS; then
+    step "СИНХРОНИЗАЦИЯ ЯРЛЫКОВ"
+
+    if [ ! -d "$INSTALL_DIR" ]; then
+        err "Репозиторий не найден: $INSTALL_DIR"
+        err "Сначала установите инструменты через пункт [6]."
+        read -p "Нажмите Enter для выхода…"
+        exit 1
+    fi
+
+    echo -e "${CYAN}Проверка ярлыков для установленных CLI…${RESET}"
+    sync_launcher_shortcuts "$INSTALL_DIR"
+
+    echo ""
+    echo -e "${GREEN}════════════════════════════════════════════════════════════════════════════════${RESET}"
+    echo -e "${GREEN}  ЯРЛЫКИ ОБНОВЛЕНЫ${RESET}"
+    echo -e "${GREEN}════════════════════════════════════════════════════════════════════════════════${RESET}"
+    echo ""
+    read -p "Нажмите Enter для выхода…"
+    exit 0
+fi
 
 # --- Update ---
 if $DO_UPDATE; then
@@ -193,6 +308,12 @@ if $DO_UPDATE; then
         fi
         ok "free-claude-code: обновлён"
     fi
+
+    # Синхронизация ярлыков: после обновления проверяем что для всех установленных
+    # CLI .desktop-ярлыки и ~/.sh лаунчеры присутствуют (создаём недостающие).
+    echo ""
+    echo -e "${CYAN}Проверка ярлыков для установленных CLI…${RESET}"
+    sync_launcher_shortcuts "$INSTALL_DIR"
 
     echo ""
     echo -e "${CYAN}════════════════════════════════════════════════════════════════════════════════${RESET}"
@@ -253,7 +374,7 @@ if $DO_UNINSTALL; then
     echo -e "${CYAN}Удаление API ключей из ~/.bashrc и ~/.zshrc...${RESET}"
     for rc in "$HOME/.bashrc" "$HOME/.zshrc"; do
         if [ -f "$rc" ]; then
-            for var in NVIDIA_NIM_API_KEY ZAI_API_KEY OPENAI_API_KEY GROQ_API_KEY OPENROUTER_API_KEY; do
+            for var in NVIDIA_NIM_API_KEY ZAI_API_KEY OPENAI_API_KEY GROQ_API_KEY OPENROUTER_API_KEY BAI_API_KEY; do
                 sed -i "/^export ${var}=/d" "$rc"
             done
             ok "Очищен: $rc"
@@ -443,6 +564,23 @@ if [ -n "$or_key" ]; then
     ok "OPENROUTER_API_KEY сохранён"
 else
     skip "OPENROUTER_API_KEY пропущен"
+fi
+
+echo ""
+
+read -s -p "B.AI API ключ (Enter = пропуск): " bai_key < /dev/tty
+echo ""
+if [ -n "$bai_key" ]; then
+    for rc in "$HOME/.bashrc" "$HOME/.zshrc"; do
+        if [ -f "$rc" ]; then
+            sed -i '/^export BAI_API_KEY=/d' "$rc"
+            echo "export BAI_API_KEY=\"$bai_key\"" >> "$rc"
+        fi
+    done
+    export BAI_API_KEY="$bai_key"
+    ok "BAI_API_KEY сохранён"
+else
+    skip "BAI_API_KEY пропущен"
 fi
 
 # ─── Единое пространство /resume ──────────────────────────────────────────────

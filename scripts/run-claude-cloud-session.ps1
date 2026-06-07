@@ -1,7 +1,7 @@
 ﻿[CmdletBinding(DefaultParameterSetName = "Full")]
 param(
   [Parameter(ParameterSetName = "Full", Mandatory = $true)]
-  [ValidateSet("zai", "nim", "nim-qwen", "openrouter")]
+  [ValidateSet("zai", "nim", "nim-qwen", "openrouter", "bai")]
   [string]$Provider,
 
   [Parameter(ParameterSetName = "Prepare")]
@@ -464,6 +464,48 @@ if ($Provider -eq "openrouter") {
       throw "free-claude-code not responding on http://127.0.0.1:$orPort"
     }
     Write-Host "dry-run:OPENROUTER:OK" -ForegroundColor Green
+    return
+  }
+}
+
+if ($Provider -eq "bai") {
+  $baiKey = [Environment]::GetEnvironmentVariable("BAI_API_KEY","User")
+  if ([string]::IsNullOrWhiteSpace($baiKey) -or $baiKey -eq "__SET_ME__") { $baiKey = $env:BAI_API_KEY }
+  if ([string]::IsNullOrWhiteSpace($baiKey) -or $baiKey -eq "__SET_ME__") {
+    Write-Host "B.AI API ключ не задан." -ForegroundColor Yellow
+    Write-Host "Получить ключ: https://chat.b.ai/key" -ForegroundColor DarkCyan
+    $baiKey = Read-SecretText "Введите B.AI API key"
+  }
+
+  # free-claude-code: используется транспорт open_router (OpenAI-compatible) с собственным base URL.
+  # Модель передаётся через $ZaiAnthropicModelId (без префикса); префикс open_router/ добавляется здесь.
+  $baiModel = "open_router/deepseek-v4-flash"
+  if (-not [string]::IsNullOrWhiteSpace($ZaiAnthropicModelId)) {
+    $baiModel = "open_router/$($ZaiAnthropicModelId.Trim())"
+  }
+
+  $baiPort = 8085
+  if ($PSBoundParameters.ContainsKey("ProxyPort")) { $baiPort = $ProxyPort }
+
+  # Используем OPENROUTER_API_KEY как транспортный ключ (free-claude-code уже знает этот var),
+  # но переопределяем base URL через OPENAI_BASE_URL для маршрутизации запросов на api.b.ai.
+  $extraEnv = @{
+    OPENROUTER_API_KEY = $baiKey
+    OPENAI_BASE_URL    = "https://api.b.ai/v1"
+  }
+  Ensure-FreeClaudeCodeProxy -Dir $FreeClaudeCodeDir -Port $baiPort -NimKey $baiKey -Model $baiModel -AuthToken $ProxyAuthToken -ExtraEnv $extraEnv
+  $env:OPENROUTER_API_KEY = $baiKey
+  $env:OPENAI_BASE_URL = "https://api.b.ai/v1"
+  $env:ANTHROPIC_AUTH_TOKEN = $ProxyAuthToken
+  Remove-Item Env:ANTHROPIC_API_KEY -ErrorAction SilentlyContinue
+  $env:ANTHROPIC_BASE_URL = ("http://127.0.0.1:{0}" -f $baiPort)
+  $env:API_TIMEOUT_MS = "3000000"
+
+  if ($DryRun -ne 0) {
+    if (-not (Test-HttpResponding -Url ("http://127.0.0.1:{0}/v1/models" -f $baiPort) -TimeoutSec 3)) {
+      throw "free-claude-code not responding on http://127.0.0.1:$baiPort"
+    }
+    Write-Host "dry-run:BAI:OK" -ForegroundColor Green
     return
   }
 }

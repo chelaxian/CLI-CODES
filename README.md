@@ -34,15 +34,21 @@ cd cloud-code-setup
 ## Что делает инсталлятор
 
 1. **Проверяет зависимости** — git, Node.js, npm
-2. **Спрашивает** что установить: Qwen Code, Claude Code, OpenCode или все три
+2. **Спрашивает** что установить: Qwen Code, Claude Code, OpenCode или все инструменты
 3. **Устанавливает CLI** через npm (если не установлен)
 4. **Запрашивает API ключи**:
    - NVIDIA NIM API ключ (можно пропустить)
    - Z.AI API ключ (можно пропустить)
    - Groq API ключ (можно пропустить)
    - OpenRouter API ключ (можно пропустить)
+   - B.AI API ключ (можно пропустить)
 5. **Создаёт ярлыки** на рабочем столе
 6. **Настраивает профили сессий** для Qwen Code
+
+Дополнительные пункты меню:
+
+- **[7] Обновление всех компонентов** — обновляет npm-пакеты и **синхронизирует ярлыки**: для каждого уже установленного CLI недостающие ярлыки создаются автоматически.
+- **[9] Добавить недостающие ярлыки** — без переустановки CLI просканирует уже установленные инструменты и дополнит недостающие ярлыки на рабочем столе (Windows) / в `~` (Linux).
 
 ---
 
@@ -81,9 +87,19 @@ cd cloud-code-setup
 ### OpenRouter (free, tool calling)
 | Модель | Qwen Code | Claude Code | OpenCode |
 |--------|-----------|-------------|----------|
-| Tencent Hy3 preview | + | + | + |
+| DeepSeek V4 Flash | + | + | + |
+| Qwen3 Coder | + | + | + |
 | Nemotron 3 Super 120B | + | + | + |
 | Poolside Laguna M.1 (coding) | + | + | + |
+
+### B.AI (https://chat.b.ai/key, OpenAI-compatible)
+| Модель | Qwen Code | Claude Code | OpenCode |
+|--------|-----------|-------------|----------|
+| DeepSeek V4 Pro / Flash | + | + | + |
+| MiniMax M3 / M2.7 | + | + | + |
+| GLM-5 | + | + | + |
+| Kimi K2.6 | + | + | + |
+| GPT-5.5 | + | + | + |
 
 ### Groq (paid, chat only — через «Другая модель»)
 | Заметка | Qwen Code | Claude Code | OpenCode |
@@ -92,7 +108,7 @@ cd cloud-code-setup
 
 > Free Tier на API провайдера **Groq** ограничен TPM 6000/8000 что не позволяет их использовать в coding agent инструментах типа Qwen, Claude, OpenCode из-за большого контекстного окна (~20K). Поэтому для использования моделей **Groq** требуется Paid подписка и API-ключ
 > 
-> Пункты **«Другая модель…»** позволяют выбрать любую модель из каталога провайдера (API или статический список).
+> Пункты **«Другая модель…»** позволяют выбрать любую модель из каталога провайдера. Для **NVIDIA NIM** есть отдельный фильтр **«только Agentic модели»** (по `build.nvidia.com?label=Agentic`). Для **OpenRouter** доступны два списка: **все модели** и **только бесплатные**.
 > 
 > Пункт **«Нативный логин»** — OAuth-авторизация через браузер (Qwen, Claude, OpenCode).
 
@@ -102,6 +118,7 @@ cd cloud-code-setup
 - **Z.AI**: [console.z.ai](https://console.z.ai/) — GLM API (paid); [open.bigmodel.cn](https://open.bigmodel.cn/) — альтернативный вход
 - **Groq**: [console.groq.com](https://console.groq.com/) — бесплатный ключ, ультрабыстрая инференс
 - **OpenRouter**: [openrouter.ai](https://openrouter.ai/) — шлюз к множеству моделей, есть бесплатные
+- **B.AI**: [chat.b.ai/key](https://chat.b.ai/key) — OpenAI-compatible провайдер с DeepSeek V4 Pro/Flash, MiniMax M3/M2.7, GLM-5, Kimi K2.6, GPT-5.5
 
 ---
 
@@ -119,7 +136,7 @@ cd cloud-code-setup
 
 В меню лаунчера выберите пункт **«Сменить ключ API провайдера»**:
 
-1. Выберите провайдера (NVIDIA NIM, Z.AI, Groq или OpenRouter)
+1. Выберите провайдера (NVIDIA NIM, Z.AI, Groq, OpenRouter или B.AI)
 2. Введите новый ключ
 3. Ключ сохраняется в переменных окружения
 

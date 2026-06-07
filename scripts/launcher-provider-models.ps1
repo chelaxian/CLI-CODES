@@ -128,7 +128,11 @@ function Get-NvidiaNimModelIdsFromApi {
   param(
     [Parameter(Mandatory = $true)][string]$ApiKey,
     # Оставить только те ID, что есть и в ответе API, и во встроенном каталоге free/preview.
-    [switch]$FilterToBundledFreeCatalog
+    [switch]$FilterToBundledFreeCatalog,
+    # Только модели, помеченные "Agentic" в каталоге build.nvidia.com
+    # (https://build.nvidia.com/models?filters=nimType%3Anim_type_preview&label=Agentic).
+    # Фильтр применяется поверх ответа API по встроенному списку Get-NvidiaNimBundledAgenticModelIds.
+    [switch]$AgenticOnly
   )
   $h = @{ Authorization = "Bearer $($ApiKey.Trim())" }
   $j = Invoke-LauncherJsonGet -Uri "https://integrate.api.nvidia.com/v1/models" -Headers $h
@@ -143,6 +147,11 @@ function Get-NvidiaNimModelIdsFromApi {
     $allow = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach ($x in @(Get-NvidiaNimBundledFreeModelIds)) { [void]$allow.Add($x) }
     $out = $out | Where-Object { $allow.Contains($_) }
+  }
+  if ($AgenticOnly) {
+    $allowAgentic = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    foreach ($x in @(Get-NvidiaNimBundledAgenticModelIds)) { [void]$allowAgentic.Add($x) }
+    $out = $out | Where-Object { $allowAgentic.Contains($_) }
   }
   return $out
 }
@@ -209,6 +218,77 @@ function Get-OpenRouterModelIdsFromApi {
   if (-not $resp -or -not $resp.data) { return @() }
   $ids = @($resp.data | Sort-Object -Property id | ForEach-Object { $_.id })
   return $ids
+}
+
+function Get-OpenRouterFreeModelIdsFromApi {
+  param([Parameter(Mandatory = $true)][string]$ApiKey)
+  $hdr = @{ "Authorization" = "Bearer $ApiKey"; "Content-Type" = "application/json" }
+  try {
+    $resp = Invoke-LauncherJsonGet -Uri "https://openrouter.ai/api/v1/models" -Headers $hdr
+  } catch {
+    return @()
+  }
+  if (-not $resp -or -not $resp.data) { return @() }
+  # OpenRouter помечает бесплатные модели полем pricing.prompt = "0" и pricing.completion = "0".
+  $free = @($resp.data | Where-Object {
+      $p = $_.pricing
+      $p -and ($p.prompt -eq "0" -or $p.prompt -eq "0.0") -and ($p.completion -eq "0" -or $p.completion -eq "0.0")
+    } | Sort-Object -Property id | ForEach-Object { $_.id })
+  return $free
+}
+
+# ─── B.AI (https://api.b.ai/v1) ─────────────────────────────────────────────
+# Совместим с OpenAI endpoint-ами. Получение ключа: https://chat.b.ai/key
+function Get-BaiModelIdsFromApi {
+  param([Parameter(Mandatory = $true)][string]$ApiKey)
+  $hdr = @{ "Authorization" = "Bearer $($ApiKey.Trim())"; "Content-Type" = "application/json" }
+  try {
+    $resp = Invoke-LauncherJsonGet -Uri "https://api.b.ai/v1/models" -Headers $hdr
+  } catch {
+    return @()
+  }
+  if (-not $resp -or -not $resp.data) { return @() }
+  $ids = @($resp.data | Sort-Object -Property id | ForEach-Object { $_.id })
+  return $ids
+}
+
+# Популярные пресеты B.AI — обзор на https://chat.b.ai/key
+# Список поддерживает самые ходовые agentic модели от вендоров (DeepSeek, MiniMax, ZAI, Moonshot, OpenAI).
+function Get-BaiBundledPopularModelIds {
+  $raw = @(
+    "deepseek-v4-pro"
+    "deepseek-v4-flash"
+    "minimax-m3"
+    "minimax-m2.7"
+    "glm-5"
+    "glm-5.1"
+    "kimi-k2.6"
+    "gpt-5.5"
+  )
+  return ($raw | ForEach-Object { $_.Trim() } | Where-Object { $_ } | Sort-Object -Unique)
+}
+
+# ─── NVIDIA NIM Agentic ─────────────────────────────────────────────────────
+# Список моделей помеченных "Agentic" в каталоге NVIDIA NIM:
+#   https://build.nvidia.com/models?filters=nimType%3Anim_type_preview&label=Agentic
+# Это модели с поддержкой tool calling и/или reasoning, подходящие для coding-agent задач.
+# Список обновляется вручную по каталогу; фильтр Get-NvidiaNimModelIdsFromApi -AgenticOnly
+# оставит только модели присутствующие и в API и в этом списке.
+function Get-NvidiaNimBundledAgenticModelIds {
+  $raw = @(
+    "mistralai/mistral-medium-3.5-128b"
+    "z-ai/glm-5.1"
+    "stepfun-ai/step-3.5-flash"
+    "mistralai/mistral-large-3-675b-instruct-2512"
+    "deepseek-ai/deepseek-v4-flash"
+    "qwen/qwen3.5-397b-a17b"
+    "qwen/qwen3-next-80b-a3b-instruct"
+    "qwen/qwen3-coder-480b-a35b-instruct"
+    "moonshotai/kimi-k2-thinking"
+    "moonshotai/kimi-k2-instruct-0905"
+    "mistralai/devstral-2-123b-instruct-2512"
+  )
+  return ($raw | ForEach-Object { $_.Trim() } | Where-Object { $_ } | Sort-Object -Unique)
 }
 
 function Get-GroqBundledFreeModelIds {
