@@ -40,10 +40,8 @@ $script:Profiles = @(
     Id    = "group:nim"
     Label = "NVIDIA NIM - 9 бесплатных agentic моделей"
   }
-  @{
-    Id    = "group:openrouter"
-    Label = "OpenRouter - бесплатные agentic модели"
-  }
+  # OpenRouter убран из пресетов: free endpoints rate-limited (429 Venice).
+  # Используйте «Другая модель…» → OpenRouter для ручного выбора.
   @{
     Id    = "group:bai"
     Label = "B.AI - DeepSeek/MiniMax/GLM/Kimi/GPT (OpenAI-compatible)"

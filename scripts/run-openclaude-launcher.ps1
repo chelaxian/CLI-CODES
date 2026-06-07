@@ -122,12 +122,11 @@ function Clear-OpenClaudeProviderProfiles {
   [System.IO.File]::WriteAllText($path, $json, (New-Object System.Text.UTF8Encoding($false)))
 }
 
-# Главное меню (8 пунктов — Z.AI на первом месте как наиболее совместимый).
+# Главное меню (OpenRouter убран — используйте «Другая модель» для ручного выбора).
 $script:Profiles = @(
   @{ Id = "group:zai";        Label = "Z.AI - Anthropic (GLM-5.1 / GLM-4.7 / Flash)" }
   @{ Id = "group:nim";        Label = "NVIDIA NIM - agentic модели" }
   @{ Id = "group:bai";        Label = "B.AI - agentic модели" }
-  @{ Id = "group:openrouter"; Label = "OpenRouter - бесплатные agentic" }
   @{ Id = "custom-model";     Label = "Другая модель (каталог Z.AI / NIM / B.AI / OpenRouter)" }
   @{ Id = "provider-setup";   Label = "OpenClaude /provider setup (интерактивный выбор)" }
   @{ Id = "vanilla";          Label = "Запустить OpenClaude без presetа" }
