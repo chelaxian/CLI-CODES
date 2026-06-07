@@ -213,55 +213,55 @@ function Invoke-QwenProfile {
 
   switch ($ProfileId) {
     "nim-mistral-medium" {
-      & (Join-Path $PSScriptRoot "run-qwen-code-nvidia-nim.ps1") -Model "mistralai/mistral-medium-3.5-128b"
+      Start-ChildPsScript -ScriptPath (Join-Path $PSScriptRoot "run-qwen-code-nvidia-nim.ps1") -Arguments @("-Model", "mistralai/mistral-medium-3.5-128b")
       return
     }
     "nim-glm51" {
-      & (Join-Path $PSScriptRoot "run-qwen-code-nvidia-nim.ps1") -Model "z-ai/glm-5.1"
+      Start-ChildPsScript -ScriptPath (Join-Path $PSScriptRoot "run-qwen-code-nvidia-nim.ps1") -Arguments @("-Model", "z-ai/glm-5.1")
       return
     }
     "nim-step-3.5-flash" {
-      & (Join-Path $PSScriptRoot "run-qwen-code-nvidia-nim.ps1") -Model "stepfun-ai/step-3.5-flash"
+      Start-ChildPsScript -ScriptPath (Join-Path $PSScriptRoot "run-qwen-code-nvidia-nim.ps1") -Arguments @("-Model", "stepfun-ai/step-3.5-flash")
       return
     }
     "nim-mistral-large-3" {
-      & (Join-Path $PSScriptRoot "run-qwen-code-nvidia-nim.ps1") -Model "mistralai/mistral-large-3-675b-instruct-2512"
+      Start-ChildPsScript -ScriptPath (Join-Path $PSScriptRoot "run-qwen-code-nvidia-nim.ps1") -Arguments @("-Model", "mistralai/mistral-large-3-675b-instruct-2512")
       return
     }
     "nim-deepseek-v4-flash" {
-      & (Join-Path $PSScriptRoot "run-qwen-code-nvidia-nim.ps1") -Model "deepseek-ai/deepseek-v4-flash"
+      Start-ChildPsScript -ScriptPath (Join-Path $PSScriptRoot "run-qwen-code-nvidia-nim.ps1") -Arguments @("-Model", "deepseek-ai/deepseek-v4-flash")
       return
     }
     "nim-gemma-4-31b" {
-      & (Join-Path $PSScriptRoot "run-qwen-code-nvidia-nim.ps1") -Model "google/gemma-4-31b-it"
+      Start-ChildPsScript -ScriptPath (Join-Path $PSScriptRoot "run-qwen-code-nvidia-nim.ps1") -Arguments @("-Model", "google/gemma-4-31b-it")
       return
     }
     "nim-qwen3.5-397b" {
-      & (Join-Path $PSScriptRoot "run-qwen-code-nvidia-nim.ps1") -Model "qwen/qwen3.5-397b-a17b"
+      Start-ChildPsScript -ScriptPath (Join-Path $PSScriptRoot "run-qwen-code-nvidia-nim.ps1") -Arguments @("-Model", "qwen/qwen3.5-397b-a17b")
       return
     }
     "nim-qwen3-next-80b" {
-      & (Join-Path $PSScriptRoot "run-qwen-code-nvidia-nim.ps1") -Model "qwen/qwen3-next-80b-a3b-instruct"
+      Start-ChildPsScript -ScriptPath (Join-Path $PSScriptRoot "run-qwen-code-nvidia-nim.ps1") -Arguments @("-Model", "qwen/qwen3-next-80b-a3b-instruct")
       return
     }
     "nim-qwen3-coder-480b" {
-      & (Join-Path $PSScriptRoot "run-qwen-code-nvidia-nim.ps1") -Model "qwen/qwen3-coder-480b-a35b-instruct"
+      Start-ChildPsScript -ScriptPath (Join-Path $PSScriptRoot "run-qwen-code-nvidia-nim.ps1") -Arguments @("-Model", "qwen/qwen3-coder-480b-a35b-instruct")
       return
     }
     "zai-glm" {
-      & (Join-Path $PSScriptRoot "run-qwen-code-cloud-zai-glm47.ps1")
+      Start-ChildPsScript -ScriptPath (Join-Path $PSScriptRoot "run-qwen-code-cloud-zai-glm47.ps1")
       return
     }
     "zai-glm51" {
-      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider zai -ModelId "glm-5.1"
+      Start-ChildPsScript -ScriptPath (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Arguments @("-Provider", "zai", "-ModelId", "glm-5.1")
       return
     }
     "zai-flash47" {
-      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider zai -ModelId "glm-4.7-flash"
+      Start-ChildPsScript -ScriptPath (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Arguments @("-Provider", "zai", "-ModelId", "glm-4.7-flash")
       return
     }
     "zai-flash45" {
-      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider zai -ModelId "glm-4.5-flash"
+      Start-ChildPsScript -ScriptPath (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Arguments @("-Provider", "zai", "-ModelId", "glm-4.5-flash")
       return
     }
     # OpenRouter пресеты убраны — используйте «Другая модель…» → OpenRouter.
@@ -271,7 +271,7 @@ function Invoke-QwenProfile {
       if ([string]::IsNullOrWhiteSpace($mid)) {
         throw "В qwen-code-launcher-state.json нет customModelId для custom-qwen-zai. Выберите модель в пункте «Другая модель»."
       }
-      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider zai -ModelId $mid.Trim()
+      Start-ChildPsScript -ScriptPath (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Arguments @("-Provider", "zai", "-ModelId", $mid.Trim())
       return
     }
     "custom-qwen-zai-general" {
@@ -280,7 +280,7 @@ function Invoke-QwenProfile {
       if ([string]::IsNullOrWhiteSpace($mid)) {
         throw "Нет customModelId для custom-qwen-zai-general."
       }
-      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider zai-general -ModelId $mid.Trim()
+      Start-ChildPsScript -ScriptPath (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Arguments @("-Provider", "zai-general", "-ModelId", $mid.Trim())
       return
     }
     "custom-qwen-nim" {
@@ -289,7 +289,7 @@ function Invoke-QwenProfile {
       if ([string]::IsNullOrWhiteSpace($mid)) {
         throw "В qwen-code-launcher-state.json нет customModelId для custom-qwen-nim."
       }
-      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider nim -ModelId $mid.Trim()
+      Start-ChildPsScript -ScriptPath (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Arguments @("-Provider", "nim", "-ModelId", $mid.Trim())
       return
     }
     "custom-qwen-groq" {
@@ -298,7 +298,7 @@ function Invoke-QwenProfile {
       if ([string]::IsNullOrWhiteSpace($mid)) {
         throw "Нет customModelId для custom-qwen-groq. Выберите модель в «Другая модель»."
       }
-      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider groq -ModelId $mid.Trim()
+      Start-ChildPsScript -ScriptPath (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Arguments @("-Provider", "groq", "-ModelId", $mid.Trim())
       return
     }
     "custom-qwen-openrouter" {
@@ -307,7 +307,7 @@ function Invoke-QwenProfile {
       if ([string]::IsNullOrWhiteSpace($mid)) {
         throw "Нет customModelId для custom-qwen-openrouter. Выберите модель в «Другая модель»."
       }
-      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider openrouter -ModelId $mid.Trim()
+      Start-ChildPsScript -ScriptPath (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Arguments @("-Provider", "openrouter", "-ModelId", $mid.Trim())
       return
     }
     "custom-qwen-bai" {
@@ -316,7 +316,7 @@ function Invoke-QwenProfile {
       if ([string]::IsNullOrWhiteSpace($mid)) {
         throw "Нет customModelId для custom-qwen-bai. Выберите модель в «Другая модель»."
       }
-      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider bai -ModelId $mid.Trim()
+      Start-ChildPsScript -ScriptPath (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Arguments @("-Provider", "bai", "-ModelId", $mid.Trim())
       return
     }
     default {
@@ -324,7 +324,7 @@ function Invoke-QwenProfile {
         $mid = $ProfileId.Substring("bai-".Length)
         $spec = $script:BaiModelSpec[$mid]
         if (-not $spec) { throw "Неизвестная B.AI модель: $mid" }
-        & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider bai -ModelId $mid -ContextLength $spec.Ctx -MaxTokens $spec.Max
+        Start-ChildPsScript -ScriptPath (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Arguments @("-Provider", "bai", "-ModelId", $mid, "-ContextLength", $spec.Ctx, "-MaxTokens", $spec.Max)
         return
       }
       throw "Неизвестный профиль: $ProfileId"
