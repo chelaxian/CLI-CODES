@@ -134,7 +134,7 @@ $script:GroupMenus = @{
     @{ Id = "bai-claude-sonnet-4.6"; Label = "B.AI - Claude Sonnet 4.6 (Anthropic, agentic)" }
     @{ Id = "bai-deepseek-v4-pro";   Label = "B.AI - DeepSeek V4 Pro (agentic)" }
     @{ Id = "bai-glm-5.1";           Label = "B.AI - GLM-5.1 (Z.AI)" }
-    @{ Id = "bai-kimi-k2.6";         Label = "B.AI - Kimi K2.6 (Moonshot)" }
+    @{ Id = "bai-kimi-k2.5";         Label = "B.AI - Kimi K2.5 (Moonshot)" }
   )
   openrouter = @(
     @{ Id = "openrouter-laguna";     Label = "OpenRouter - Poolside Laguna M.1 (free, coding)" }
@@ -161,7 +161,7 @@ $script:PresetSpec = @{
   "bai-claude-sonnet-4.6" = @{ Base = "https://api.b.ai/v1"; Model = "claude-sonnet-4.6";                          KeyEnv = "BAI_API_KEY" }
   "bai-deepseek-v4-pro" = @{ Base = "https://api.b.ai/v1"; Model = "deepseek-v4-pro";                              KeyEnv = "BAI_API_KEY" }
   "bai-glm-5.1" = @{ Base = "https://api.b.ai/v1"; Model = "glm-5.1";                                              KeyEnv = "BAI_API_KEY" }
-  "bai-kimi-k2.6" = @{ Base = "https://api.b.ai/v1"; Model = "kimi-k2.6";                                          KeyEnv = "BAI_API_KEY" }
+  "bai-kimi-k2.5" = @{ Base = "https://api.b.ai/v1"; Model = "kimi-k2.5";                                          KeyEnv = "BAI_API_KEY" }
   "openrouter-laguna" = @{ Base = "https://openrouter.ai/api/v1"; Model = "poolside/laguna-m.1:free";              KeyEnv = "OPENROUTER_API_KEY" }
   "openrouter-qwen3-coder" = @{ Base = "https://openrouter.ai/api/v1"; Model = "qwen/qwen3-coder:free";            KeyEnv = "OPENROUTER_API_KEY" }
 }
@@ -205,7 +205,7 @@ function Invoke-OpenClaudeZaiPreset {
   Clear-Host
   Write-Host "Запуск OpenClaude (Z.AI)..." -ForegroundColor Cyan
   Write-Host "Model: $($zSpec.Model) | Endpoint: https://api.z.ai/api/anthropic" -ForegroundColor DarkGray
-  & $exe --bare
+  try { & $exe --bare } catch { Write-Host "" }
 }
 
 function Invoke-OpenClaudeOpenAIPreset {
@@ -260,7 +260,7 @@ function Invoke-OpenClaudeOpenAIPreset {
   Write-Host "Запуск OpenClaude..." -ForegroundColor Cyan
   Write-Host "Provider: $($spec.Base) | Model: $($spec.Model)" -ForegroundColor DarkGray
   Write-Host "Provider profile записан в ~/.openclaude/settings.json" -ForegroundColor DarkGray
-  & $exe --bare
+  try { & $exe --bare } catch { Write-Host "" }
 }
 
 # Главное меню loop
@@ -339,7 +339,7 @@ while ($true) {
       Clear-Host
       Write-Host "Запуск OpenClaude (Z.AI custom)..." -ForegroundColor Cyan
       Write-Host "Model: $mid | Endpoint: https://api.z.ai/api/anthropic" -ForegroundColor DarkGray
-      & $exe --bare
+      try { & $exe --bare } catch { Write-Host "" }
     } else {
       $spec = switch ($w.Provider) {
         "nim"        { @{ Base = "https://integrate.api.nvidia.com/v1"; KeyEnv = "NVIDIA_NIM_API_KEY" } }
@@ -377,7 +377,7 @@ while ($true) {
       Write-Host "Запуск OpenClaude..." -ForegroundColor Cyan
       Write-Host "Provider: $($spec.Base) | Model: $mid" -ForegroundColor DarkGray
       Write-Host "Provider profile записан в ~/.openclaude.json" -ForegroundColor DarkGray
-      & $exe --bare
+      try { & $exe --bare } catch { Write-Host "" }
     }
     continue
   }
@@ -392,7 +392,7 @@ while ($true) {
     if (-not $exe) { throw "OpenClaude CLI не найден. Установите: npm install -g @gitlawb/openclaude" }
     Clear-Host
     Write-Host "Запуск OpenClaude (vanilla для /provider setup)..." -ForegroundColor Cyan
-    & $exe --bare
+    try { & $exe --bare } catch { Write-Host "" }
     continue
   }
 
@@ -403,7 +403,7 @@ while ($true) {
     if (-not $exe) { throw "OpenClaude CLI не найден. Установите: npm install -g @gitlawb/openclaude" }
     Clear-Host
     Write-Host "Запуск OpenClaude (vanilla)..." -ForegroundColor Cyan
-    & $exe --bare
+    try { & $exe --bare } catch { Write-Host "" }
     continue
   }
 

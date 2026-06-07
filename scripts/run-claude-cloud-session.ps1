@@ -678,10 +678,18 @@ try {
   # --bare skips OAuth/keychain reads and uses ONLY ANTHROPIC_API_KEY (env or settings).
   # Without --bare, Claude Code v2.x shows "Not logged in" for any 3P provider because
   # it tries OAuth first and refuses to fall through to the env API key.
-  if ($ClaudeTools -eq "default") {
-    & $claudeExe --bare
-  } else {
-    & $claudeExe --bare --tools $ClaudeTools
+  #
+  # try/catch глотает PipelineStoppedException, возникающую при Ctrl+C в TUI Claude Code:
+  # PowerShell получает SIGINT вместе с child process и пытается остановить pipeline.
+  # Без try/catch скрипт launcher'а тоже завершается и не возвращается в TUI меню.
+  try {
+    if ($ClaudeTools -eq "default") {
+      & $claudeExe --bare
+    } else {
+      & $claudeExe --bare --tools $ClaudeTools
+    }
+  } catch {
+    Write-Host ""
   }
 } finally {
   Pop-Location

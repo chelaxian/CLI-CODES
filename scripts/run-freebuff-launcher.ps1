@@ -73,11 +73,19 @@ function Invoke-FreebuffRun {
     if ($attempt -ge $maxRetries) {
       Write-Host ""
       Write-Host "Freebuff завершился с кодом $exitCode." -ForegroundColor Yellow
-      Write-Host "Если была сетевая ошибка (ECONNRESET/timeout) — проверьте интернет и попробуйте снова." -ForegroundColor Yellow
-      Write-Host "Возможные причины и решения:" -ForegroundColor Cyan
-      Write-Host "  1) Сервер freebuff временно недоступен — попробуйте позже или через VPN" -ForegroundColor DarkGray
-      Write-Host "  2) Обновите freebuff: npm i -g freebuff@latest" -ForegroundColor DarkGray
-      Write-Host "  3) Альтернатива: npm i -g codebuff (оригинальный Codebuff CLI)" -ForegroundColor DarkGray
+      Write-Host "Причина: freebuff при первом запуске пытается скачать binary (~50MB) с" -ForegroundColor Cyan
+      Write-Host "        https://codebuff.com/api/releases/download/… и получает ECONNRESET." -ForegroundColor Cyan
+      Write-Host "        Это CDN-блокировка в вашем регионе, лечится только VPN/HTTPS_PROXY." -ForegroundColor Cyan
+      Write-Host ""
+      Write-Host "Решения:" -ForegroundColor Cyan
+      Write-Host "  1) Включите VPN и запустите снова (binary качается один раз в" -ForegroundColor DarkGray
+      Write-Host "     ~/.config/manicode/freebuff.exe, потом работает без интернета)." -ForegroundColor DarkGray
+      Write-Host "  2) Установите HTTPS_PROXY перед запуском:" -ForegroundColor DarkGray
+      Write-Host '       $env:HTTPS_PROXY = "http://127.0.0.1:7890"' -ForegroundColor DarkGray
+      Write-Host "       (замените 7890 на порт вашего proxy/VPN-клиента)" -ForegroundColor DarkGray
+      Write-Host "  3) Скачать binary вручную через curl и положить в" -ForegroundColor DarkGray
+      Write-Host "     $env:USERPROFILE\.config\manicode\freebuff.exe" -ForegroundColor DarkGray
+      Write-Host "  4) Скипнуть Freebuff — он опциональный, агента дают и OpenClaude/Claude Code." -ForegroundColor DarkGray
       return $false
     }
 

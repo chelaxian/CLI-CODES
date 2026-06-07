@@ -113,16 +113,18 @@ $script:BaiModelSpec = @{
   "claude-opus-4.6"   = @{ Ctx = 200000;  Max = 8192 }
   "claude-opus-4.7"   = @{ Ctx = 200000;  Max = 8192 }
   "claude-opus-4.8"   = @{ Ctx = 200000;  Max = 8192 }
+  "deepseek-v3.2"     = @{ Ctx = 131072;  Max = 8192 }
   "deepseek-v4-pro"   = @{ Ctx = 131072;  Max = 8192 }
   "deepseek-v4-flash" = @{ Ctx = 131072;  Max = 8192 }
+  "gemini-3-flash"    = @{ Ctx = 1000000; Max = 8192 }
   "gemini-3.1-pro"    = @{ Ctx = 1000000; Max = 8192 }
   "gemini-3.5-flash"  = @{ Ctx = 1000000; Max = 8192 }
   "glm-5"             = @{ Ctx = 128000;  Max = 8192 }
   "glm-5.1"           = @{ Ctx = 128000;  Max = 8192 }
   "kimi-k2.5"         = @{ Ctx = 131072;  Max = 8192 }
-  "kimi-k2.6"         = @{ Ctx = 131072;  Max = 8192 }
-  "minimax-m3"        = @{ Ctx = 1000000; Max = 8192 }
+  "minimax-m2.5"      = @{ Ctx = 1000000; Max = 8192 }
   "minimax-m2.7"      = @{ Ctx = 1000000; Max = 8192 }
+  "minimax-m3"        = @{ Ctx = 1000000; Max = 8192 }
 }
 
 # Подменю для каждой группы провайдера
@@ -166,16 +168,15 @@ $script:GroupMenus = @{
     @{ Id = "claude-bai-claude-opus-4.6";   Label = "B.AI - Claude Opus 4.6 (Anthropic, agentic)" }
     @{ Id = "claude-bai-claude-opus-4.7";   Label = "B.AI - Claude Opus 4.7 (Anthropic, agentic)" }
     @{ Id = "claude-bai-claude-opus-4.8";   Label = "B.AI - Claude Opus 4.8 (Anthropic, agentic)" }
-    @{ Id = "claude-bai-deepseek-v4-pro";   Label = "B.AI - DeepSeek V4 Pro (agentic)" }
-    @{ Id = "claude-bai-deepseek-v4-flash"; Label = "B.AI - DeepSeek V4 Flash (agentic)" }
-    @{ Id = "claude-bai-gemini-3.1-pro";    Label = "B.AI - Gemini 3.1 Pro (Google, agentic)" }
-    @{ Id = "claude-bai-gemini-3.5-flash";  Label = "B.AI - Gemini 3.5 Flash (Google, agentic)" }
-    @{ Id = "claude-bai-glm-5";             Label = "B.AI - GLM-5 (Z.AI)" }
-    @{ Id = "claude-bai-glm-5.1";           Label = "B.AI - GLM-5.1 (Z.AI)" }
-    @{ Id = "claude-bai-kimi-k2.5";         Label = "B.AI - Kimi K2.5 (Moonshot)" }
-    @{ Id = "claude-bai-kimi-k2.6";         Label = "B.AI - Kimi K2.6 (Moonshot)" }
-    @{ Id = "claude-bai-minimax-m3";        Label = "B.AI - MiniMax M3 (agentic)" }
-    @{ Id = "claude-bai-minimax-m2.7";      Label = "B.AI - MiniMax M2.7 (fast)" }
+    @{ Id = "claude-bai-deepseek-v4-pro";   Label = "B.AI - DeepSeek V4 Pro (agentic) [use OpenClaude]" }
+    @{ Id = "claude-bai-deepseek-v4-flash"; Label = "B.AI - DeepSeek V4 Flash (agentic) [use OpenClaude]" }
+    @{ Id = "claude-bai-gemini-3.1-pro";    Label = "B.AI - Gemini 3.1 Pro (Google, agentic) [use OpenClaude]" }
+    @{ Id = "claude-bai-gemini-3.5-flash";  Label = "B.AI - Gemini 3.5 Flash (Google, agentic) [use OpenClaude]" }
+    @{ Id = "claude-bai-glm-5";             Label = "B.AI - GLM-5 (Z.AI) [use OpenClaude]" }
+    @{ Id = "claude-bai-glm-5.1";           Label = "B.AI - GLM-5.1 (Z.AI) [use OpenClaude]" }
+    @{ Id = "claude-bai-kimi-k2.5";         Label = "B.AI - Kimi K2.5 (Moonshot) [use OpenClaude]" }
+    @{ Id = "claude-bai-minimax-m3";        Label = "B.AI - MiniMax M3 (agentic) [use OpenClaude]" }
+    @{ Id = "claude-bai-minimax-m2.7";      Label = "B.AI - MiniMax M2.7 (fast) [use OpenClaude]" }
   )
 }
 
@@ -361,21 +362,26 @@ function Invoke-ClaudeCloudProfile {
       return
     }
     "custom-claude-bai" {
-      $st = Get-LauncherState
-      $mid = [string]$st.customModelId
-      if ([string]::IsNullOrWhiteSpace($mid)) {
-        throw "Нет customModelId для custom-claude-bai. Выберите модель в «Другая модель»."
-      }
-      & $SessionScript -Provider bai -ZaiAnthropicModelId $mid.Trim() -ClaudeTools default `
-        -ClaudeMemMaxWaitSec 25 -SkipCommonPreamble
+      Write-Host ""
+      Write-Host "B.AI в Claude Code не поддерживается." -ForegroundColor Yellow
+      Write-Host "Используйте OpenClaude launcher (там работает через нативный provider profile)." -ForegroundColor Cyan
+      Write-Host "Нажмите любую клавишу для возврата в меню…" -ForegroundColor DarkGray
+      [void][Console]::ReadKey($true)
       return
     }
     default {
       if ($ProfileId -like "claude-bai-*") {
-        $mid = $ProfileId.Substring("claude-bai-".Length)
-        if (-not $script:BaiModelSpec.ContainsKey($mid)) { throw "Неизвестная B.AI модель: $mid" }
-        & $SessionScript -Provider bai -ZaiAnthropicModelId $mid -ClaudeTools default `
-          -ClaudeMemMaxWaitSec 25 -SkipCommonPreamble
+        # B.AI в Claude Code v2.x не поддерживается: native binary не умеет
+        # OpenAI-compat, а free-claude-code не имеет b_ai provider и не разрешает
+        # переопределять base_url для nvidia_nim/open_router. Используйте OpenClaude.
+        Write-Host ""
+        Write-Host "B.AI в Claude Code не поддерживается." -ForegroundColor Yellow
+        Write-Host "Причина: Claude Code v2.x native binary не умеет OpenAI-compat провайдеры напрямую," -ForegroundColor DarkGray
+        Write-Host "        а free-claude-code не имеет provider 'b_ai' и не позволяет переопределить base URL." -ForegroundColor DarkGray
+        Write-Host ""
+        Write-Host "Запустите лаунчер OpenClaude и выберите B.AI там — там работает." -ForegroundColor Cyan
+        Write-Host "Нажмите любую клавишу для возврата в меню…" -ForegroundColor DarkGray
+        [void][Console]::ReadKey($true)
         return
       }
       throw "Неизвестный профиль: $ProfileId"
