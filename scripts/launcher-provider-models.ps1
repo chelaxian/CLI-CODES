@@ -252,18 +252,73 @@ function Get-BaiModelIdsFromApi {
   return $ids
 }
 
-# Популярные пресеты B.AI — обзор на https://chat.b.ai/key
-# Список поддерживает самые ходовые agentic модели от вендоров (DeepSeek, MiniMax, ZAI, Moonshot, OpenAI).
+# Полный каталог B.AI по https://docs.b.ai/llmservice/pricing-and-usage/ (28 моделей на 2026-06).
+# Это fallback для "Другая модель" (launcher-custom-model-wizard.ps1), если API вернёт пустоту.
 function Get-BaiBundledPopularModelIds {
   $raw = @(
+    "gpt-5-mini"
+    "gpt-5-nano"
+    "gpt-5.2"
+    "gpt-5.4"
+    "gpt-5.4-mini"
+    "gpt-5.4-nano"
+    "gpt-5.4-pro"
+    "gpt-5.5"
+    "gpt-5.5-instant"
+    "claude-haiku-4.5"
+    "claude-sonnet-4.5"
+    "claude-sonnet-4.6"
+    "claude-opus-4.5"
+    "claude-opus-4.6"
+    "claude-opus-4.7"
+    "claude-opus-4.8"
+    "deepseek-v3.2"
     "deepseek-v4-pro"
     "deepseek-v4-flash"
-    "minimax-m3"
-    "minimax-m2.7"
+    "gemini-3.1-pro"
+    "gemini-3.5-flash"
+    "gemini-3-flash"
     "glm-5"
     "glm-5.1"
+    "kimi-k2.5"
     "kimi-k2.6"
+    "minimax-m3"
+    "minimax-m2.7"
+  )
+  return ($raw | ForEach-Object { $_.Trim() } | Where-Object { $_ } | Sort-Object -Unique)
+}
+
+# Agentic-подмножество B.AI: только модели со стабильной поддержкой tool/function calling
+# (исключены DeepSeek V3.2 - устаревший weak tools, и Gemini 3 Flash - младшая линейка без качественного tool support).
+# Эти 26 моделей попадают в главное TUI-подменю провайдера B.AI.
+function Get-BaiBundledAgenticModelIds {
+  $raw = @(
+    "gpt-5-mini"
+    "gpt-5-nano"
+    "gpt-5.2"
+    "gpt-5.4"
+    "gpt-5.4-mini"
+    "gpt-5.4-nano"
+    "gpt-5.4-pro"
     "gpt-5.5"
+    "gpt-5.5-instant"
+    "claude-haiku-4.5"
+    "claude-sonnet-4.5"
+    "claude-sonnet-4.6"
+    "claude-opus-4.5"
+    "claude-opus-4.6"
+    "claude-opus-4.7"
+    "claude-opus-4.8"
+    "deepseek-v4-pro"
+    "deepseek-v4-flash"
+    "gemini-3.1-pro"
+    "gemini-3.5-flash"
+    "glm-5"
+    "glm-5.1"
+    "kimi-k2.5"
+    "kimi-k2.6"
+    "minimax-m3"
+    "minimax-m2.7"
   )
   return ($raw | ForEach-Object { $_.Trim() } | Where-Object { $_ } | Sort-Object -Unique)
 }

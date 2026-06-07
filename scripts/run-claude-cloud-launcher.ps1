@@ -95,6 +95,36 @@ $script:Profiles = @(
   }
 )
 
+# Характеристики B.AI моделей (context window, max_tokens). Только agentic-модели.
+$script:BaiModelSpec = @{
+  "gpt-5-nano"        = @{ Ctx = 128000;  Max = 16384 }
+  "gpt-5-mini"        = @{ Ctx = 128000;  Max = 16384 }
+  "gpt-5.2"           = @{ Ctx = 200000;  Max = 16384 }
+  "gpt-5.4-nano"      = @{ Ctx = 200000;  Max = 16384 }
+  "gpt-5.4-mini"      = @{ Ctx = 200000;  Max = 16384 }
+  "gpt-5.4"           = @{ Ctx = 200000;  Max = 16384 }
+  "gpt-5.4-pro"       = @{ Ctx = 200000;  Max = 16384 }
+  "gpt-5.5"           = @{ Ctx = 200000;  Max = 16384 }
+  "gpt-5.5-instant"   = @{ Ctx = 200000;  Max = 16384 }
+  "claude-haiku-4.5"  = @{ Ctx = 200000;  Max = 8192 }
+  "claude-sonnet-4.5" = @{ Ctx = 200000;  Max = 8192 }
+  "claude-sonnet-4.6" = @{ Ctx = 200000;  Max = 8192 }
+  "claude-opus-4.5"   = @{ Ctx = 200000;  Max = 8192 }
+  "claude-opus-4.6"   = @{ Ctx = 200000;  Max = 8192 }
+  "claude-opus-4.7"   = @{ Ctx = 200000;  Max = 8192 }
+  "claude-opus-4.8"   = @{ Ctx = 200000;  Max = 8192 }
+  "deepseek-v4-pro"   = @{ Ctx = 131072;  Max = 8192 }
+  "deepseek-v4-flash" = @{ Ctx = 131072;  Max = 8192 }
+  "gemini-3.1-pro"    = @{ Ctx = 1000000; Max = 8192 }
+  "gemini-3.5-flash"  = @{ Ctx = 1000000; Max = 8192 }
+  "glm-5"             = @{ Ctx = 128000;  Max = 8192 }
+  "glm-5.1"           = @{ Ctx = 128000;  Max = 8192 }
+  "kimi-k2.5"         = @{ Ctx = 131072;  Max = 8192 }
+  "kimi-k2.6"         = @{ Ctx = 131072;  Max = 8192 }
+  "minimax-m3"        = @{ Ctx = 1000000; Max = 8192 }
+  "minimax-m2.7"      = @{ Ctx = 1000000; Max = 8192 }
+}
+
 # Подменю для каждой группы провайдера
 $script:GroupMenus = @{
   zai = @(
@@ -120,13 +150,32 @@ $script:GroupMenus = @{
     @{ Id = "claude-openrouter-laguna";            Label = "OpenRouter - Poolside Laguna M.1 (free, tool calling, coding)" }
   )
   bai = @(
+    @{ Id = "claude-bai-gpt-5-nano";        Label = "B.AI - GPT-5 Nano (OpenAI, agentic)" }
+    @{ Id = "claude-bai-gpt-5-mini";        Label = "B.AI - GPT-5 Mini (OpenAI, agentic)" }
+    @{ Id = "claude-bai-gpt-5.2";           Label = "B.AI - GPT-5.2 (OpenAI, agentic)" }
+    @{ Id = "claude-bai-gpt-5.4-nano";      Label = "B.AI - GPT-5.4 Nano (OpenAI, agentic)" }
+    @{ Id = "claude-bai-gpt-5.4-mini";      Label = "B.AI - GPT-5.4 Mini (OpenAI, agentic)" }
+    @{ Id = "claude-bai-gpt-5.4";           Label = "B.AI - GPT-5.4 (OpenAI, agentic)" }
+    @{ Id = "claude-bai-gpt-5.4-pro";       Label = "B.AI - GPT-5.4 Pro (OpenAI, agentic)" }
+    @{ Id = "claude-bai-gpt-5.5";           Label = "B.AI - GPT-5.5 (OpenAI, agentic)" }
+    @{ Id = "claude-bai-gpt-5.5-instant";   Label = "B.AI - GPT-5.5 Instant (OpenAI, agentic)" }
+    @{ Id = "claude-bai-claude-haiku-4.5";  Label = "B.AI - Claude Haiku 4.5 (Anthropic, agentic)" }
+    @{ Id = "claude-bai-claude-sonnet-4.5"; Label = "B.AI - Claude Sonnet 4.5 (Anthropic, agentic)" }
+    @{ Id = "claude-bai-claude-sonnet-4.6"; Label = "B.AI - Claude Sonnet 4.6 (Anthropic, agentic)" }
+    @{ Id = "claude-bai-claude-opus-4.5";   Label = "B.AI - Claude Opus 4.5 (Anthropic, agentic)" }
+    @{ Id = "claude-bai-claude-opus-4.6";   Label = "B.AI - Claude Opus 4.6 (Anthropic, agentic)" }
+    @{ Id = "claude-bai-claude-opus-4.7";   Label = "B.AI - Claude Opus 4.7 (Anthropic, agentic)" }
+    @{ Id = "claude-bai-claude-opus-4.8";   Label = "B.AI - Claude Opus 4.8 (Anthropic, agentic)" }
     @{ Id = "claude-bai-deepseek-v4-pro";   Label = "B.AI - DeepSeek V4 Pro (agentic)" }
     @{ Id = "claude-bai-deepseek-v4-flash"; Label = "B.AI - DeepSeek V4 Flash (agentic)" }
+    @{ Id = "claude-bai-gemini-3.1-pro";    Label = "B.AI - Gemini 3.1 Pro (Google, agentic)" }
+    @{ Id = "claude-bai-gemini-3.5-flash";  Label = "B.AI - Gemini 3.5 Flash (Google, agentic)" }
+    @{ Id = "claude-bai-glm-5";             Label = "B.AI - GLM-5 (Z.AI)" }
+    @{ Id = "claude-bai-glm-5.1";           Label = "B.AI - GLM-5.1 (Z.AI)" }
+    @{ Id = "claude-bai-kimi-k2.5";         Label = "B.AI - Kimi K2.5 (Moonshot)" }
+    @{ Id = "claude-bai-kimi-k2.6";         Label = "B.AI - Kimi K2.6 (Moonshot)" }
     @{ Id = "claude-bai-minimax-m3";        Label = "B.AI - MiniMax M3 (agentic)" }
     @{ Id = "claude-bai-minimax-m2.7";      Label = "B.AI - MiniMax M2.7 (fast)" }
-    @{ Id = "claude-bai-glm-5";             Label = "B.AI - GLM-5 (Z.AI)" }
-    @{ Id = "claude-bai-kimi-k2.6";         Label = "B.AI - Kimi K2.6 (Moonshot)" }
-    @{ Id = "claude-bai-gpt-5.5";           Label = "B.AI - GPT-5.5 (OpenAI)" }
   )
 }
 
@@ -164,10 +213,13 @@ function Resolve-ProfileFromState($state) {
       "claude-nim-qwen3.5-397b", "claude-nim-qwen3-next-80b", "claude-nim-qwen3-coder-480b",
       "claude-openrouter-hy3", "claude-openrouter-nemotron", "claude-openrouter-laguna",
       "claude-openrouter-deepseek-v4-flash", "claude-openrouter-qwen3-coder",
-      "claude-bai-deepseek-v4-pro", "claude-bai-deepseek-v4-flash", "claude-bai-minimax-m3", "claude-bai-minimax-m2.7",
-      "claude-bai-glm-5", "claude-bai-kimi-k2.6", "claude-bai-gpt-5.5",
       "custom-claude-zai", "custom-claude-nim", "custom-claude-openrouter", "custom-claude-bai"
     )) { return $id }
+  # B.AI Claude: динамически проверяем по agentic-списку
+  if ($id -like "claude-bai-*") {
+    $mid = $id.Substring("claude-bai-".Length)
+    if ($mid -and ($script:BaiModelSpec.ContainsKey($mid))) { return $id }
+  }
   return $null
 }
 
@@ -310,41 +362,6 @@ function Invoke-ClaudeCloudProfile {
         -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
       return
     }
-    "claude-bai-deepseek-v4-pro" {
-      & $SessionScript -Provider bai -ZaiAnthropicModelId "deepseek-v4-pro" -ClaudeTools default `
-        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
-      return
-    }
-    "claude-bai-deepseek-v4-flash" {
-      & $SessionScript -Provider bai -ZaiAnthropicModelId "deepseek-v4-flash" -ClaudeTools default `
-        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
-      return
-    }
-    "claude-bai-minimax-m3" {
-      & $SessionScript -Provider bai -ZaiAnthropicModelId "minimax-m3" -ClaudeTools default `
-        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
-      return
-    }
-    "claude-bai-minimax-m2.7" {
-      & $SessionScript -Provider bai -ZaiAnthropicModelId "minimax-m2.7" -ClaudeTools default `
-        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
-      return
-    }
-    "claude-bai-glm-5" {
-      & $SessionScript -Provider bai -ZaiAnthropicModelId "glm-5" -ClaudeTools default `
-        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
-      return
-    }
-    "claude-bai-kimi-k2.6" {
-      & $SessionScript -Provider bai -ZaiAnthropicModelId "kimi-k2.6" -ClaudeTools default `
-        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
-      return
-    }
-    "claude-bai-gpt-5.5" {
-      & $SessionScript -Provider bai -ZaiAnthropicModelId "gpt-5.5" -ClaudeTools default `
-        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
-      return
-    }
     "custom-claude-bai" {
       $st = Get-LauncherState
       $mid = [string]$st.customModelId
@@ -356,6 +373,13 @@ function Invoke-ClaudeCloudProfile {
       return
     }
     default {
+      if ($ProfileId -like "claude-bai-*") {
+        $mid = $ProfileId.Substring("claude-bai-".Length)
+        if (-not $script:BaiModelSpec.ContainsKey($mid)) { throw "Неизвестная B.AI модель: $mid" }
+        & $SessionScript -Provider bai -ZaiAnthropicModelId $mid -ClaudeTools default `
+          -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+        return
+      }
       throw "Неизвестный профиль: $ProfileId"
     }
   }

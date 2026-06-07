@@ -5,7 +5,11 @@ param(
   [string]$Provider,
 
   [Parameter(Mandatory = $true)]
-  [string]$ModelId
+  [string]$ModelId,
+
+  # Override context window size (для B.AI моделей: GPT-5=200K, Gemini/MiniMax=1M, и т.д.)
+  [int]$ContextLength = 0,
+  [int]$MaxTokens = 0
 )
 
 $ErrorActionPreference = "Stop"
@@ -404,9 +408,11 @@ if ($Provider -eq "zai") {
     $key = Read-SecretText "Введите B.AI API key"
   }
   $env:OPENAI_API_KEY = $key.Trim()
-  # B.AI - OpenAI-compatible endpoint. Большинство моделей имеют ctx 128k+ и support tool calling.
-  $cfg = Build-QwenSettingsOpenAI -Mid $ModelId.Trim() -BaseUrl "https://api.b.ai/v1" -ContextWindowSize 131072 -MaxTokens 8192
-  $script:BaiMaxOutput = 8192
+  # B.AI - OpenAI-compatible endpoint. Контекст/макс.токены зависят от модели (см. $ContextLength/$MaxTokens).
+  $baiCtx = if ($ContextLength -gt 0) { $ContextLength } else { 131072 }
+  $baiMax = if ($MaxTokens -gt 0) { $MaxTokens } else { 8192 }
+  $cfg = Build-QwenSettingsOpenAI -Mid $ModelId.Trim() -BaseUrl "https://api.b.ai/v1" -ContextWindowSize $baiCtx -MaxTokens $baiMax
+  $script:BaiMaxOutput = $baiMax
 } else {
   $key = [Environment]::GetEnvironmentVariable("NVIDIA_NIM_API_KEY", "User")
   if ([string]::IsNullOrWhiteSpace($key)) { $key = $env:NVIDIA_NIM_API_KEY }

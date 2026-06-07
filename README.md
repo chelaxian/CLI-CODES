@@ -92,14 +92,39 @@ cd cloud-code-setup
 | Nemotron 3 Super 120B | + | + | + |
 | Poolside Laguna M.1 (coding) | + | + | + |
 
-### B.AI (https://chat.b.ai/key, OpenAI-compatible)
+### B.AI (https://chat.b.ai/key, OpenAI-compatible, 26 agentic моделей в подменю)
+
+В главном подменю B.AI отображаются только модели с поддержкой tool/function calling (всего 26):
+
+**OpenAI GPT-5 (9 моделей):**
+
+| Модель | Qwen Code | Claude Code | OpenCode |
+|--------|-----------|-------------|----------|
+| GPT-5 Nano / Mini | + | + | + |
+| GPT-5.2 | + | + | + |
+| GPT-5.4 Nano / Mini | + | + | + |
+| GPT-5.4 / 5.4 Pro | + | + | + |
+| GPT-5.5 / 5.5 Instant | + | + | + |
+
+**Anthropic Claude 4.5+ (7 моделей):**
+
+| Модель | Qwen Code | Claude Code | OpenCode |
+|--------|-----------|-------------|----------|
+| Claude Haiku 4.5 | + | + | + |
+| Claude Sonnet 4.5 / 4.6 | + | + | + |
+| Claude Opus 4.5 / 4.6 / 4.7 / 4.8 | + | + | + |
+
+**Другие agentic-семейства:**
+
 | Модель | Qwen Code | Claude Code | OpenCode |
 |--------|-----------|-------------|----------|
 | DeepSeek V4 Pro / Flash | + | + | + |
+| Gemini 3.1 Pro / 3.5 Flash (Google) | + | + | + |
+| GLM-5 / 5.1 (Z.AI) | + | + | + |
+| Kimi K2.5 / K2.6 (Moonshot) | + | + | + |
 | MiniMax M3 / M2.7 | + | + | + |
-| GLM-5 | + | + | + |
-| Kimi K2.6 | + | + | + |
-| GPT-5.5 | + | + | + |
+
+> Полный каталог B.AI (28 моделей, включая **DeepSeek V3.2** и **Gemini 3 Flash**) доступен через пункт **«Другая модель» → B.AI (api.b.ai/v1)**. Эти две модели убраны из основного подменю, так как их tool calling нестабилен для coding-agent задач.
 
 ### Groq (paid, chat only — через «Другая модель»)
 | Заметка | Qwen Code | Claude Code | OpenCode |
@@ -118,7 +143,7 @@ cd cloud-code-setup
 - **Z.AI**: [console.z.ai](https://console.z.ai/) — GLM API (paid); [open.bigmodel.cn](https://open.bigmodel.cn/) — альтернативный вход
 - **Groq**: [console.groq.com](https://console.groq.com/) — бесплатный ключ, ультрабыстрая инференс
 - **OpenRouter**: [openrouter.ai](https://openrouter.ai/) — шлюз к множеству моделей, есть бесплатные
-- **B.AI**: [chat.b.ai/key](https://chat.b.ai/key) — OpenAI-compatible провайдер с DeepSeek V4 Pro/Flash, MiniMax M3/M2.7, GLM-5, Kimi K2.6, GPT-5.5
+- **B.AI**: [chat.b.ai/key](https://chat.b.ai/key) — OpenAI-compatible провайдер с 28 моделями от OpenAI, Anthropic, Google, DeepSeek, Zhipu, Moonshot, MiniMax. 26 agentic моделей в подменю + 2 (DeepSeek V3.2, Gemini 3 Flash) через «Другая модель»
 
 ---
 

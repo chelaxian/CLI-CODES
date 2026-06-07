@@ -62,6 +62,37 @@ $script:Profiles = @(
   }
 )
 
+# Характеристики B.AI моделей для Write-OpenCodeConfig (context window, max_tokens).
+# Только agentic-модели — соответствуют $script:GroupMenus.bai (26 штук).
+$script:BaiModelSpec = @{
+  "gpt-5-nano"        = @{ Ctx = 128000;  Max = 16384 }
+  "gpt-5-mini"        = @{ Ctx = 128000;  Max = 16384 }
+  "gpt-5.2"           = @{ Ctx = 200000;  Max = 16384 }
+  "gpt-5.4-nano"      = @{ Ctx = 200000;  Max = 16384 }
+  "gpt-5.4-mini"      = @{ Ctx = 200000;  Max = 16384 }
+  "gpt-5.4"           = @{ Ctx = 200000;  Max = 16384 }
+  "gpt-5.4-pro"       = @{ Ctx = 200000;  Max = 16384 }
+  "gpt-5.5"           = @{ Ctx = 200000;  Max = 16384 }
+  "gpt-5.5-instant"   = @{ Ctx = 200000;  Max = 16384 }
+  "claude-haiku-4.5"  = @{ Ctx = 200000;  Max = 8192 }
+  "claude-sonnet-4.5" = @{ Ctx = 200000;  Max = 8192 }
+  "claude-sonnet-4.6" = @{ Ctx = 200000;  Max = 8192 }
+  "claude-opus-4.5"   = @{ Ctx = 200000;  Max = 8192 }
+  "claude-opus-4.6"   = @{ Ctx = 200000;  Max = 8192 }
+  "claude-opus-4.7"   = @{ Ctx = 200000;  Max = 8192 }
+  "claude-opus-4.8"   = @{ Ctx = 200000;  Max = 8192 }
+  "deepseek-v4-pro"   = @{ Ctx = 131072;  Max = 8192 }
+  "deepseek-v4-flash" = @{ Ctx = 131072;  Max = 8192 }
+  "gemini-3.1-pro"    = @{ Ctx = 1000000; Max = 8192 }
+  "gemini-3.5-flash"  = @{ Ctx = 1000000; Max = 8192 }
+  "glm-5"             = @{ Ctx = 128000;  Max = 8192 }
+  "glm-5.1"           = @{ Ctx = 128000;  Max = 8192 }
+  "kimi-k2.5"         = @{ Ctx = 131072;  Max = 8192 }
+  "kimi-k2.6"         = @{ Ctx = 131072;  Max = 8192 }
+  "minimax-m3"        = @{ Ctx = 1000000; Max = 8192 }
+  "minimax-m2.7"      = @{ Ctx = 1000000; Max = 8192 }
+}
+
 # Подменю для каждой группы провайдера
 $script:GroupMenus = @{
   zai = @(
@@ -87,13 +118,32 @@ $script:GroupMenus = @{
     @{ Id = "openrouter-laguna";            Label = "OpenRouter - Poolside Laguna M.1 (free, tool calling, coding)" }
   )
   bai = @(
+    @{ Id = "bai-gpt-5-nano";        Label = "B.AI - GPT-5 Nano (OpenAI, agentic)" }
+    @{ Id = "bai-gpt-5-mini";        Label = "B.AI - GPT-5 Mini (OpenAI, agentic)" }
+    @{ Id = "bai-gpt-5.2";           Label = "B.AI - GPT-5.2 (OpenAI, agentic)" }
+    @{ Id = "bai-gpt-5.4-nano";      Label = "B.AI - GPT-5.4 Nano (OpenAI, agentic)" }
+    @{ Id = "bai-gpt-5.4-mini";      Label = "B.AI - GPT-5.4 Mini (OpenAI, agentic)" }
+    @{ Id = "bai-gpt-5.4";           Label = "B.AI - GPT-5.4 (OpenAI, agentic)" }
+    @{ Id = "bai-gpt-5.4-pro";       Label = "B.AI - GPT-5.4 Pro (OpenAI, agentic)" }
+    @{ Id = "bai-gpt-5.5";           Label = "B.AI - GPT-5.5 (OpenAI, agentic)" }
+    @{ Id = "bai-gpt-5.5-instant";   Label = "B.AI - GPT-5.5 Instant (OpenAI, agentic)" }
+    @{ Id = "bai-claude-haiku-4.5";  Label = "B.AI - Claude Haiku 4.5 (Anthropic, agentic)" }
+    @{ Id = "bai-claude-sonnet-4.5"; Label = "B.AI - Claude Sonnet 4.5 (Anthropic, agentic)" }
+    @{ Id = "bai-claude-sonnet-4.6"; Label = "B.AI - Claude Sonnet 4.6 (Anthropic, agentic)" }
+    @{ Id = "bai-claude-opus-4.5";   Label = "B.AI - Claude Opus 4.5 (Anthropic, agentic)" }
+    @{ Id = "bai-claude-opus-4.6";   Label = "B.AI - Claude Opus 4.6 (Anthropic, agentic)" }
+    @{ Id = "bai-claude-opus-4.7";   Label = "B.AI - Claude Opus 4.7 (Anthropic, agentic)" }
+    @{ Id = "bai-claude-opus-4.8";   Label = "B.AI - Claude Opus 4.8 (Anthropic, agentic)" }
     @{ Id = "bai-deepseek-v4-pro";   Label = "B.AI - DeepSeek V4 Pro (agentic)" }
     @{ Id = "bai-deepseek-v4-flash"; Label = "B.AI - DeepSeek V4 Flash (agentic)" }
+    @{ Id = "bai-gemini-3.1-pro";    Label = "B.AI - Gemini 3.1 Pro (Google, agentic)" }
+    @{ Id = "bai-gemini-3.5-flash";  Label = "B.AI - Gemini 3.5 Flash (Google, agentic)" }
+    @{ Id = "bai-glm-5";             Label = "B.AI - GLM-5 (Z.AI)" }
+    @{ Id = "bai-glm-5.1";           Label = "B.AI - GLM-5.1 (Z.AI)" }
+    @{ Id = "bai-kimi-k2.5";         Label = "B.AI - Kimi K2.5 (Moonshot)" }
+    @{ Id = "bai-kimi-k2.6";         Label = "B.AI - Kimi K2.6 (Moonshot)" }
     @{ Id = "bai-minimax-m3";        Label = "B.AI - MiniMax M3 (agentic)" }
     @{ Id = "bai-minimax-m2.7";      Label = "B.AI - MiniMax M2.7 (fast)" }
-    @{ Id = "bai-glm-5";             Label = "B.AI - GLM-5 (Z.AI)" }
-    @{ Id = "bai-kimi-k2.6";         Label = "B.AI - Kimi K2.6 (Moonshot)" }
-    @{ Id = "bai-gpt-5.5";           Label = "B.AI - GPT-5.5 (OpenAI)" }
   )
 }
 
@@ -129,8 +179,12 @@ function Resolve-ProfileFromState($state) {
       "nim-mistral-medium", "nim-glm51", "nim-step-3.5-flash", "nim-mistral-large-3",
       "nim-deepseek-v4-flash", "nim-gemma-4-31b", "nim-qwen3.5-397b", "nim-qwen3-next-80b", "nim-qwen3-coder-480b",
       "openrouter-hy3", "openrouter-nemotron", "openrouter-laguna", "openrouter-deepseek-v4-flash", "openrouter-qwen3-coder",
-      "bai-deepseek-v4-pro", "bai-deepseek-v4-flash", "bai-minimax-m3", "bai-minimax-m2.7", "bai-glm-5", "bai-kimi-k2.6", "bai-gpt-5.5",
       "custom-opencode-zai", "custom-opencode-nim", "custom-opencode-groq", "custom-opencode-openrouter", "custom-opencode-bai")) { return $id }
+  # B.AI: динамически проверяем по agentic-списку
+  if ($id -like "bai-*") {
+    $mid = $id.Substring("bai-".Length)
+    if ($mid -and ($script:BaiModelSpec.ContainsKey($mid))) { return $id }
+  }
   return $null
 }
 
@@ -494,90 +548,6 @@ function Invoke-OpenCodeProfile {
       & $opencodeExe
       return
     }
-    "bai-deepseek-v4-pro" {
-      $apiKey = [Environment]::GetEnvironmentVariable("BAI_API_KEY", "User")
-      if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") { $apiKey = $env:BAI_API_KEY }
-      if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") {
-        $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "B.AI" -HelpUrl "https://chat.b.ai/key"
-      }
-      $configPath = Write-OpenCodeConfig -Provider "bai" -Model "deepseek-v4-pro" -BaseURL "https://api.b.ai/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
-      $env:OPENCODE_CONFIG = $configPath
-      Write-Host "Запуск OpenCode (B.AI DeepSeek V4 Pro)…" -ForegroundColor Cyan
-      & $opencodeExe
-      return
-    }
-    "bai-deepseek-v4-flash" {
-      $apiKey = [Environment]::GetEnvironmentVariable("BAI_API_KEY", "User")
-      if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") { $apiKey = $env:BAI_API_KEY }
-      if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") {
-        $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "B.AI" -HelpUrl "https://chat.b.ai/key"
-      }
-      $configPath = Write-OpenCodeConfig -Provider "bai" -Model "deepseek-v4-flash" -BaseURL "https://api.b.ai/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
-      $env:OPENCODE_CONFIG = $configPath
-      Write-Host "Запуск OpenCode (B.AI DeepSeek V4 Flash)…" -ForegroundColor Cyan
-      & $opencodeExe
-      return
-    }
-    "bai-minimax-m3" {
-      $apiKey = [Environment]::GetEnvironmentVariable("BAI_API_KEY", "User")
-      if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") { $apiKey = $env:BAI_API_KEY }
-      if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") {
-        $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "B.AI" -HelpUrl "https://chat.b.ai/key"
-      }
-      $configPath = Write-OpenCodeConfig -Provider "bai" -Model "minimax-m3" -BaseURL "https://api.b.ai/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
-      $env:OPENCODE_CONFIG = $configPath
-      Write-Host "Запуск OpenCode (B.AI MiniMax M3)…" -ForegroundColor Cyan
-      & $opencodeExe
-      return
-    }
-    "bai-minimax-m2.7" {
-      $apiKey = [Environment]::GetEnvironmentVariable("BAI_API_KEY", "User")
-      if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") { $apiKey = $env:BAI_API_KEY }
-      if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") {
-        $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "B.AI" -HelpUrl "https://chat.b.ai/key"
-      }
-      $configPath = Write-OpenCodeConfig -Provider "bai" -Model "minimax-m2.7" -BaseURL "https://api.b.ai/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
-      $env:OPENCODE_CONFIG = $configPath
-      Write-Host "Запуск OpenCode (B.AI MiniMax M2.7)…" -ForegroundColor Cyan
-      & $opencodeExe
-      return
-    }
-    "bai-glm-5" {
-      $apiKey = [Environment]::GetEnvironmentVariable("BAI_API_KEY", "User")
-      if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") { $apiKey = $env:BAI_API_KEY }
-      if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") {
-        $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "B.AI" -HelpUrl "https://chat.b.ai/key"
-      }
-      $configPath = Write-OpenCodeConfig -Provider "bai" -Model "glm-5" -BaseURL "https://api.b.ai/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
-      $env:OPENCODE_CONFIG = $configPath
-      Write-Host "Запуск OpenCode (B.AI GLM-5)…" -ForegroundColor Cyan
-      & $opencodeExe
-      return
-    }
-    "bai-kimi-k2.6" {
-      $apiKey = [Environment]::GetEnvironmentVariable("BAI_API_KEY", "User")
-      if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") { $apiKey = $env:BAI_API_KEY }
-      if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") {
-        $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "B.AI" -HelpUrl "https://chat.b.ai/key"
-      }
-      $configPath = Write-OpenCodeConfig -Provider "bai" -Model "kimi-k2.6" -BaseURL "https://api.b.ai/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
-      $env:OPENCODE_CONFIG = $configPath
-      Write-Host "Запуск OpenCode (B.AI Kimi K2.6)…" -ForegroundColor Cyan
-      & $opencodeExe
-      return
-    }
-    "bai-gpt-5.5" {
-      $apiKey = [Environment]::GetEnvironmentVariable("BAI_API_KEY", "User")
-      if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") { $apiKey = $env:BAI_API_KEY }
-      if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") {
-        $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "B.AI" -HelpUrl "https://chat.b.ai/key"
-      }
-      $configPath = Write-OpenCodeConfig -Provider "bai" -Model "gpt-5.5" -BaseURL "https://api.b.ai/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
-      $env:OPENCODE_CONFIG = $configPath
-      Write-Host "Запуск OpenCode (B.AI GPT-5.5)…" -ForegroundColor Cyan
-      & $opencodeExe
-      return
-    }
     "custom-opencode-bai" {
       $st = Get-LauncherState
       $mid = [string]$st.customModelId
@@ -650,6 +620,21 @@ function Invoke-OpenCodeProfile {
       return
     }
     default {
+      if ($ProfileId -like "bai-*") {
+        $mid = $ProfileId.Substring("bai-".Length)
+        $spec = $script:BaiModelSpec[$mid]
+        if (-not $spec) { throw "Неизвестная B.AI модель: $mid" }
+        $apiKey = [Environment]::GetEnvironmentVariable("BAI_API_KEY", "User")
+        if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") { $apiKey = $env:BAI_API_KEY }
+        if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") {
+          $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "B.AI" -HelpUrl "https://chat.b.ai/key"
+        }
+        $configPath = Write-OpenCodeConfig -Provider "bai" -Model $mid -BaseURL "https://api.b.ai/v1" -ApiKey $apiKey -MaxTokens $spec.Max -ContextLength $spec.Ctx
+        $env:OPENCODE_CONFIG = $configPath
+        Write-Host "Запуск OpenCode (B.AI ${mid})…" -ForegroundColor Cyan
+        & $opencodeExe
+        return
+      }
       throw "Неизвестный профиль: $ProfileId"
     }
   }
