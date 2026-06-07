@@ -4,6 +4,8 @@ param()
 $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "launcher-tui.ps1")
 . (Join-Path $PSScriptRoot "launcher-api-keys.ps1")
+. (Join-Path $PSScriptRoot "launcher-provider-models.ps1")
+. (Join-Path $PSScriptRoot "launcher-custom-model-wizard.ps1")
 
 function Resolve-OpenClaudeExe {
   $cmd = Get-Command openclaude.cmd -ErrorAction SilentlyContinue
@@ -22,10 +24,10 @@ $script:Profiles = @(
   @{ Id = "group:nim";           Label = "NVIDIA NIM - agentic модели (free)" }
   @{ Id = "group:bai";           Label = "B.AI - agentic модели (api.b.ai/v1)" }
   @{ Id = "group:openrouter";    Label = "OpenRouter - бесплатные agentic" }
+  @{ Id = "custom-model";        Label = "Другая модель (каталог Z.AI / NIM / B.AI / OpenRouter)" }
   @{ Id = "provider-setup";      Label = "OpenClaude /provider setup (интерактивный выбор)" }
   @{ Id = "vanilla";             Label = "Запустить OpenClaude без presetа" }
   @{ Id = "change-api-key";      Label = "Сменить ключ API провайдера" }
-  @{ Id = "native-login";        Label = "Запуск OpenClaude с очисткой env" }
 )
 
 # Подменю для каждой группы провайдера
@@ -145,6 +147,41 @@ while ($true) {
     continue
   }
 
+  if ($profileId -eq "custom-model") {
+    $w = Invoke-LauncherCustomModelWizard -App "OpenCode"
+    if ($null -eq $w) {
+      Write-Host "Отменено." -ForegroundColor Yellow
+      continue
+    }
+    if ($true -eq $w.__menuBack) { continue }
+    $mid = [string]$w.ModelId
+    $spec = switch ($w.Provider) {
+      "nim"        { @{ Base = "https://integrate.api.nvidia.com/v1"; Model = $mid; KeyEnv = "NVIDIA_NIM_API_KEY" } }
+      "openrouter" { @{ Base = "https://openrouter.ai/api/v1";          Model = $mid; KeyEnv = "OPENROUTER_API_KEY" } }
+      "bai"        { @{ Base = "https://api.b.ai/v1";                    Model = $mid; KeyEnv = "BAI_API_KEY" } }
+      "groq"       { @{ Base = "https://api.groq.com/openai/v1";         Model = $mid; KeyEnv = "GROQ_API_KEY" } }
+      default      { @{ Base = "https://integrate.api.nvidia.com/v1";    Model = $mid; KeyEnv = "NVIDIA_NIM_API_KEY" } }
+    }
+    $key = [Environment]::GetEnvironmentVariable($spec.KeyEnv, "User")
+    if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") { $key = (Get-ChildItem env: | Where-Object { $_.Name -eq $spec.KeyEnv } | Select-Object -First 1).Value }
+    if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") {
+      $providerName = switch ($w.Provider) { "nim" { "NVIDIA NIM" }; "bai" { "B.AI" }; "openrouter" { "OpenRouter" }; "groq" { "Groq" }; default { "Provider" } }
+      $helpUrl = switch ($w.Provider) { "nim" { "https://build.nvidia.com/api-key" }; "bai" { "https://chat.b.ai/key" }; "openrouter" { "https://openrouter.ai/settings/keys" }; "groq" { "https://console.groq.com/keys" }; default { "" } }
+      $key = Resolve-ApiKeyOrPrompt -CurrentKey $key -ProviderName $providerName -HelpUrl $helpUrl
+    }
+    $env:CLAUDE_CODE_USE_OPENAI = "1"
+    $env:OPENAI_API_KEY = $key
+    $env:OPENAI_BASE_URL = $spec.Base
+    $env:OPENAI_MODEL = $spec.Model
+    Clear-Host
+    Write-Host "Запуск OpenClaude..." -ForegroundColor Cyan
+    Write-Host "Provider: $($spec.Base) | Model: $($spec.Model)" -ForegroundColor DarkGray
+    $exe = Resolve-OpenClaudeExe
+    if (-not $exe) { throw "OpenClaude CLI не найден. Установите: npm install -g @gitlawb/openclaude" }
+    & $exe
+    continue
+  }
+
   if ($profileId -eq "provider-setup") {
     Write-Host "После запуска выполните /provider для настройки профиля." -ForegroundColor Cyan
     Start-Sleep -Seconds 1
@@ -156,16 +193,6 @@ while ($true) {
   if ($profileId -eq "vanilla") {
     Remove-Item Env:OPENAI_BASE_URL, Env:OPENAI_MODEL, Env:CLAUDE_CODE_USE_OPENAI -ErrorAction SilentlyContinue
     Invoke-OpenClaudeExe
-    continue
-  }
-
-  if ($profileId -eq "native-login") {
-    Remove-Item Env:OPENAI_BASE_URL, Env:OPENAI_MODEL, Env:CLAUDE_CODE_USE_OPENAI, Env:OPENAI_API_KEY -ErrorAction SilentlyContinue
-    Clear-Host
-    Write-Host "Запуск OpenClaude с полностью очищенными env preset-ами..." -ForegroundColor Cyan
-    $exe = Resolve-OpenClaudeExe
-    if (-not $exe) { throw "OpenClaude CLI не найден. Установите: npm install -g @gitlawb/openclaude" }
-    & $exe
     continue
   }
 

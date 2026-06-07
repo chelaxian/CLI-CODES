@@ -104,20 +104,21 @@ if [ -d "$INSTALL_DIR/.git" ]; then
     fi
 fi
 
-echo -e "  ${GREEN}[1]${RESET} Qwen Code"
-echo -e "  ${GREEN}[2]${RESET} Claude Code"
-echo -e "  ${GREEN}[3]${RESET} OpenCode"
-echo -e "  ${GREEN}[4]${RESET} Freebuff"
-echo -e "  ${GREEN}[5]${RESET} OpenClaude"
-echo -e "  ${GREEN}[6]${RESET} Все инструменты"
+echo -e "  ${CYAN}[0]${RESET} Установка системных зависимостей (git, node, npm, curl)"
+echo -e "  ${YELLOW}[1]${RESET} Все инструменты  ← рекомендуется"
+echo -e "  ${GREEN}[2]${RESET} Qwen Code"
+echo -e "  ${GREEN}[3]${RESET} Claude Code"
+echo -e "  ${GREEN}[4]${RESET} OpenCode"
+echo -e "  ${GREEN}[5]${RESET} Freebuff"
+echo -e "  ${GREEN}[6]${RESET} OpenClaude"
 echo -e "  ${CYAN}[7]${RESET} Обновление всех компонентов"
 echo -e "  ${RED}[8]${RESET} Полное удаление (uninstall)"
 echo -e "  ${CYAN}[9]${RESET} Добавить недостающие ярлыки (без переустановки)"
-echo -e "  ${GRAY}[0]${RESET} Выход"
+echo -e "  ${GRAY}[X]${RESET} Выход"
 echo ""
 
-read -p "Ваш выбор [6]: " install_choice
-install_choice="${install_choice:-6}"
+read -p "Ваш выбор [1]: " install_choice
+install_choice="${install_choice:-1}"
 
 INSTALL_QWEN=false
 INSTALL_CLAUDE=false
@@ -127,20 +128,130 @@ INSTALL_OPENCLAUDE=false
 DO_UNINSTALL=false
 DO_UPDATE=false
 DO_SYNC_SHORTCUTS=false
+DO_INSTALL_DEPS=false
+
+# Установка системных зависимостей
+install_system_dependencies() {
+    echo ""
+    echo -e "${CYAN}======================================================================${RESET}"
+    echo -e "${MAGENTA}УСТАНОВКА СИСТЕМНЫХ ЗАВИСИМОСТЕЙ${RESET}"
+    echo -e "${CYAN}======================================================================${RESET}"
+    echo ""
+
+    local missing=()
+    for cmd in git node npm curl; do
+        if command -v "$cmd" >/dev/null 2>&1; then
+            local path="$(command -v "$cmd")"
+            echo -e "  ${GREEN}[OK]${RESET}   $cmd → $path"
+        else
+            echo -e "  ${YELLOW}[MISS]${RESET} $cmd — не найден"
+            missing+=("$cmd")
+        fi
+    done
+
+    if [ "${#missing[@]}" -eq 0 ]; then
+        echo ""
+        echo -e "${GREEN}Все необходимые зависимости уже установлены.${RESET}"
+        return 0
+    fi
+
+    echo ""
+    echo -e "${YELLOW}Отсутствуют: ${missing[*]}${RESET}"
+    echo -e "${CYAN}Определяем пакетный менеджер...${RESET}"
+
+    local pm=""
+    if command -v apt-get >/dev/null 2>&1; then pm="apt"
+    elif command -v dnf >/dev/null 2>&1; then pm="dnf"
+    elif command -v yum >/dev/null 2>&1; then pm="yum"
+    elif command -v pacman >/dev/null 2>&1; then pm="pacman"
+    elif command -v apk >/dev/null 2>&1; then pm="apk"
+    elif command -v brew >/dev/null 2>&1; then pm="brew"
+    else
+        echo -e "${RED}Пакетный менеджер не определён. Установите вручную: ${missing[*]}${RESET}"
+        return 1
+    fi
+    echo -e "${CYAN}Используется: $pm${RESET}"
+
+    case "$pm" in
+        apt)
+            sudo apt-get update -qq
+            for pkg in "${missing[@]}"; do
+                local deb_pkg="$pkg"
+                case "$pkg" in
+                    node) deb_pkg="nodejs" ;;
+                    npm)  deb_pkg="npm" ;;
+                    curl) deb_pkg="curl" ;;
+                esac
+                sudo apt-get install -y "$deb_pkg"
+            done
+            ;;
+        dnf|yum)
+            for pkg in "${missing[@]}"; do
+                local rpm_pkg="$pkg"
+                case "$pkg" in
+                    node) rpm_pkg="nodejs" ;;
+                esac
+                sudo "$pm" install -y "$rpm_pkg"
+            done
+            ;;
+        pacman)
+            local pacman_pkgs=()
+            for pkg in "${missing[@]}"; do
+                case "$pkg" in
+                    node) pacman_pkgs+=("nodejs") ;;
+                    npm)  pacman_pkgs+=("npm") ;;
+                    *)    pacman_pkgs+=("$pkg") ;;
+                esac
+            done
+            sudo pacman -S --noconfirm "${pacman_pkgs[@]}"
+            ;;
+        apk)
+            for pkg in "${missing[@]}"; do
+                local apk_pkg="$pkg"
+                case "$pkg" in
+                    node) apk_pkg="nodejs" ;;
+                    npm)  apk_pkg="npm" ;;
+                esac
+                sudo apk add "$apk_pkg"
+            done
+            ;;
+        brew)
+            brew install "${missing[@]}"
+            ;;
+    esac
+
+    echo ""
+    echo -e "${CYAN}Проверка после установки:${RESET}"
+    for cmd in git node npm curl; do
+        if command -v "$cmd" >/dev/null 2>&1; then
+            echo -e "  ${GREEN}[OK]${RESET}   $cmd"
+        else
+            echo -e "  ${YELLOW}[MISS]${RESET} $cmd — установите вручную или перезапустите терминал"
+        fi
+    done
+}
 
 case "$install_choice" in
-    1) INSTALL_QWEN=true ;;
-    2) INSTALL_CLAUDE=true ;;
-    3) INSTALL_OPENCODE=true ;;
-    4) INSTALL_FREEBUFF=true ;;
-    5) INSTALL_OPENCLAUDE=true ;;
-    6) INSTALL_QWEN=true; INSTALL_CLAUDE=true; INSTALL_OPENCODE=true; INSTALL_FREEBUFF=true; INSTALL_OPENCLAUDE=true ;;
+    0) DO_INSTALL_DEPS=true ;;
+    1) INSTALL_QWEN=true; INSTALL_CLAUDE=true; INSTALL_OPENCODE=true; INSTALL_FREEBUFF=true; INSTALL_OPENCLAUDE=true ;;
+    2) INSTALL_QWEN=true ;;
+    3) INSTALL_CLAUDE=true ;;
+    4) INSTALL_OPENCODE=true ;;
+    5) INSTALL_FREEBUFF=true ;;
+    6) INSTALL_OPENCLAUDE=true ;;
     7) DO_UPDATE=true ;;
     8) DO_UNINSTALL=true ;;
     9) DO_SYNC_SHORTCUTS=true ;;
-    0) echo -e "${YELLOW}Выход.${RESET}"; exit 0 ;;
+    X|x|Q|q) echo -e "${YELLOW}Выход.${RESET}"; exit 0 ;;
     *) warn "Неверный выбор. Устанавливаем все инструменты."; INSTALL_QWEN=true; INSTALL_CLAUDE=true; INSTALL_OPENCODE=true; INSTALL_FREEBUFF=true; INSTALL_OPENCLAUDE=true ;;
 esac
+
+if [ "$DO_INSTALL_DEPS" = true ]; then
+    install_system_dependencies
+    echo ""
+    echo -e "${CYAN}Готово. Перезапустите терминал и запустите install.sh снова для установки инструментов.${RESET}"
+    exit 0
+fi
 
 # ─── Helper: синхронизация ярлыков ──────────────────────────────────────────
 # Создаёт недостающие .desktop и ~/.sh лаунчеры для уже установленных CLI.

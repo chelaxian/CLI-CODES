@@ -172,21 +172,116 @@ Write-Status "==================================================================
 Write-Status "ЧТО УСТАНАВЛИВАЕМ?" "Magenta"
 Write-Status "======================================================================" "Cyan"
 Write-Host ""
-Write-Status "  [1] Qwen Code" "Green"
-Write-Status "  [2] Claude Code" "Green"
-Write-Status "  [3] OpenCode" "Green"
-Write-Status "  [4] Freebuff" "Green"
-Write-Status "  [5] OpenClaude" "Green"
-Write-Status "  [6] Все инструменты" "Green"
+Write-Status "  [0] Установка системных зависимостей (git, node, npm, curl)" "Cyan"
+Write-Status "  [1] Все инструменты  ← рекомендуется" "Yellow"
+Write-Status "  [2] Qwen Code" "Green"
+Write-Status "  [3] Claude Code" "Green"
+Write-Status "  [4] OpenCode" "Green"
+Write-Status "  [5] Freebuff" "Green"
+Write-Status "  [6] OpenClaude" "Green"
 Write-Status "  [7] Обновление всех компонентов" "Green"
 Write-Status "  [8] Полное удаление (uninstall)" "Red"
 Write-Status "  [9] Добавить недостающие ярлыки (без переустановки)" "Cyan"
-Write-Status "  [0] Выход" "Gray"
+Write-Status "  [X] Выход" "Gray"
 Write-Host ""
 
-$installChoice = Read-Host "Ваш выбор [6]"
+$installChoice = Read-Host "Ваш выбор [1]"
 
-if ([string]::IsNullOrWhiteSpace($installChoice)) { $installChoice = "6" }
+if ([string]::IsNullOrWhiteSpace($installChoice)) { $installChoice = "1" }
+$installChoice = $installChoice.Trim().ToUpper()
+
+# ─── [0] Установка системных зависимостей ─────────────────────────────────────
+function Install-SystemDependencies {
+    Write-Host ""
+    Write-Status "======================================================================" "Cyan"
+    Write-Status "УСТАНОВКА СИСТЕМНЫХ ЗАВИСИМОСТЕЙ" "Magenta"
+    Write-Status "======================================================================" "Cyan"
+    Write-Host ""
+
+    $missing = @()
+    $pkgs = @(
+        @{ Name = "git";   Cmd = "git";   MinVer = "2.30" },
+        @{ Name = "node";  Cmd = "node";  MinVer = "18.0" },
+        @{ Name = "npm";   Cmd = "npm";   MinVer = "9.0"  },
+        @{ Name = "curl";  Cmd = "curl";  MinVer = "7.0"  }
+    )
+    foreach ($p in $pkgs) {
+        $c = Get-Command $p.Cmd -ErrorAction SilentlyContinue
+        if ($c) {
+            Write-Status "  [OK]   $($p.Name) → $($c.Source)" "Green"
+        } else {
+            Write-Status "  [MISS] $($p.Name) — не найден" "Yellow"
+            $missing += $p.Name
+        }
+    }
+
+    if ($missing.Count -eq 0) {
+        Write-Host ""
+        Write-Status "Все необходимые зависимости уже установлены." "Green"
+        return
+    }
+
+    Write-Host ""
+    Write-Status "Отсутствуют: $($missing -join ', ')" "Yellow"
+    Write-Status "Попытка установки через доступный пакетный менеджер..." "Cyan"
+    Write-Host ""
+
+    # Определяем пакетный менеджер: winget > choco > scoop
+    $pm = $null
+    if (Get-Command winget -ErrorAction SilentlyContinue) { $pm = "winget" }
+    elseif (Get-Command choco -ErrorAction SilentlyContinue) { $pm = "choco" }
+    elseif (Get-Command scoop -ErrorAction SilentlyContinue) { $pm = "scoop" }
+
+    if (-not $pm) {
+        Write-Status "Не найден winget/choco/scoop. Установите один из них или пакеты вручную:" "Red"
+        Write-Status "  winget: https://github.com/microsoft/winget-cli/releases" "Yellow"
+        Write-Status "  choco:  https://chocolatey.org/install" "Yellow"
+        Write-Status "  scoop:  https://scoop.sh" "Yellow"
+        return
+    }
+
+    Write-Status "Используется пакетный менеджер: $pm" "Cyan"
+    $wingetMap = @{ git = "Git.Git"; node = "OpenJS.NodeJS.LTS"; npm = "OpenJS.NodeJS.LTS"; curl = "cURL.cURL" }
+    $chocoMap  = @{ git = "git"; node = "nodejs-lts"; npm = "nodejs-lts"; curl = "curl" }
+    $scoopMap  = @{ git = "git"; node = "nodejs-lts"; npm = "nodejs-lts"; curl = "curl" }
+
+    foreach ($pkg in $missing) {
+        $pkgId = switch ($pm) {
+            "winget" { $wingetMap[$pkg] }
+            "choco"  { $chocoMap[$pkg] }
+            "scoop"  { $scoopMap[$pkg] }
+        }
+        if (-not $pkgId) { continue }
+        Write-Status "  Установка $pkg ($pm → $pkgId)..." "Cyan"
+        try {
+            switch ($pm) {
+                "winget" { & winget install --id $pkgId --silent --accept-source-agreements --accept-package-agreements 2>&1 | Out-Null }
+                "choco"  { & choco install $pkgId -y 2>&1 | Out-Null }
+                "scoop"  { & scoop install $pkgId 2>&1 | Out-Null }
+            }
+        } catch {
+            Write-Status "  [WARN] $pkg не установлен: $($_.Exception.Message)" "Yellow"
+        }
+    }
+
+    # Обновляем PATH для текущей сессии
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+
+    Write-Host ""
+    Write-Status "Проверка после установки:" "Cyan"
+    foreach ($p in $pkgs) {
+        $c = Get-Command $p.Cmd -ErrorAction SilentlyContinue
+        if ($c) { Write-Status "  [OK]   $($p.Name)" "Green" }
+        else    { Write-Status "  [MISS] $($p.Name) — установите вручную или перезапустите терминал" "Yellow" }
+    }
+}
+
+if ($installChoice -eq "0") {
+    Install-SystemDependencies
+    Write-Host ""
+    Write-Status "Готово. Перезапустите терминал и запустите install.ps1 снова для установки инструментов." "Cyan"
+    return
+}
 
 # ─── Helper: синхронизация ярлыков для уже установленных CLI ────────────────
 # Проверяет наличие CLI на диске (через npm-bin в PATH или жёсткий путь %APPDATA%\npm)
@@ -535,13 +630,13 @@ $installFreebuff = $false
 $installOpenClaude = $false
 
 switch ($installChoice) {
-    "1" { $installQwen = $true }
-    "2" { $installClaude = $true }
-    "3" { $installOpenCode = $true }
-    "4" { $installFreebuff = $true }
-    "5" { $installOpenClaude = $true }
-    "6" { $installQwen = $true; $installClaude = $true; $installOpenCode = $true; $installFreebuff = $true; $installOpenClaude = $true }
-    "0" { Write-Status "Выход." "Yellow"; return }
+    "1" { $installQwen = $true; $installClaude = $true; $installOpenCode = $true; $installFreebuff = $true; $installOpenClaude = $true }
+    "2" { $installQwen = $true }
+    "3" { $installClaude = $true }
+    "4" { $installOpenCode = $true }
+    "5" { $installFreebuff = $true }
+    "6" { $installOpenClaude = $true }
+    "X" { Write-Status "Выход." "Yellow"; return }
     default { Write-Status "Неверный выбор. Устанавливаем все инструменты." "Yellow"; $installQwen = $true; $installClaude = $true; $installOpenCode = $true; $installFreebuff = $true; $installOpenClaude = $true }
 }
 
