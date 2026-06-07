@@ -316,6 +316,47 @@ function Sync-LauncherShortcuts {
         return $false
     }
 
+    # Возвращает $true если файл записан или уже актуален; $false если пропущен
+    # из-за ошибки доступа (файл заблокирован запущенным процессом / read-only).
+    function Write-CmdFile-Safe {
+        param([string]$Path, [string]$Content)
+        try {
+            # Снимаем ReadOnly если есть (Installer мог ранее его поставить).
+            if (Test-Path -LiteralPath $Path) {
+                $attrs = (Get-Item -LiteralPath $Path -Force).Attributes
+                if (($attrs -band [System.IO.FileAttributes]::ReadOnly) -ne 0) {
+                    (Get-Item -LiteralPath $Path -Force).Attributes = $attrs -bxor [System.IO.FileAttributes]::ReadOnly
+                }
+            }
+            [System.IO.File]::WriteAllText($Path, $Content, (New-Object System.Text.UTF8Encoding($false)))
+            return $true
+        } catch [System.UnauthorizedAccessException] {
+            # Файл заблокирован запущенным процессом. Пробуем atomic-rename fallback:
+            # пишем во временный файл и Move-Item (на Win32 можно перезаписать занятый
+            # файл через rename + delete-original — это работает для read-by-another-process).
+            try {
+                $tmp = "$Path.$PID.$(Get-Random).tmp"
+                [System.IO.File]::WriteAllText($tmp, $Content, (New-Object System.Text.UTF8Encoding($false)))
+                if (Test-Path -LiteralPath $Path) {
+                    # Backup old file and try replace
+                    $bak = "$Path.bak"
+                    if (Test-Path -LiteralPath $bak) { Remove-Item -LiteralPath $bak -Force -ErrorAction SilentlyContinue }
+                    Rename-Item -LiteralPath $Path -NewName (Split-Path -Leaf $bak) -Force -ErrorAction Stop
+                }
+                Move-Item -LiteralPath $tmp -Destination $Path -Force -ErrorAction Stop
+                return $true
+            } catch {
+                # Last resort: создать новый рядом (с суффиксом .new), юзер подменит после освобождения файла.
+                $newPath = "$Path.new"
+                try {
+                    [System.IO.File]::WriteAllText($newPath, $Content, (New-Object System.Text.UTF8Encoding($false)))
+                    Write-Status ("    [WARN] Файл заблокирован. Новый записан как: $newPath") "Yellow"
+                } catch {}
+                return $false
+            }
+        }
+    }
+
     function New-LauncherShortcutSync {
         param([string]$Name, [string]$ScriptFile)
         $launcher = Join-Path $scriptsDir $ScriptFile
@@ -323,16 +364,12 @@ function Sync-LauncherShortcuts {
         $lnkPath = Join-Path $desktop "$Name.lnk"
         $cmdPath = Join-Path $desktop "$Name.cmd"
         $created = $false
-        # .cmd всегда переписываем (в нём путь к launcher скрипту; при git pull
-        # путь не меняется, но содержимое launcher скрипта обновляется в репозитории).
-        # В Force-режае гарантированно переписываем даже если совпадает.
         $cmdContent = "@echo off`r`nchcp 65001 >nul 2>`&1`r`npowershell -NoProfile -ExecutionPolicy Bypass -Command `"& '$launcher'`"`r`nif ($LASTEXITCODE -ne 0) pause"
         if ($Force -or -not (Test-Path -LiteralPath $cmdPath)) {
-            [System.IO.File]::WriteAllText($cmdPath, $cmdContent, (New-Object System.Text.UTF8Encoding($false)))
-            $created = $true
+            $ok = Write-CmdFile-Safe -Path $cmdPath -Content $cmdContent
+            if ($ok) { $created = $true }
         }
-        # .lnk создаём только если нет (он указывает на тот же .cmd/launcher путь,
-        # Force не нужен — структура stable).
+        # .lnk создаём только если нет (структура stable, Force не требуется).
         if (-not (Test-Path -LiteralPath $lnkPath)) {
             try {
                 $cmdExe = (Get-Command cmd.exe -ErrorAction SilentlyContinue).Source
