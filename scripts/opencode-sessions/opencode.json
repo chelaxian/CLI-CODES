@@ -1,0 +1,21 @@
+{
+    "$schema":  "https://opencode.ai/config.json",
+    "provider":  {
+                     "bai":  {
+                                 "npm":  "@ai-sdk/openai-compatible",
+                                 "name":  "bai",
+                                 "options":  {
+                                                 "baseURL":  "https://api.b.ai/v1",
+                                                 "apiKey":  "sk-2oj9xp6d0avsg12vgkg5gu7gzldxw33f"
+                                             },
+                                 "models":  {
+                                                "gpt-5.2":  {
+                                                                "name":  "gpt-5.2",
+                                                                "maxTokens":  16384,
+                                                                "contextLength":  200000
+                                                            }
+                                            }
+                             }
+                 },
+    "model":  "bai/gpt-5.2"
+}

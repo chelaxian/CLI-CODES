@@ -694,19 +694,19 @@ while ($true) {
       default      { "" }
     }
     $subChoice = Show-TuiFramedMenu -AppBrand "OpenCode" -Title ("OpenCode - {0}" -f $groupKey.ToUpper()) -Subtitle $subTitle -Items $groupItems -MaxVisible 16 -EscapeAction Back
-    if ($null -eq $subChoice) { exit 0 }
+    if ($null -eq $subChoice) { continue }
     if ($true -eq $subChoice.__menuBack) { continue }
     $profileId = [string]$subChoice.Id
     Save-LauncherState -ProfileId $profileId
     Invoke-OpenCodeProfile -ProfileId $profileId
-    exit $LASTEXITCODE
+    continue
   }
 
   if ($profileId -eq "custom-model") {
     $w = Invoke-LauncherCustomModelWizard -App "OpenCode"
     if ($null -eq $w) {
       Write-Host "Отменено." -ForegroundColor Yellow
-      exit 0
+      continue
     }
     if ($true -eq $w.__menuBack) { continue }
     $newId = switch ($w.Provider) {
@@ -718,7 +718,7 @@ while ($true) {
     }
     Save-LauncherState -ProfileId $newId -Extra @{ customModelId = [string]$w.ModelId }
     Invoke-OpenCodeProfile -ProfileId $newId
-    exit $LASTEXITCODE
+    continue
   }
 
   if ($profileId -eq "native-login") {
@@ -792,12 +792,12 @@ while ($true) {
       Write-Host "Сохранённый профиль не найден. Выберите провайдер один раз." -ForegroundColor Red
       Write-Host "Нажмите любую клавишу..."
       $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-      exit 2
+      continue
     }
   } else {
     Save-LauncherState -ProfileId $profileId
   }
 
   Invoke-OpenCodeProfile -ProfileId $profileId
-  exit $LASTEXITCODE
+  continue
 }

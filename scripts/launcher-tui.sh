@@ -48,6 +48,7 @@ read_key() {
     local key
     IFS= read -rsn1 key < /dev/tty
     case "$key" in
+        $'\x03') echo "esc"; return ;;
         $'\x1b')
             local seq=""
             if IFS= read -rsn1 -t 0.1 seq < /dev/tty; then
@@ -202,7 +203,7 @@ draw_tui_banner_openclaude() {
 
 # Main TUI menu with arrow-key navigation
 # Args: app_brand title subtitle item1 item2 item3 ...
-# Prints selected index (1-based) to stdout. Prints 0 for Esc/exit.
+# Prints selected index (1-based) to stdout. Prints 0 for Esc/Ctrl+C/exit.
 # All visual output goes to FD 3 (/dev/tty).
 # Always returns 0.
 show_tui_numbered_menu() {
@@ -348,7 +349,7 @@ show_tui_numbered_menu() {
         printf '%*s' "$inner_width" '' >&3
         printf "${banner_color}║${RESET}\n" >&3
 
-        local hint="  ↑↓ выбор · Enter · Esc"
+        local hint="  ↑↓ выбор · Enter · Esc/Ctrl+C"
         local hint_len=${#hint}
         printf "${banner_color}║${RESET}${GRAY}${hint}${RESET}" >&3
         if [ "$hint_len" -lt "$inner_width" ]; then

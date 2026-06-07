@@ -830,7 +830,7 @@ while true; do
             profile_id=$(echo "${group_items[$((sub_choice-1))]}" | cut -d'|' -f1)
             save_launcher_state "$profile_id"
             invoke_claude_cloud_profile "$profile_id"
-            exit $?
+            continue
             ;;
     esac
     
@@ -940,7 +940,7 @@ while true; do
             
             save_launcher_state "$new_id" "$extra"
             invoke_claude_cloud_profile "$new_id"
-            exit $?
+            continue
             ;;
         "last")
             if state=$(get_launcher_state); then
@@ -949,12 +949,12 @@ while true; do
                 else
                     echo -e "${RED}Сохранённый профиль не найден. Выберите пункт меню один раз.${RESET}"
                     read -p "Нажмите Enter..."
-                    exit 2
+                    continue
                 fi
             else
                 echo -e "${RED}Сохранённый профиль не найден. Выберите пункт меню один раз.${RESET}"
                 read -p "Нажмите Enter..."
-                exit 2
+                continue
             fi
             ;;
         *)
@@ -963,7 +963,7 @@ while true; do
     esac
     
     invoke_claude_cloud_profile "$profile_id"
-    exit $?
+    continue
 done
 }
 main "$@"

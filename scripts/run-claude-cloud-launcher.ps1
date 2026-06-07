@@ -225,9 +225,7 @@ function Resolve-ProfileFromState($state) {
 
 function Invoke-ClaudeCloudProfile {
   param(
-    [Parameter(Mandatory = $true)][string]$ProfileId,
-    # Быстрый старт без PrepareOnly: открыть observer один раз здесь (после меню Prepare уже открыл вкладку).
-    [int]$OpenClaudeMemObserver = 0
+    [Parameter(Mandatory = $true)][string]$ProfileId
   )
 
   Clear-Host
@@ -238,92 +236,92 @@ function Invoke-ClaudeCloudProfile {
   switch ($ProfileId) {
     "claude-zai" {
       & $SessionScript -Provider zai -ClaudeTools default `
-        -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+        -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     "claude-zai-glm51" {
       & $SessionScript -Provider zai -ZaiAnthropicModelId "glm-5.1" -ClaudeTools default `
-        -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+        -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     "claude-zai-flash47" {
       & $SessionScript -Provider zai -ZaiAnthropicModelId "glm-4.7-flash" -ClaudeTools default `
-        -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+        -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     "claude-zai-flash45" {
       & $SessionScript -Provider zai -ZaiAnthropicModelId "glm-4.5-flash" -ClaudeTools default `
-        -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+        -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     "claude-nim-mistral-medium" {
       & $SessionScript -Provider nim -NimModel "mistralai/mistral-medium-3.5-128b" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
-        -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+        -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     "claude-nim-glm51" {
       & $SessionScript -Provider nim -NimModel "z-ai/glm-5.1" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
-        -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+        -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     "claude-nim-step-3.5-flash" {
       & $SessionScript -Provider nim -NimModel "stepfun-ai/step-3.5-flash" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
-        -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+        -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     "claude-nim-mistral-large-3" {
       & $SessionScript -Provider nim -NimModel "mistralai/mistral-large-3-675b-instruct-2512" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
-        -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+        -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     "claude-nim-deepseek-v4-flash" {
       & $SessionScript -Provider nim -NimModel "deepseek-ai/deepseek-v4-flash" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools minimal `
-        -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+        -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     "claude-nim-gemma-4-31b" {
       & $SessionScript -Provider nim -NimModel "google/gemma-4-31b-it" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools minimal `
-        -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+        -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     "claude-nim-qwen3.5-397b" {
       & $SessionScript -Provider nim -NimModel "qwen/qwen3.5-397b-a17b" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools minimal `
-        -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+        -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     "claude-nim-qwen3-next-80b" {
       & $SessionScript -Provider nim -NimModel "qwen/qwen3-next-80b-a3b-instruct" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools minimal `
-        -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+        -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     "claude-nim-qwen3-coder-480b" {
       & $SessionScript -Provider nim -NimModel "qwen/qwen3-coder-480b-a35b-instruct" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools minimal `
-        -ClaudeMemMaxWaitSec 60 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+        -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     "claude-openrouter-hy3" {
       & $SessionScript -Provider openrouter -ZaiAnthropicModelId "deepseek/deepseek-v4-flash:free" -ClaudeTools default `
-        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+        -ClaudeMemMaxWaitSec 25 -SkipCommonPreamble
       return
     }
     "claude-openrouter-deepseek-v4-flash" {
       & $SessionScript -Provider openrouter -ZaiAnthropicModelId "deepseek/deepseek-v4-flash:free" -ClaudeTools default `
-        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+        -ClaudeMemMaxWaitSec 25 -SkipCommonPreamble
       return
     }
     "claude-openrouter-qwen3-coder" {
       & $SessionScript -Provider openrouter -ZaiAnthropicModelId "qwen/qwen3-coder:free" -ClaudeTools default `
-        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+        -ClaudeMemMaxWaitSec 25 -SkipCommonPreamble
       return
     }
     "claude-openrouter-nemotron" {
       & $SessionScript -Provider openrouter -ZaiAnthropicModelId "nvidia/nemotron-3-super-120b-a12b:free" -ClaudeTools default `
-        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+        -ClaudeMemMaxWaitSec 25 -SkipCommonPreamble
       return
     }
     "claude-openrouter-laguna" {
       & $SessionScript -Provider openrouter -ZaiAnthropicModelId "poolside/laguna-m.1:free" -ClaudeTools default `
-        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+        -ClaudeMemMaxWaitSec 25 -SkipCommonPreamble
       return
     }
     "custom-claude-zai" {
@@ -333,7 +331,7 @@ function Invoke-ClaudeCloudProfile {
         throw "Нет customModelId в claude-cloud-launcher-state.json. Выберите модель в «Другая модель»."
       }
       & $SessionScript -Provider zai -ZaiAnthropicModelId $mid.Trim() -ClaudeTools default `
-        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+        -ClaudeMemMaxWaitSec 25 -SkipCommonPreamble
       return
     }
     "custom-claude-nim" {
@@ -349,7 +347,7 @@ function Invoke-ClaudeCloudProfile {
       $claudeTools = if (Test-NvidiaNimOpenAiNativeToolCalling $catalog) { "default" } else { "minimal" }
       $port = Get-LauncherFreeTcpPort
       & $SessionScript -Provider nim -NimModel $full.Trim() -ProxyPort $port -ClaudeTools $claudeTools `
-        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+        -ClaudeMemMaxWaitSec 25 -SkipCommonPreamble
       return
     }
     "custom-claude-openrouter" {
@@ -359,7 +357,7 @@ function Invoke-ClaudeCloudProfile {
         throw "Нет customModelId для custom-claude-openrouter. Выберите модель в «Другая модель»."
       }
       & $SessionScript -Provider openrouter -ZaiAnthropicModelId $mid.Trim() -ClaudeTools default `
-        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+        -ClaudeMemMaxWaitSec 25 -SkipCommonPreamble
       return
     }
     "custom-claude-bai" {
@@ -369,7 +367,7 @@ function Invoke-ClaudeCloudProfile {
         throw "Нет customModelId для custom-claude-bai. Выберите модель в «Другая модель»."
       }
       & $SessionScript -Provider bai -ZaiAnthropicModelId $mid.Trim() -ClaudeTools default `
-        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+        -ClaudeMemMaxWaitSec 25 -SkipCommonPreamble
       return
     }
     default {
@@ -377,7 +375,7 @@ function Invoke-ClaudeCloudProfile {
         $mid = $ProfileId.Substring("claude-bai-".Length)
         if (-not $script:BaiModelSpec.ContainsKey($mid)) { throw "Неизвестная B.AI модель: $mid" }
         & $SessionScript -Provider bai -ZaiAnthropicModelId $mid -ClaudeTools default `
-          -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+          -ClaudeMemMaxWaitSec 25 -SkipCommonPreamble
         return
       }
       throw "Неизвестный профиль: $ProfileId"
@@ -393,7 +391,7 @@ if ($Quick -or $env:CLAUDE_CLOUD_LAUNCHER_QUICK -eq "1") {
     Start-Sleep -Seconds 3
     exit 2
   }
-  Invoke-ClaudeCloudProfile -ProfileId $resolvedId -OpenClaudeMemObserver 1
+  Invoke-ClaudeCloudProfile -ProfileId $resolvedId
   exit $LASTEXITCODE
 }
 
@@ -435,19 +433,19 @@ while ($true) {
       default      { "" }
     }
     $subChoice = Show-TuiFramedMenu -AppBrand "Claude" -Title ("Claude Code - {0}" -f $groupKey.ToUpper()) -Subtitle $subTitle -Items $groupItems -MaxVisible 16 -EscapeAction Back
-    if ($null -eq $subChoice) { exit 0 }
+    if ($null -eq $subChoice) { continue }
     if ($true -eq $subChoice.__menuBack) { continue }
     $profileId = [string]$subChoice.Id
     Save-LauncherState -ProfileId $profileId
     Invoke-ClaudeCloudProfile -ProfileId $profileId
-    exit $LASTEXITCODE
+    continue
   }
 
   if ($profileId -eq "custom-model") {
     $w = Invoke-LauncherCustomModelWizard -App "Claude"
     if ($null -eq $w) {
       Write-Host "Отменено." -ForegroundColor Yellow
-      exit 0
+      continue
     }
     if ($true -eq $w.__menuBack) { continue }
     switch ($w.Provider) {
@@ -468,7 +466,7 @@ while ($true) {
         Invoke-ClaudeCloudProfile -ProfileId "custom-claude-nim"
       }
     }
-    exit $LASTEXITCODE
+    continue
   }
 
   if ($profileId -eq "native-login") {
@@ -552,12 +550,12 @@ while ($true) {
       Write-Host "Сохранённый профиль не найден. Выберите пункт меню один раз." -ForegroundColor Red
       Write-Host "Нажмите любую клавишу..."
       $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-      exit 2
+      continue
     }
   } else {
     Save-LauncherState -ProfileId $profileId
   }
 
   Invoke-ClaudeCloudProfile -ProfileId $profileId
-  exit $LASTEXITCODE
+  continue
 }

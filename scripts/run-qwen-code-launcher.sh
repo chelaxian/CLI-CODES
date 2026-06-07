@@ -718,7 +718,7 @@ while true; do
             
             save_launcher_state "$new_id" "\"customModelId\":\"$wiz_model\""
             invoke_qwen_profile "$new_id"
-            exit $?
+            continue
             ;;
         "last")
             if state=$(get_launcher_state); then
@@ -727,12 +727,12 @@ while true; do
                 else
                     echo -e "${RED}Сохранённый профиль не найден. Выберите пресет или «Другая модель» один раз.${RESET}"
                     read -p "Нажмите Enter..."
-                    exit 2
+                    continue
                 fi
             else
                 echo -e "${RED}Сохранённый профиль не найден. Выберите пресет или «Другая модель» один раз.${RESET}"
                 read -p "Нажмите Enter..."
-                exit 2
+                continue
             fi
             ;;
         *)
@@ -745,7 +745,7 @@ while true; do
     fi
     
     invoke_qwen_profile "$profile_id"
-    exit $?
+    continue
 done
 }
 main "$@"

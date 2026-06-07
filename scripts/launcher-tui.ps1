@@ -236,7 +236,7 @@ function Show-TuiFramedMenu {
       Write-TuiRow -Text $row -InnerWidth $inner -Fg $fg
     }
     Write-TuiRow -Text ("".PadRight($inner)) -InnerWidth $inner
-    $escHint = if ($EscapeAction -eq "Back") { "Esc - назад" } else { "Esc - выход" }
+    $escHint = if ($EscapeAction -eq "Back") { "Esc/Ctrl+C - назад" } else { "Esc/Ctrl+C - выход" }
     $hint = ("  {0}{1}  выбор   Enter - OK   {2}   Home/End   PgUp/PgDn" -f [char]0x2191, [char]0x2193, $escHint)
     Write-TuiRow -Text $hint -InnerWidth $inner -Fg DarkGray
     if ($n -gt $visible) {
@@ -249,10 +249,21 @@ function Show-TuiFramedMenu {
   $scroll.Top = 0
   Sync-TuiScroll
   try { [Console]::CursorVisible = $false } catch { }
+  # Перехват Ctrl+C: TreatControlCAsInput=true позволяет нам самим обработать Ctrl+C в ReadKey
+  # как ESC (Back — вернуться, Exit — закрыть TUI). Без этого Ctrl+C сразу терминирует скрипт.
+  $prevCtrlC = $false
+  try { $prevCtrlC = [Console]::TreatControlCAsInput; [Console]::TreatControlCAsInput = $true } catch { }
   try {
     Redraw-TuiMenu
     while ($true) {
       $key = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+      # Ctrl+C: Character = 0x03 (ETX). Обрабатываем как ESC.
+      if ([int]$key.Character -eq 3) {
+        if ($EscapeAction -eq "Back") {
+          return [pscustomobject]@{ __menuBack = $true }
+        }
+        return $null
+      }
       switch ($key.VirtualKeyCode) {
         38 {
           if ($idx -gt 0) { $idx-- }
@@ -288,6 +299,7 @@ function Show-TuiFramedMenu {
       }
     }
   } finally {
+    try { [Console]::TreatControlCAsInput = $prevCtrlC } catch { }
     try { [Console]::CursorVisible = $true } catch { }
   }
 }

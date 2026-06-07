@@ -202,13 +202,10 @@ function Resolve-NvidiaNimFreeClaudeModel {
 function Get-GroqModelIdsFromApi {
   param([Parameter(Mandatory = $true)][string]$ApiKey)
   $hdr = @{ "Authorization" = "Bearer $ApiKey"; "Content-Type" = "application/json" }
-  try {
-    $resp = Invoke-LauncherJsonGet -Uri "https://api.groq.com/openai/v1/models" -Headers $hdr
-    if ($resp -and $resp.data) {
-      return @($resp.data | Sort-Object -Property id | ForEach-Object { $_.id })
-    }
-  } catch {}
-  return @()
+  $resp = Invoke-LauncherJsonGet -Uri "https://api.groq.com/openai/v1/models" -Headers $hdr
+  if (-not $resp -or -not $resp.data) { return @() }
+  $ids = @($resp.data | Sort-Object -Property id | ForEach-Object { $_.id })
+  return $ids
 }
 
 function Get-OpenRouterModelIdsFromApi {

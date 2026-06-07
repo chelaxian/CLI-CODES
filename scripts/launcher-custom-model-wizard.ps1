@@ -122,7 +122,17 @@ function Invoke-LauncherCustomModelWizard {
       elseif ($provSource -eq "groq") {
         Show-TuiWaitFrame -AppBrand $brand -Message "Загрузка каталога Groq (paid)…"
         $key = Resolve-GroqKeyForWizard
-        $ids = @(Get-GroqModelIdsFromApi -ApiKey $key)
+        try {
+          $ids = @(Get-GroqModelIdsFromApi -ApiKey $key)
+        } catch {
+          # DNS / timeout / network error — fallback на встроенный каталог free-моделей Groq
+          Write-Host ("API Groq недоступен: {0}" -f $_.Exception.Message) -ForegroundColor DarkYellow
+          $ids = @()
+        }
+        if ($ids.Count -eq 0) {
+          # Fallback на встроенный список Groq (free tier)
+          $ids = @(Get-GroqBundledFreeModelIds)
+        }
       }
       elseif ($provSource -eq "openrouter") {
         Show-TuiWaitFrame -AppBrand $brand -Message "Загрузка каталога OpenRouter (все модели)…"

@@ -874,7 +874,7 @@ while true; do
             profile_id=$(echo "${group_items[$((sub_choice-1))]}" | cut -d'|' -f1)
             save_launcher_state "$profile_id"
             invoke_opencode_profile "$profile_id"
-            exit $?
+            continue
             ;;
         "native-login")
             local opencode_exe
@@ -951,7 +951,7 @@ while true; do
             local wizard_result
             wizard_result=$(invoke_custom_model_wizard "OpenCode") || {
                 echo -e "${YELLOW}Отменено.${RESET}"
-                exit 0
+                continue
             }
             
             local wiz_provider=$(echo "$wizard_result" | cut -d'|' -f1)
@@ -970,7 +970,7 @@ while true; do
             
             save_launcher_state "$new_id" "\"customModelId\":\"$wiz_model\""
             invoke_opencode_profile "$new_id"
-            exit $?
+            continue
             ;;
         "last")
             if state=$(get_launcher_state); then
@@ -979,12 +979,12 @@ while true; do
                 else
                     echo -e "${RED}Сохранённый профиль не найден. Выберите провайдер один раз.${RESET}"
                     read -p "Нажмите Enter..."
-                    exit 2
+                    continue
                 fi
             else
                 echo -e "${RED}Сохранённый профиль не найден. Выберите провайдер один раз.${RESET}"
                 read -p "Нажмите Enter..."
-                exit 2
+                continue
             fi
             ;;
         *)
@@ -993,7 +993,7 @@ while true; do
     esac
     
     invoke_opencode_profile "$profile_id"
-    exit $?
+    continue
 done
 }
 main "$@"
