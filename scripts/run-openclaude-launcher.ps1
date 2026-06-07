@@ -20,11 +20,11 @@ function Resolve-OpenClaudeExe {
 
 function Set-OpenClaudeProviderProfile {
   <#
-    OpenClaude (форк Claude Code) использует систему provider profiles:
-    ~/.openclaude/settings.json -> providerProfiles[] + activeProviderProfileId.
+    OpenClaude (форк Claude Code) использует систему provider profiles.
+    Global config: ~/.openclaude.json (НЕ ~/.openclaude/settings.json!).
+    Там хранятся: providerProfiles[] + activeProviderProfileId.
     При старте вызывается applyProviderProfileToProcessEnv(activeProfile) — это
     ПОЛНОСТЬЮ перезаписывает process env (включая ANTHROPIC_*/OPENAI_*).
-    Поэтому env-блок в settings.json игнорируется; нужно писать provider profile.
 
     .PARAMETER ProfileId
       Статический ID профиля (для UPSERT — повторный запуск обновит, не дублируя).
@@ -49,9 +49,10 @@ function Set-OpenClaudeProviderProfile {
     [Parameter(Mandatory)][string]$Model
   )
 
-  $path = Join-Path $HOME ".openclaude\settings.json"
-  $dir = Split-Path -Parent $path
-  if (-not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+  # Global config: ~/.openclaude.json (НЕ ~/.openclaude/settings.json).
+  # settings.json хранит user preferences; .openclaude.json хранит runtime state
+  # including providerProfiles[] + activeProviderProfileId.
+  $path = Join-Path $HOME ".openclaude.json"
 
   $obj = $null
   if (Test-Path -LiteralPath $path) {
@@ -79,29 +80,17 @@ function Set-OpenClaudeProviderProfile {
   $obj | Add-Member -NotePropertyName providerProfiles -NotePropertyValue $profiles -Force
   $obj | Add-Member -NotePropertyName activeProviderProfileId -NotePropertyValue $ProfileId -Force
 
-  # Также поддерживаем минимальный env-блок (бэкфол для parts of OpenClaude что читает env)
-  if (-not $obj.PSObject.Properties['env'] -or -not $obj.env) {
-    $obj | Add-Member -NotePropertyName env -NotePropertyValue ([pscustomobject]@{}) -Force
-  }
-  $envHash = @{}
-  if ($obj.env.PSObject.Properties) {
-    foreach ($p in $obj.env.PSObject.Properties) { $envHash[$p.Name] = $p.Value }
-  }
-  if (-not $envHash.ContainsKey("CLAUDE_CODE_ATTRIBUTION_HEADER")) { $envHash["CLAUDE_CODE_ATTRIBUTION_HEADER"] = "0" }
-  if (-not $envHash.ContainsKey("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC")) { $envHash["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"] = "1" }
-  $obj.env = [pscustomobject]$envHash
-
   $json = ($obj | ConvertTo-Json -Depth 10)
   [System.IO.File]::WriteAllText($path, $json, (New-Object System.Text.UTF8Encoding($false)))
 }
 
 function Clear-OpenClaudeProviderProfiles {
   <#
-    Удаляет все providerProfiles и activeProviderProfileId — OpenClaude возвращается
-    к дефолтному gateway (Gitlawb Opengateway). Используется для vanilla / /provider setup.
+    Удаляет все providerProfiles и activeProviderProfileId из ~/.openclaude.json —
+    OpenClaude возвращается к дефолтному Gitlawb Opengateway.
   #>
   param()
-  $path = Join-Path $HOME ".openclaude\settings.json"
+  $path = Join-Path $HOME ".openclaude.json"
   if (-not (Test-Path -LiteralPath $path)) { return }
 
   $obj = $null

@@ -34,15 +34,16 @@ ensure_jq() {
 }
 
 # set_openclaude_profile <profile_id> <provider> <name> <base_url> <api_key> <model>
+# Writes provider profile to ~/.openclaude.json (NOT ~/.openclaude/settings.json —
+# that's user preferences, while .openclaude.json holds runtime state including
+# providerProfiles[] + activeProviderProfileId).
 set_openclaude_profile() {
     ensure_jq
     local profile_id="$1" provider="$2" name="$3" base_url="$4" api_key="$5" model="$6"
-    local settings_dir="$HOME/.openclaude"
-    local settings_file="$settings_dir/settings.json"
-    mkdir -p "$settings_dir"
+    local config_file="$HOME/.openclaude.json"
 
-    if [ ! -f "$settings_file" ]; then
-        echo '{}' > "$settings_file"
+    if [ ! -f "$config_file" ]; then
+        echo '{}' > "$config_file"
     fi
 
     # UPSERT: remove existing profile with same id, then append new one and set as active
@@ -65,22 +66,18 @@ set_openclaude_profile() {
         }] as $newProfiles |
         $orig |
         .providerProfiles = $newProfiles |
-        .activeProviderProfileId = $id |
-        if .env == null then .env = {
-            "CLAUDE_CODE_ATTRIBUTION_HEADER": "0",
-            "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
-        } else . end
-    ' "$settings_file")"
-    echo "$tmp" > "$settings_file"
+        .activeProviderProfileId = $id
+    ' "$config_file")"
+    echo "$tmp" > "$config_file"
 }
 
 clear_openclaude_profiles() {
     ensure_jq
-    local settings_file="$HOME/.openclaude/settings.json"
-    if [ ! -f "$settings_file" ]; then return; fi
+    local config_file="$HOME/.openclaude.json"
+    if [ ! -f "$config_file" ]; then return; fi
     local tmp
-    tmp="$(jq '.providerProfiles = [] | .activeProviderProfileId = null' "$settings_file")"
-    echo "$tmp" > "$settings_file"
+    tmp="$(jq '.providerProfiles = [] | .activeProviderProfileId = null' "$config_file")"
+    echo "$tmp" > "$config_file"
 }
 
 resolve_key() {

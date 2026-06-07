@@ -648,10 +648,13 @@ try {
     $claudeExe = $claudeCmd.Source
   }
 
+  # --bare skips OAuth/keychain reads and uses ONLY ANTHROPIC_API_KEY (env or settings).
+  # Without --bare, Claude Code v2.x shows "Not logged in" for any 3P provider because
+  # it tries OAuth first and refuses to fall through to the env API key.
   if ($ClaudeTools -eq "default") {
-    & $claudeExe
+    & $claudeExe --bare
   } else {
-    & $claudeExe --tools $ClaudeTools
+    & $claudeExe --bare --tools $ClaudeTools
   }
 } finally {
   Pop-Location
