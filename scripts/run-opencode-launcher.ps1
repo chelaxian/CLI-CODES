@@ -569,9 +569,9 @@ function Invoke-OpenCodeProfile {
       $apiKey = [Environment]::GetEnvironmentVariable("OPENROUTER_API_KEY", "User")
       if ([string]::IsNullOrWhiteSpace($apiKey)) { $apiKey = $env:OPENROUTER_API_KEY }
       if ([string]::IsNullOrWhiteSpace($apiKey)) { $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "OpenRouter" -HelpUrl "https://openrouter.ai/settings/keys" }
-      $configPath = Write-OpenCodeConfig -Provider "openrouter" -Model "deepseek/deepseek-v4-flash:free" -BaseURL "https://openrouter.ai/api/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 1048576
+      $configPath = Write-OpenCodeConfig -Provider "openrouter" -Model "deepseek/deepseek-chat-v3.1:free" -BaseURL "https://openrouter.ai/api/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 1048576
       $env:OPENCODE_CONFIG = $configPath
-      Write-Host "Запуск OpenCode (OpenRouter DeepSeek V4 Flash)…" -ForegroundColor Cyan
+      Write-Host "Запуск OpenCode (OpenRouter DeepSeek Chat V3.1)…" -ForegroundColor Cyan
       & $opencodeExe
       return
     }
@@ -581,7 +581,7 @@ function Invoke-OpenCodeProfile {
       if ([string]::IsNullOrWhiteSpace($apiKey)) {
         $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "OpenRouter" -HelpUrl "https://openrouter.ai/settings/keys"
       }
-      $configPath = Write-OpenCodeConfig -Provider "openrouter" -Model "deepseek/deepseek-v4-flash:free" -BaseURL "https://openrouter.ai/api/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 1048576
+      $configPath = Write-OpenCodeConfig -Provider "openrouter" -Model "deepseek/deepseek-chat-v3.1:free" -BaseURL "https://openrouter.ai/api/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 1048576
       $env:OPENCODE_CONFIG = $configPath
       Write-Host "Запуск OpenCode (OpenRouter DeepSeek V4 Flash)…" -ForegroundColor Cyan
       & $opencodeExe

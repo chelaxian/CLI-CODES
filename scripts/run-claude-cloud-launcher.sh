@@ -438,10 +438,10 @@ invoke_claude_cloud_profile() {
             ;;
         claude-openrouter*|custom-claude-openrouter*)
             # Keep main menu to working free tool-calling models; custom still supported.
-            local fcc_model="open_router/deepseek/deepseek-v4-flash:free"
+            local fcc_model="open_router/deepseek/deepseek-chat-v3.1:free"
             case "$profile_id" in
-                "claude-openrouter-hy3") fcc_model="open_router/deepseek/deepseek-v4-flash:free" ;;
-                "claude-openrouter-deepseek-v4-flash") fcc_model="open_router/deepseek/deepseek-v4-flash:free" ;;
+                "claude-openrouter-hy3") fcc_model="open_router/deepseek/deepseek-chat-v3.1:free" ;;
+                "claude-openrouter-deepseek-v4-flash") fcc_model="open_router/deepseek/deepseek-chat-v3.1:free" ;;
                 "claude-openrouter-qwen3-coder") fcc_model="open_router/qwen/qwen3-coder:free" ;;
                 "claude-openrouter-nemotron") fcc_model="open_router/nvidia/nemotron-3-super-120b-a12b:free" ;;
                 "claude-openrouter-laguna") fcc_model="open_router/poolside/laguna-m.1:free" ;;

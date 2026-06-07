@@ -522,7 +522,7 @@ invoke_opencode_profile() {
                 return 0
             fi
             local config_path
-            config_path=$(write_opencode_config "openrouter" "deepseek/deepseek-v4-flash:free" "https://openrouter.ai/api/v1" "$api_key" 8192 1048576)
+            config_path=$(write_opencode_config "openrouter" "deepseek/deepseek-chat-v3.1:free" "https://openrouter.ai/api/v1" "$api_key" 8192 1048576)
             export OPENCODE_CONFIG="$config_path"
             echo -e "${CYAN}Запуск OpenCode (OpenRouter DeepSeek V4 Flash)…${RESET}"
             "$opencode_exe"

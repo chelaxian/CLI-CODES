@@ -476,7 +476,7 @@ invoke_qwen_profile() {
             bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider zai -ModelId "glm-4.5-flash"
             ;;
         "openrouter-deepseek-v4-flash")
-            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider openrouter -ModelId "deepseek/deepseek-v4-flash:free"
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider openrouter -ModelId "deepseek/deepseek-chat-v3.1:free"
             ;;
         "openrouter-qwen3-coder")
             bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider openrouter -ModelId "qwen/qwen3-coder:free"

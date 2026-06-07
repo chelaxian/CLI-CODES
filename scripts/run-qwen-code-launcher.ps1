@@ -276,11 +276,11 @@ function Invoke-QwenProfile {
       return
     }
     "openrouter-hy3" {
-      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider openrouter -ModelId "deepseek/deepseek-v4-flash:free"
+      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider openrouter -ModelId "deepseek/deepseek-chat-v3.1:free"
       return
     }
     "openrouter-deepseek-v4-flash" {
-      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider openrouter -ModelId "deepseek/deepseek-v4-flash:free"
+      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider openrouter -ModelId "deepseek/deepseek-chat-v3.1:free"
       return
     }
     "openrouter-qwen3-coder" {

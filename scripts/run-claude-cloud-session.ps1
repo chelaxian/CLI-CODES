@@ -451,7 +451,7 @@ if ($PrepareOnly) {
 
 # СБРОС env от предыдущего провайдера (env vars сохраняются между запусками
 # launcher'а в одном PowerShell процессе и могут конфликтовать).
-Remove-Item Env:OPENAI_BASE_URL, Env:OPENAI_API_KEY, Env:OPENROUTER_API_KEY, Env:BAI_API_KEY, Env:NVIDIA_NIM_API_KEY, Env:ANTHROPIC_AUTH_TOKEN, Env:ANTHROPIC_API_KEY, Env:ANTHROPIC_BASE_URL, Env:ANTHROPIC_DEFAULT_OPUS_MODEL, Env:ANTHROPIC_DEFAULT_SONNET_MODEL, Env:ANTHROPIC_DEFAULT_HAIKU_MODEL -ErrorAction SilentlyContinue
+Remove-Item Env:OPENAI_BASE_URL, Env:OPENAI_API_KEY, Env:OPENROUTER_API_KEY, Env:BAI_API_KEY, Env:NVIDIA_NIM_API_KEY, Env:ANTHROPIC_AUTH_TOKEN, Env:ANTHROPIC_API_KEY, Env:ANTHROPIC_BASE_URL, Env:ANTHROPIC_DEFAULT_OPUS_MODEL, Env:ANTHROPIC_DEFAULT_SONNET_MODEL, Env:ANTHROPIC_DEFAULT_HAIKU_MODEL, Env:CLAUDE_CODE_USE_OPENAI, Env:OPENAI_MODEL -ErrorAction SilentlyContinue
 
 if ($Provider -eq "zai") {
   if (-not $ZaiApiKey -or $ZaiApiKey.Trim().Length -eq 0 -or $ZaiApiKey -eq "__SET_ME__") {
@@ -491,6 +491,9 @@ if ($Provider -eq "zai") {
     OPENAI_BASE_URL                = $null
     OPENAI_API_KEY                 = $null
     NVIDIA_NIM_API_KEY             = $null
+    BAI_API_KEY                    = $null
+    CLAUDE_CODE_USE_OPENAI         = $null
+    OPENAI_MODEL                   = $null
   } -ClearTopLevelModel
 
   if ($DryRun -ne 0) {
@@ -547,6 +550,8 @@ if ($Provider -in @("nim", "nim-qwen")) {
     OPENAI_BASE_URL               = $null
     OPENAI_API_KEY                = $null
     BAI_API_KEY                   = $null
+    CLAUDE_CODE_USE_OPENAI        = $null
+    OPENAI_MODEL                  = $null
   } -ClearTopLevelModel
 
   if ($DryRun -ne 0) {
@@ -598,6 +603,8 @@ if ($Provider -eq "openrouter") {
     OPENAI_API_KEY                = $null
     BAI_API_KEY                   = $null
     NVIDIA_NIM_API_KEY            = $null
+    CLAUDE_CODE_USE_OPENAI        = $null
+    OPENAI_MODEL                  = $null
   } -ClearTopLevelModel
 
   if ($DryRun -ne 0) {
@@ -618,50 +625,37 @@ if ($Provider -eq "bai") {
     $baiKey = Read-SecretText "Введите B.AI API key"
   }
 
-  # free-claude-code: используется транспорт open_router (OpenAI-compatible) с собственным base URL.
-  # Модель передаётся через $ZaiAnthropicModelId (без префикса); префикс open_router/ добавляется здесь.
-  $baiModel = "open_router/deepseek-v4-flash"
+  # B.AI — прямой OpenAI-compat без proxy (free-claude-code не имеет 'b_ai' provider).
+  # Claude Code v2.x нативно поддерживает CLAUDE_CODE_USE_OPENAI=1 + OPENAI_BASE_URL.
+  $baiModel = "gpt-5-nano"
   if (-not [string]::IsNullOrWhiteSpace($ZaiAnthropicModelId)) {
-    $baiModel = "open_router/$($ZaiAnthropicModelId.Trim())"
+    $baiModel = $ZaiAnthropicModelId.Trim()
   }
 
-  $baiPort = 8085
-  if ($PSBoundParameters.ContainsKey("ProxyPort")) { $baiPort = $ProxyPort }
-
-  # Используем OPENROUTER_API_KEY как транспортный ключ (free-claude-code уже знает этот var),
-  # но переопределяем base URL через OPENAI_BASE_URL для маршрутизации запросов на api.b.ai.
-  $extraEnv = @{
-    OPENROUTER_API_KEY = $baiKey
-    OPENAI_BASE_URL    = "https://api.b.ai/v1"
-  }
-  Ensure-FreeClaudeCodeProxy -Dir $FreeClaudeCodeDir -Port $baiPort -NimKey $baiKey -Model $baiModel -AuthToken $ProxyAuthToken -ExtraEnv $extraEnv
-  $env:OPENROUTER_API_KEY = $baiKey
+  $env:CLAUDE_CODE_USE_OPENAI = "1"
+  $env:OPENAI_API_KEY = $baiKey
   $env:OPENAI_BASE_URL = "https://api.b.ai/v1"
-  $env:ANTHROPIC_AUTH_TOKEN = $ProxyAuthToken
-  Remove-Item Env:ANTHROPIC_API_KEY -ErrorAction SilentlyContinue
-  $env:ANTHROPIC_BASE_URL = ("http://127.0.0.1:{0}" -f $baiPort)
+  $env:OPENAI_MODEL = $baiModel
   $env:API_TIMEOUT_MS = "3000000"
 
   Update-ClaudeSettingsEnv -EnvTable @{
-    ANTHROPIC_AUTH_TOKEN          = $ProxyAuthToken
-    ANTHROPIC_BASE_URL            = "http://127.0.0.1:$baiPort"
-    API_TIMEOUT_MS                = "3000000"
-    OPENROUTER_API_KEY            = $baiKey
-    OPENAI_BASE_URL               = "https://api.b.ai/v1"
-    ANTHROPIC_API_KEY             = $null
-    ANTHROPIC_DEFAULT_OPUS_MODEL  = $null
+    CLAUDE_CODE_USE_OPENAI         = "1"
+    OPENAI_API_KEY                 = $baiKey
+    OPENAI_BASE_URL                = "https://api.b.ai/v1"
+    OPENAI_MODEL                   = $baiModel
+    API_TIMEOUT_MS                 = "3000000"
+    ANTHROPIC_API_KEY              = $null
+    ANTHROPIC_BASE_URL             = $null
+    ANTHROPIC_AUTH_TOKEN           = $null
+    ANTHROPIC_DEFAULT_OPUS_MODEL   = $null
     ANTHROPIC_DEFAULT_SONNET_MODEL = $null
-    ANTHROPIC_DEFAULT_HAIKU_MODEL = $null
-    OPENAI_API_KEY                = $null
-    BAI_API_KEY                   = $null
-    NVIDIA_NIM_API_KEY            = $null
+    ANTHROPIC_DEFAULT_HAIKU_MODEL  = $null
+    OPENROUTER_API_KEY             = $null
+    NVIDIA_NIM_API_KEY             = $null
   } -ClearTopLevelModel
 
   if ($DryRun -ne 0) {
-    if (-not (Test-HttpResponding -Url ("http://127.0.0.1:{0}/v1/models" -f $baiPort) -TimeoutSec 3)) {
-      throw "free-claude-code not responding on http://127.0.0.1:$baiPort"
-    }
-    Write-Host "dry-run:BAI:OK" -ForegroundColor Green
+    Write-Host "dry-run:BAI:OK (direct OpenAI-compat)" -ForegroundColor Green
     return
   }
 }
