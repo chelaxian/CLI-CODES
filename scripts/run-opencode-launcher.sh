@@ -14,18 +14,49 @@ CONFIG_DIR="$SCRIPT_DIR/../opencode-sessions/_shared"
 
 PROFILES=(
     "last|Запустить с последними настройками (быстрый старт)"
-    "zai-glm|Z.AI - GLM-4.7 (paid, tool calling)"
+    "group:zai|Z.AI - модели (GLM-5.1 / GLM-4.7 / GLM-4.7-Flash)"
+    "group:nim|NVIDIA NIM - 9 бесплатных agentic моделей"
+    "group:openrouter|OpenRouter - бесплатные agentic модели"
+    "group:bai|B.AI - DeepSeek/MiniMax/GLM/Kimi/GPT (OpenAI-compatible)"
+    "custom-model|Другая модель… → выбор провайдера и модели"
+    "native-login|Нативный логин (OpenCode Providers)"
+    "change-api-key|Сменить ключ API провайдера"
+)
+
+# Submenus grouped by provider
+ZAI_MODELS=(
     "zai-glm51|Z.AI - GLM-5.1 (paid, tool calling)"
+    "zai-glm|Z.AI - GLM-4.7 (paid, tool calling)"
     "zai-flash47|Z.AI - GLM-4.7-Flash (free, tool calling)"
-    "zai-flash45|Z.AI - GLM-4.5-Flash (free, tool calling)"
-    "nim-qwen|NVIDIA NIM - Qwen3.5-122B-A10B (tool calling)"
+)
+
+NIM_MODELS=(
+    "nim-mistral-medium|NIM - Mistral Medium 3.5 128B (free, tool calling)"
+    "nim-glm51|NIM - Z.AI GLM-5.1 (free, tool calling)"
+    "nim-step-3.5-flash|NIM - Step 3.5 Flash (free, tool calling)"
+    "nim-mistral-large-3|NIM - Mistral Large 3 675B (free, tool calling)"
+    "nim-deepseek-v4-flash|NIM - DeepSeek V4 Flash 284B MoE (free)"
+    "nim-gemma-4-31b|NIM - Google Gemma-4 31B (free)"
+    "nim-qwen3.5-397b|NIM - Qwen 3.5 397B A17B (free)"
+    "nim-qwen3-next-80b|NIM - Qwen 3 Next 80B A3B (free)"
+    "nim-qwen3-coder-480b|NIM - Qwen 3 Coder 480B A35B (free)"
+)
+
+OPENROUTER_MODELS=(
     "openrouter-deepseek-v4-flash|OpenRouter - DeepSeek V4 Flash (free, tool calling)"
     "openrouter-qwen3-coder|OpenRouter - Qwen3 Coder (free, tool calling)"
     "openrouter-nemotron|OpenRouter - Nemotron 3 Super 120B (free, tool calling)"
     "openrouter-laguna|OpenRouter - Poolside Laguna M.1 (free, tool calling, coding)"
-    "custom-model|Другая модель… → выбор провайдера и модели"
-    "native-login|Нативный логин (OpenCode Providers)"
-    "change-api-key|Сменить ключ API провайдера"
+)
+
+BAI_MODELS=(
+    "bai-deepseek-v4-pro|B.AI - DeepSeek V4 Pro (agentic)"
+    "bai-deepseek-v4-flash|B.AI - DeepSeek V4 Flash (agentic)"
+    "bai-minimax-m3|B.AI - MiniMax M3 (agentic)"
+    "bai-minimax-m2.7|B.AI - MiniMax M2.7 (fast)"
+    "bai-glm-5|B.AI - GLM-5 (Z.AI)"
+    "bai-kimi-k2.6|B.AI - Kimi K2.6 (Moonshot)"
+    "bai-gpt-5.5|B.AI - GPT-5.5 (OpenAI)"
 )
 
 get_launcher_state() {
@@ -73,7 +104,13 @@ resolve_profile_from_state() {
     local profile_id=$(echo "$state" | grep -o '"profileId":"[^"]*"' | cut -d'"' -f4)
     
     case "$profile_id" in
-        "zai-glm"|"zai-glm51"|"zai-flash47"|"zai-flash45"|"nim-glm"|"nim-qwen"|"openrouter-hy3"|"openrouter-deepseek-v4-flash"|"openrouter-qwen3-coder"|"openrouter-nemotron"|"openrouter-laguna"|"custom-opencode-zai"|"custom-opencode-nim"|"custom-opencode-groq"|"custom-opencode-openrouter")
+        "zai-glm"|"zai-glm51"|"zai-flash47"|"zai-flash45"|\
+        "nim-mistral-medium"|"nim-glm51"|"nim-step-3.5-flash"|"nim-mistral-large-3"|\
+        "nim-deepseek-v4-flash"|"nim-gemma-4-31b"|"nim-qwen3.5-397b"|"nim-qwen3-next-80b"|"nim-qwen3-coder-480b"|\
+        "nim-glm"|"nim-qwen"|\
+        "openrouter-hy3"|"openrouter-deepseek-v4-flash"|"openrouter-qwen3-coder"|"openrouter-nemotron"|"openrouter-laguna"|\
+        "bai-deepseek-v4-pro"|"bai-deepseek-v4-flash"|"bai-minimax-m3"|"bai-minimax-m2.7"|"bai-glm-5"|"bai-kimi-k2.6"|"bai-gpt-5.5"|\
+        "custom-opencode-zai"|"custom-opencode-nim"|"custom-opencode-groq"|"custom-opencode-openrouter"|"custom-opencode-bai")
             echo "$profile_id"
             return 0
             ;;
@@ -223,6 +260,25 @@ get_openrouter_api_key() {
     fi
 }
 
+get_bai_api_key() {
+    local key="${BAI_API_KEY:-}"
+    if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then
+        key=$(get_current_api_key "BAI")
+    fi
+    if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then
+        printf "${YELLOW}B.AI API ключ не задан.${RESET}\n" >&3
+        printf "${CYAN}Получить ключ: https://chat.b.ai/key${RESET}\n" >&3
+        local input
+        input=$(read_secret_text "B.AI API key: ")
+        if [ -n "$input" ]; then
+            set_provider_api_key "BAI" "$input"
+            echo "$input"
+        fi
+    else
+        echo "$key"
+    fi
+}
+
 invoke_opencode_profile() {
     local profile_id="$1"
     
@@ -234,6 +290,7 @@ invoke_opencode_profile() {
         zai-*|custom-opencode-zai*) env_var="ZAI"; provider_name="Z.AI"; provider_url="https://console.z.ai/" ;;
         nim-*|custom-opencode-nim*) env_var="NVIDIA_NIM"; provider_name="NVIDIA NIM"; provider_url="https://build.nvidia.com/api-key" ;;
         openrouter-*|custom-opencode-openrouter*) env_var="OPENROUTER"; provider_name="OpenRouter"; provider_url="https://openrouter.ai/settings/keys" ;;
+        bai-*|custom-opencode-bai*) env_var="BAI"; provider_name="B.AI"; provider_url="https://chat.b.ai/key" ;;
     esac
     if [ -n "$env_var" ]; then
         if ! ensure_api_key_or_prompt "$env_var" "$provider_name" "$provider_url"; then
@@ -301,6 +358,150 @@ invoke_opencode_profile() {
             config_path=$(write_opencode_config "nvidia-nim" "qwen/qwen3.5-122b-a10b" "https://integrate.api.nvidia.com/v1" "$api_key")
             export OPENCODE_CONFIG="$config_path"
             echo -e "${CYAN}Запуск OpenCode (NVIDIA NIM Qwen3.5-122B-A10B)…${RESET}"
+            "$opencode_exe"
+            ;;
+        "nim-mistral-medium")
+            local api_key
+            api_key=$(get_nim_api_key) || true
+            local config_path
+            config_path=$(write_opencode_config "nvidia-nim" "mistralai/mistral-medium-3.5-128b" "https://integrate.api.nvidia.com/v1" "$api_key")
+            export OPENCODE_CONFIG="$config_path"
+            echo -e "${CYAN}Запуск OpenCode (NVIDIA NIM Mistral Medium 3.5 128B)…${RESET}"
+            "$opencode_exe"
+            ;;
+        "nim-glm51")
+            local api_key
+            api_key=$(get_nim_api_key) || true
+            local config_path
+            config_path=$(write_opencode_config "nvidia-nim" "z-ai/glm-5.1" "https://integrate.api.nvidia.com/v1" "$api_key")
+            export OPENCODE_CONFIG="$config_path"
+            echo -e "${CYAN}Запуск OpenCode (NVIDIA NIM Z.AI GLM-5.1)…${RESET}"
+            "$opencode_exe"
+            ;;
+        "nim-step-3.5-flash")
+            local api_key
+            api_key=$(get_nim_api_key) || true
+            local config_path
+            config_path=$(write_opencode_config "nvidia-nim" "stepfun-ai/step-3.5-flash" "https://integrate.api.nvidia.com/v1" "$api_key")
+            export OPENCODE_CONFIG="$config_path"
+            echo -e "${CYAN}Запуск OpenCode (NVIDIA NIM Step 3.5 Flash)…${RESET}"
+            "$opencode_exe"
+            ;;
+        "nim-mistral-large-3")
+            local api_key
+            api_key=$(get_nim_api_key) || true
+            local config_path
+            config_path=$(write_opencode_config "nvidia-nim" "mistralai/mistral-large-3-675b-instruct-2512" "https://integrate.api.nvidia.com/v1" "$api_key")
+            export OPENCODE_CONFIG="$config_path"
+            echo -e "${CYAN}Запуск OpenCode (NVIDIA NIM Mistral Large 3 675B)…${RESET}"
+            "$opencode_exe"
+            ;;
+        "nim-deepseek-v4-flash")
+            local api_key
+            api_key=$(get_nim_api_key) || true
+            local config_path
+            config_path=$(write_opencode_config "nvidia-nim" "deepseek-ai/deepseek-v4-flash" "https://integrate.api.nvidia.com/v1" "$api_key")
+            export OPENCODE_CONFIG="$config_path"
+            echo -e "${CYAN}Запуск OpenCode (NVIDIA NIM DeepSeek V4 Flash)…${RESET}"
+            "$opencode_exe"
+            ;;
+        "nim-gemma-4-31b")
+            local api_key
+            api_key=$(get_nim_api_key) || true
+            local config_path
+            config_path=$(write_opencode_config "nvidia-nim" "google/gemma-4-31b-it" "https://integrate.api.nvidia.com/v1" "$api_key")
+            export OPENCODE_CONFIG="$config_path"
+            echo -e "${CYAN}Запуск OpenCode (NVIDIA NIM Gemma-4 31B)…${RESET}"
+            "$opencode_exe"
+            ;;
+        "nim-qwen3.5-397b")
+            local api_key
+            api_key=$(get_nim_api_key) || true
+            local config_path
+            config_path=$(write_opencode_config "nvidia-nim" "qwen/qwen3.5-397b-a17b" "https://integrate.api.nvidia.com/v1" "$api_key")
+            export OPENCODE_CONFIG="$config_path"
+            echo -e "${CYAN}Запуск OpenCode (NVIDIA NIM Qwen 3.5 397B)…${RESET}"
+            "$opencode_exe"
+            ;;
+        "nim-qwen3-next-80b")
+            local api_key
+            api_key=$(get_nim_api_key) || true
+            local config_path
+            config_path=$(write_opencode_config "nvidia-nim" "qwen/qwen3-next-80b-a3b-instruct" "https://integrate.api.nvidia.com/v1" "$api_key")
+            export OPENCODE_CONFIG="$config_path"
+            echo -e "${CYAN}Запуск OpenCode (NVIDIA NIM Qwen 3 Next 80B)…${RESET}"
+            "$opencode_exe"
+            ;;
+        "nim-qwen3-coder-480b")
+            local api_key
+            api_key=$(get_nim_api_key) || true
+            local config_path
+            config_path=$(write_opencode_config "nvidia-nim" "qwen/qwen3-coder-480b-a35b-instruct" "https://integrate.api.nvidia.com/v1" "$api_key")
+            export OPENCODE_CONFIG="$config_path"
+            echo -e "${CYAN}Запуск OpenCode (NVIDIA NIM Qwen 3 Coder 480B)…${RESET}"
+            "$opencode_exe"
+            ;;
+        "bai-deepseek-v4-pro")
+            local api_key
+            api_key=$(get_bai_api_key) || true
+            local config_path
+            config_path=$(write_opencode_config "bai" "deepseek-v4-pro" "https://api.b.ai/v1" "$api_key" 8192 131072)
+            export OPENCODE_CONFIG="$config_path"
+            echo -e "${CYAN}Запуск OpenCode (B.AI DeepSeek V4 Pro)…${RESET}"
+            "$opencode_exe"
+            ;;
+        "bai-deepseek-v4-flash")
+            local api_key
+            api_key=$(get_bai_api_key) || true
+            local config_path
+            config_path=$(write_opencode_config "bai" "deepseek-v4-flash" "https://api.b.ai/v1" "$api_key" 8192 131072)
+            export OPENCODE_CONFIG="$config_path"
+            echo -e "${CYAN}Запуск OpenCode (B.AI DeepSeek V4 Flash)…${RESET}"
+            "$opencode_exe"
+            ;;
+        "bai-minimax-m3")
+            local api_key
+            api_key=$(get_bai_api_key) || true
+            local config_path
+            config_path=$(write_opencode_config "bai" "minimax-m3" "https://api.b.ai/v1" "$api_key" 8192 131072)
+            export OPENCODE_CONFIG="$config_path"
+            echo -e "${CYAN}Запуск OpenCode (B.AI MiniMax M3)…${RESET}"
+            "$opencode_exe"
+            ;;
+        "bai-minimax-m2.7")
+            local api_key
+            api_key=$(get_bai_api_key) || true
+            local config_path
+            config_path=$(write_opencode_config "bai" "minimax-m2.7" "https://api.b.ai/v1" "$api_key" 8192 131072)
+            export OPENCODE_CONFIG="$config_path"
+            echo -e "${CYAN}Запуск OpenCode (B.AI MiniMax M2.7)…${RESET}"
+            "$opencode_exe"
+            ;;
+        "bai-glm-5")
+            local api_key
+            api_key=$(get_bai_api_key) || true
+            local config_path
+            config_path=$(write_opencode_config "bai" "glm-5" "https://api.b.ai/v1" "$api_key" 8192 131072)
+            export OPENCODE_CONFIG="$config_path"
+            echo -e "${CYAN}Запуск OpenCode (B.AI GLM-5)…${RESET}"
+            "$opencode_exe"
+            ;;
+        "bai-kimi-k2.6")
+            local api_key
+            api_key=$(get_bai_api_key) || true
+            local config_path
+            config_path=$(write_opencode_config "bai" "kimi-k2.6" "https://api.b.ai/v1" "$api_key" 8192 131072)
+            export OPENCODE_CONFIG="$config_path"
+            echo -e "${CYAN}Запуск OpenCode (B.AI Kimi K2.6)…${RESET}"
+            "$opencode_exe"
+            ;;
+        "bai-gpt-5.5")
+            local api_key
+            api_key=$(get_bai_api_key) || true
+            local config_path
+            config_path=$(write_opencode_config "bai" "gpt-5.5" "https://api.b.ai/v1" "$api_key" 8192 131072)
+            export OPENCODE_CONFIG="$config_path"
+            echo -e "${CYAN}Запуск OpenCode (B.AI GPT-5.5)…${RESET}"
             "$opencode_exe"
             ;;
         "openrouter-hy3"|"openrouter-deepseek-v4-flash")
@@ -433,6 +634,22 @@ invoke_opencode_profile() {
             echo -e "${CYAN}Запуск OpenCode (OpenRouter custom: $model_id)…${RESET}"
             "$opencode_exe"
             ;;
+        "custom-opencode-bai")
+            local state
+            state=$(get_launcher_state) || true
+            local model_id=$(echo "$state" | grep -o '"customModelId":"[^"]*"' | cut -d'"' -f4)
+            if [ -z "$model_id" ]; then
+                echo -e "${RED}Нет customModelId для B.AI. Выберите модель в «Другая модель».${RESET}"
+                return 1
+            fi
+            local api_key
+            api_key=$(get_bai_api_key) || true
+            local config_path
+            config_path=$(write_opencode_config "bai" "$model_id" "https://api.b.ai/v1" "$api_key" 8192 131072)
+            export OPENCODE_CONFIG="$config_path"
+            echo -e "${CYAN}Запуск OpenCode (B.AI custom: $model_id)…${RESET}"
+            "$opencode_exe"
+            ;;
         *)
             echo -e "${RED}Неизвестный профиль: $profile_id${RESET}"
             return 1
@@ -450,6 +667,7 @@ invoke_custom_model_wizard() {
         "nim|NVIDIA NIM - полный каталог (GET /v1/models)"
         "groq|Groq - полный каталог моделей (paid, GET /v1/models)"
         "openrouter|OpenRouter - полный каталог моделей (GET /v1/models)"
+        "bai|B.AI - DeepSeek/MiniMax/GLM/Kimi/GPT (GET /v1/models)"
     )
     
     while true; do
@@ -516,6 +734,16 @@ invoke_custom_model_wizard() {
             if [ -n "$response" ]; then
                 ids=($(echo "$response" | grep -o '"id":"[^"]*"' | cut -d'"' -f4 | sort -u))
             fi
+        elif [ "$prov_source" = "bai" ]; then
+            show_tui_wait_frame "$app_brand" "Загрузка каталога B.AI…"
+            key=$(get_bai_api_key) || { echo -e "${RED}Не удалось получить API ключ${RESET}"; read -p "Нажмите Enter..."; return 1; }
+            
+            local response
+            response=$(curl -s -H "Authorization: Bearer $key" -H "Content-Type: application/json" "https://api.b.ai/v1/models" 2>/dev/null) || true
+            
+            if [ -n "$response" ]; then
+                ids=($(echo "$response" | grep -o '"id":"[^"]*"' | cut -d'"' -f4 | sort -u))
+            fi
         fi
         
         if [ ${#ids[@]} -eq 0 ]; then
@@ -544,6 +772,8 @@ invoke_custom_model_wizard() {
             prov="groq"
         elif [ "$prov_source" = "openrouter" ]; then
             prov="openrouter"
+        elif [ "$prov_source" = "bai" ]; then
+            prov="bai"
         fi
         
         echo "$prov|$model_id"
@@ -581,7 +811,7 @@ while true; do
     done
     
     local choice
-    choice="$(show_tui_numbered_menu "OpenCode" "OpenCode - выбор провайдера" "Z.AI · NVIDIA NIM (OpenAI-compatible)" "${menu_items[@]}")"
+    choice="$(show_tui_framed_menu "OpenCode" "OpenCode - выбор провайдера" "Z.AI · NIM · OpenRouter · B.AI (OpenAI-compatible)" "${menu_items[@]}")"
     
     if [ "${choice:-0}" -eq 0 ]; then
         echo -e "${YELLOW}Отменено.${RESET}"
@@ -591,6 +821,52 @@ while true; do
     local profile_id=$(echo "${PROFILES[$((choice-1))]}" | cut -d'|' -f1)
     
     case "$profile_id" in
+        group:*)
+            local group_key="${profile_id#group:}"
+            local group_items=()
+            local subtitle=""
+            case "$group_key" in
+                zai)
+                    subtitle="Z.AI Coding (paid) + GLM-4.7-Flash (free)"
+                    group_items=("${ZAI_MODELS[@]}")
+                    ;;
+                nim)
+                    subtitle="NVIDIA NIM - 9 бесплатных agentic моделей"
+                    group_items=("${NIM_MODELS[@]}")
+                    ;;
+                openrouter)
+                    subtitle="OpenRouter - бесплатные agentic модели"
+                    group_items=("${OPENROUTER_MODELS[@]}")
+                    ;;
+                bai)
+                    subtitle="B.AI - https://api.b.ai/v1 (OpenAI-compatible)"
+                    group_items=("${BAI_MODELS[@]}")
+                    ;;
+                *)
+                    echo -e "${RED}Не найдено подменю для группы: $group_key${RESET}"
+                    sleep 2
+                    continue
+                    ;;
+            esac
+            
+            local sub_menu=()
+            for item in "${group_items[@]}"; do
+                sub_menu+=("${item##*|}")
+            done
+            
+            local group_upper="${group_key^^}"
+            local sub_choice
+            sub_choice=$(show_tui_framed_menu "OpenCode" "OpenCode - $group_upper" "$subtitle" "${sub_menu[@]}")
+            
+            if [ "${sub_choice:-0}" -eq 0 ]; then
+                continue
+            fi
+            
+            profile_id=$(echo "${group_items[$((sub_choice-1))]}" | cut -d'|' -f1)
+            save_launcher_state "$profile_id"
+            invoke_opencode_profile "$profile_id"
+            exit $?
+            ;;
         "native-login")
             local opencode_exe
             opencode_exe=$(resolve_opencode_exe) || true
@@ -679,6 +955,8 @@ while true; do
                 new_id="custom-opencode-groq"
             elif [ "$wiz_provider" = "openrouter" ]; then
                 new_id="custom-opencode-openrouter"
+            elif [ "$wiz_provider" = "bai" ]; then
+                new_id="custom-opencode-bai"
             fi
             
             save_launcher_state "$new_id" "\"customModelId\":\"$wiz_model\""

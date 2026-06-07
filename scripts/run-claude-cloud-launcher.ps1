@@ -66,72 +66,20 @@ $script:Profiles = @(
     Label = "Запустить с последними настройками (быстрый старт)"
   }
   @{
-    Id    = "claude-zai"
-    Label = "Z.AI - GLM-4.7 (paid, tool calling)"
+    Id    = "group:zai"
+    Label = "Z.AI - модели (GLM-5.1 / GLM-4.7 / GLM-4.7-Flash)"
   }
   @{
-    Id    = "claude-zai-glm51"
-    Label = "Z.AI - GLM-5.1 (paid, tool calling)"
+    Id    = "group:nim"
+    Label = "NVIDIA NIM - 9 бесплатных agentic моделей"
   }
   @{
-    Id    = "claude-zai-flash47"
-    Label = "Z.AI - GLM-4.7-Flash (free, tool calling)"
+    Id    = "group:openrouter"
+    Label = "OpenRouter - бесплатные agentic модели"
   }
   @{
-    Id    = "claude-zai-flash45"
-    Label = "Z.AI - GLM-4.5-Flash (free, tool calling)"
-  }
-  @{
-    Id    = "claude-nim-mistral-medium"
-    Label = "NIM - Mistral Medium 3.5 128B (free, tool calling)"
-  }
-  @{
-    Id    = "claude-nim-glm51"
-    Label = "NIM - Z.AI GLM-5.1 (free, tool calling)"
-  }
-  @{
-    Id    = "claude-nim-step-3.5-flash"
-    Label = "NIM - Step 3.5 Flash (free, tool calling)"
-  }
-  @{
-    Id    = "claude-nim-mistral-large-3"
-    Label = "NIM - Mistral Large 3 675B (free, tool calling)"
-  }
-  @{
-    Id    = "claude-nim-deepseek-v4-flash"
-    Label = "NIM - DeepSeek V4 Flash 284B MoE (free)"
-  }
-  @{
-    Id    = "claude-nim-gemma-4-31b"
-    Label = "NIM - Google Gemma-4 31B (free)"
-  }
-  @{
-    Id    = "claude-nim-qwen3.5-397b"
-    Label = "NIM - Qwen 3.5 397B A17B (free)"
-  }
-  @{
-    Id    = "claude-nim-qwen3-next-80b"
-    Label = "NIM - Qwen 3 Next 80B A3B (free)"
-  }
-  @{
-    Id    = "claude-nim-qwen3-coder-480b"
-    Label = "NIM - Qwen 3 Coder 480B A35B (free)"
-  }
-  @{
-    Id    = "claude-openrouter-deepseek-v4-flash"
-    Label = "OpenRouter - DeepSeek V4 Flash (free, tool calling)"
-  }
-  @{
-    Id    = "claude-openrouter-qwen3-coder"
-    Label = "OpenRouter - Qwen3 Coder (free, tool calling)"
-  }
-  @{
-    Id    = "claude-openrouter-nemotron"
-    Label = "OpenRouter - Nemotron 3 Super 120B (free, tool calling)"
-  }
-  @{
-    Id    = "claude-openrouter-laguna"
-    Label = "OpenRouter - Poolside Laguna M.1 (free, tool calling, coding)"
+    Id    = "group:bai"
+    Label = "B.AI - DeepSeek/MiniMax/GLM/Kimi/GPT (Anthropic-compatible)"
   }
   @{
     Id    = "custom-model"
@@ -146,6 +94,41 @@ $script:Profiles = @(
     Label = "Сменить ключ API провайдера"
   }
 )
+
+# Подменю для каждой группы провайдера
+$script:GroupMenus = @{
+  zai = @(
+    @{ Id = "claude-zai-glm51";   Label = "Z.AI - GLM-5.1 (paid, tool calling)" }
+    @{ Id = "claude-zai";         Label = "Z.AI - GLM-4.7 (paid, tool calling)" }
+    @{ Id = "claude-zai-flash47"; Label = "Z.AI - GLM-4.7-Flash (free, tool calling)" }
+  )
+  nim = @(
+    @{ Id = "claude-nim-mistral-medium";   Label = "NIM - Mistral Medium 3.5 128B (free, tool calling)" }
+    @{ Id = "claude-nim-glm51";            Label = "NIM - Z.AI GLM-5.1 (free, tool calling)" }
+    @{ Id = "claude-nim-step-3.5-flash";   Label = "NIM - Step 3.5 Flash (free, tool calling)" }
+    @{ Id = "claude-nim-mistral-large-3";  Label = "NIM - Mistral Large 3 675B (free, tool calling)" }
+    @{ Id = "claude-nim-deepseek-v4-flash"; Label = "NIM - DeepSeek V4 Flash 284B MoE (free)" }
+    @{ Id = "claude-nim-gemma-4-31b";      Label = "NIM - Google Gemma-4 31B (free)" }
+    @{ Id = "claude-nim-qwen3.5-397b";     Label = "NIM - Qwen 3.5 397B A17B (free)" }
+    @{ Id = "claude-nim-qwen3-next-80b";   Label = "NIM - Qwen 3 Next 80B A3B (free)" }
+    @{ Id = "claude-nim-qwen3-coder-480b"; Label = "NIM - Qwen 3 Coder 480B A35B (free)" }
+  )
+  openrouter = @(
+    @{ Id = "claude-openrouter-deepseek-v4-flash"; Label = "OpenRouter - DeepSeek V4 Flash (free, tool calling)" }
+    @{ Id = "claude-openrouter-qwen3-coder";       Label = "OpenRouter - Qwen3 Coder (free, tool calling)" }
+    @{ Id = "claude-openrouter-nemotron";          Label = "OpenRouter - Nemotron 3 Super 120B (free, tool calling)" }
+    @{ Id = "claude-openrouter-laguna";            Label = "OpenRouter - Poolside Laguna M.1 (free, tool calling, coding)" }
+  )
+  bai = @(
+    @{ Id = "claude-bai-deepseek-v4-pro";   Label = "B.AI - DeepSeek V4 Pro (agentic)" }
+    @{ Id = "claude-bai-deepseek-v4-flash"; Label = "B.AI - DeepSeek V4 Flash (agentic)" }
+    @{ Id = "claude-bai-minimax-m3";        Label = "B.AI - MiniMax M3 (agentic)" }
+    @{ Id = "claude-bai-minimax-m2.7";      Label = "B.AI - MiniMax M2.7 (fast)" }
+    @{ Id = "claude-bai-glm-5";             Label = "B.AI - GLM-5 (Z.AI)" }
+    @{ Id = "claude-bai-kimi-k2.6";         Label = "B.AI - Kimi K2.6 (Moonshot)" }
+    @{ Id = "claude-bai-gpt-5.5";           Label = "B.AI - GPT-5.5 (OpenAI)" }
+  )
+}
 
 function Get-LauncherState {
   if (-not (Test-Path -LiteralPath $StatePath)) { return $null }
@@ -180,7 +163,10 @@ function Resolve-ProfileFromState($state) {
       "claude-nim-mistral-large-3", "claude-nim-deepseek-v4-flash", "claude-nim-gemma-4-31b",
       "claude-nim-qwen3.5-397b", "claude-nim-qwen3-next-80b", "claude-nim-qwen3-coder-480b",
       "claude-openrouter-hy3", "claude-openrouter-nemotron", "claude-openrouter-laguna",
-      "custom-claude-zai", "custom-claude-nim", "custom-claude-openrouter"
+      "claude-openrouter-deepseek-v4-flash", "claude-openrouter-qwen3-coder",
+      "claude-bai-deepseek-v4-pro", "claude-bai-deepseek-v4-flash", "claude-bai-minimax-m3", "claude-bai-minimax-m2.7",
+      "claude-bai-glm-5", "claude-bai-kimi-k2.6", "claude-bai-gpt-5.5",
+      "custom-claude-zai", "custom-claude-nim", "custom-claude-openrouter", "custom-claude-bai"
     )) { return $id }
   return $null
 }
@@ -324,6 +310,51 @@ function Invoke-ClaudeCloudProfile {
         -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
       return
     }
+    "claude-bai-deepseek-v4-pro" {
+      & $SessionScript -Provider bai -ZaiAnthropicModelId "deepseek-v4-pro" -ClaudeTools default `
+        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+      return
+    }
+    "claude-bai-deepseek-v4-flash" {
+      & $SessionScript -Provider bai -ZaiAnthropicModelId "deepseek-v4-flash" -ClaudeTools default `
+        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+      return
+    }
+    "claude-bai-minimax-m3" {
+      & $SessionScript -Provider bai -ZaiAnthropicModelId "minimax-m3" -ClaudeTools default `
+        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+      return
+    }
+    "claude-bai-minimax-m2.7" {
+      & $SessionScript -Provider bai -ZaiAnthropicModelId "minimax-m2.7" -ClaudeTools default `
+        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+      return
+    }
+    "claude-bai-glm-5" {
+      & $SessionScript -Provider bai -ZaiAnthropicModelId "glm-5" -ClaudeTools default `
+        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+      return
+    }
+    "claude-bai-kimi-k2.6" {
+      & $SessionScript -Provider bai -ZaiAnthropicModelId "kimi-k2.6" -ClaudeTools default `
+        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+      return
+    }
+    "claude-bai-gpt-5.5" {
+      & $SessionScript -Provider bai -ZaiAnthropicModelId "gpt-5.5" -ClaudeTools default `
+        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+      return
+    }
+    "custom-claude-bai" {
+      $st = Get-LauncherState
+      $mid = [string]$st.customModelId
+      if ([string]::IsNullOrWhiteSpace($mid)) {
+        throw "Нет customModelId для custom-claude-bai. Выберите модель в «Другая модель»."
+      }
+      & $SessionScript -Provider bai -ZaiAnthropicModelId $mid.Trim() -ClaudeTools default `
+        -ClaudeMemMaxWaitSec 25 -OpenClaudeMemObserver $OpenClaudeMemObserver -SkipCommonPreamble
+      return
+    }
     default {
       throw "Неизвестный профиль: $ProfileId"
     }
@@ -355,13 +386,38 @@ if ($lastId) {
 }
 
 while ($true) {
-  $choice = Show-TuiFramedMenu -AppBrand "Claude" -Title "Claude Code (облако) - провайдер" -Subtitle "Z.AI · NIM · OpenRouter (через free-claude-code)" -Items $items -InitialIndex $startIdx -MaxVisible 20
+  $choice = Show-TuiFramedMenu -AppBrand "Claude" -Title "Claude Code (облако) - провайдер" -Subtitle "Z.AI · NIM · OpenRouter · B.AI (через free-claude-code)" -Items $items -InitialIndex $startIdx -MaxVisible 20
   if (-not $choice) {
     Write-Host "Отменено." -ForegroundColor Yellow
     exit 0
   }
 
   $profileId = [string]$choice.Id
+
+  # Подменю для группы провайдера
+  if ($profileId -like "group:*") {
+    $groupKey = $profileId.Substring("group:".Length)
+    $groupItems = $script:GroupMenus[$groupKey]
+    if (-not $groupItems) {
+      Write-Host "Не найдено подменю для группы: $groupKey" -ForegroundColor Red
+      Start-Sleep -Seconds 2
+      continue
+    }
+    $subTitle = switch ($groupKey) {
+      "zai"        { "Z.AI Coding (paid) + GLM-4.7-Flash (free)" }
+      "nim"        { "NVIDIA NIM - 9 бесплатных agentic моделей" }
+      "openrouter" { "OpenRouter - бесплатные agentic модели" }
+      "bai"        { "B.AI - https://api.b.ai/v1 (OpenAI-compatible)" }
+      default      { "" }
+    }
+    $subChoice = Show-TuiFramedMenu -AppBrand "Claude" -Title ("Claude Code - {0}" -f $groupKey.ToUpper()) -Subtitle $subTitle -Items $groupItems -MaxVisible 16 -EscapeAction Back
+    if ($null -eq $subChoice) { exit 0 }
+    if ($true -eq $subChoice.__menuBack) { continue }
+    $profileId = [string]$subChoice.Id
+    Save-LauncherState -ProfileId $profileId
+    Invoke-ClaudeCloudProfile -ProfileId $profileId
+    exit $LASTEXITCODE
+  }
 
   if ($profileId -eq "custom-model") {
     $w = Invoke-LauncherCustomModelWizard -App "Claude"
@@ -378,6 +434,10 @@ while ($true) {
       "openrouter" {
         Save-LauncherState -ProfileId "custom-claude-openrouter" -Extra @{ customModelId = [string]$w.ModelId }
         Invoke-ClaudeCloudProfile -ProfileId "custom-claude-openrouter"
+      }
+      "bai" {
+        Save-LauncherState -ProfileId "custom-claude-bai" -Extra @{ customModelId = [string]$w.ModelId }
+        Invoke-ClaudeCloudProfile -ProfileId "custom-claude-bai"
       }
       default {
         Save-LauncherState -ProfileId "custom-claude-nim" -Extra @{ customNimModel = [string]$w.ClaudeNimModel }

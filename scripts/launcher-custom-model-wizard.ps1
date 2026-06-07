@@ -64,6 +64,15 @@ function Resolve-OpenRouterKeyForWizard {
   return $k.Trim()
 }
 
+function Resolve-BaiKeyForWizard {
+  $k = [Environment]::GetEnvironmentVariable("BAI_API_KEY", "User")
+  if ([string]::IsNullOrWhiteSpace($k) -or $k -eq "__SET_ME__") { $k = $env:BAI_API_KEY }
+  if ([string]::IsNullOrWhiteSpace($k) -or $k -eq "__SET_ME__") {
+    $k = Read-SecretTextWizard "B.AI API key (не сохраняется)"
+  }
+  return $k.Trim()
+}
+
 function Invoke-LauncherCustomModelWizard {
   param(
     [Parameter(Mandatory = $true)]
@@ -75,8 +84,11 @@ function Invoke-LauncherCustomModelWizard {
   $provItems = @(
     [pscustomobject]@{ Id = "zai"; Label = "Z.AI - Coding / Anthropic (GET /models по вашему ключу)" }
     [pscustomobject]@{ Id = "nim"; Label = "NVIDIA NIM - полный каталог (GET /v1/models)" }
+    [pscustomobject]@{ Id = "nim-agentic"; Label = "NVIDIA NIM - только Agentic модели (фильтр build.nvidia.com Agentic)" }
     [pscustomobject]@{ Id = "groq"; Label = "Groq - полный каталог моделей (paid, GET /v1/models)" }
     [pscustomobject]@{ Id = "openrouter"; Label = "OpenRouter - полный каталог моделей (GET /v1/models)" }
+    [pscustomobject]@{ Id = "openrouter-free"; Label = "OpenRouter - только бесплатные модели (pricing = 0)" }
+    [pscustomobject]@{ Id = "bai"; Label = "B.AI - полный каталог (https://api.b.ai/v1/models)" }
   )
 
   # Groq не поддерживается для Claude Code (ограничение free-claude-code: nvidia_nim transport)
@@ -102,15 +114,38 @@ function Invoke-LauncherCustomModelWizard {
         $key = Resolve-NimKeyForWizard
         $ids = @(Get-NvidiaNimModelIdsFromApi -ApiKey $key)
       }
+      elseif ($provSource -eq "nim-agentic") {
+        Show-TuiWaitFrame -AppBrand $brand -Message "Загрузка каталога NVIDIA NIM (Agentic фильтр)…"
+        $key = Resolve-NimKeyForWizard
+        $ids = @(Get-NvidiaNimModelIdsFromApi -ApiKey $key -AgenticOnly)
+      }
       elseif ($provSource -eq "groq") {
         Show-TuiWaitFrame -AppBrand $brand -Message "Загрузка каталога Groq (paid)…"
         $key = Resolve-GroqKeyForWizard
         $ids = @(Get-GroqModelIdsFromApi -ApiKey $key)
       }
       elseif ($provSource -eq "openrouter") {
-        Show-TuiWaitFrame -AppBrand $brand -Message "Загрузка каталога OpenRouter…"
+        Show-TuiWaitFrame -AppBrand $brand -Message "Загрузка каталога OpenRouter (все модели)…"
         $key = Resolve-OpenRouterKeyForWizard
         $ids = @(Get-OpenRouterModelIdsFromApi -ApiKey $key)
+      }
+      elseif ($provSource -eq "openrouter-free") {
+        Show-TuiWaitFrame -AppBrand $brand -Message "Загрузка каталога OpenRouter (только free)…"
+        $key = Resolve-OpenRouterKeyForWizard
+        $ids = @(Get-OpenRouterFreeModelIdsFromApi -ApiKey $key)
+        if ($ids.Count -eq 0) {
+          # Fallback на встроенный список free
+          $ids = @(Get-OpenRouterBundledFreeModelIds)
+        }
+      }
+      elseif ($provSource -eq "bai") {
+        Show-TuiWaitFrame -AppBrand $brand -Message "Загрузка каталога B.AI (https://api.b.ai/v1/models)…"
+        $key = Resolve-BaiKeyForWizard
+        $ids = @(Get-BaiModelIdsFromApi -ApiKey $key)
+        if ($ids.Count -eq 0) {
+          # Fallback на встроенный список популярных моделей B.AI
+          $ids = @(Get-BaiBundledPopularModelIds)
+        }
       }
       else {
         throw ("Неизвестный провайдер: {0}" -f $provSource)
@@ -129,12 +164,21 @@ function Invoke-LauncherCustomModelWizard {
       return $null
     }
 
-    $prov = if ($provSource -eq "nim") { "nim" } elseif ($provSource -eq "groq") { "groq" } elseif ($provSource -eq "openrouter") { "openrouter" } else { $provSource }
+    $prov = if ($provSource -eq "nim-agentic") { "nim" }
+            elseif ($provSource -eq "nim") { "nim" }
+            elseif ($provSource -eq "groq") { "groq" }
+            elseif ($provSource -eq "openrouter") { "openrouter" }
+            elseif ($provSource -eq "openrouter-free") { "openrouter" }
+            elseif ($provSource -eq "bai") { "bai" }
+            else { $provSource }
     $provLabel = switch ($provSource) {
       "zai" { "Z.AI Coding" }
       "nim" { "NIM (полный API)" }
+      "nim-agentic" { "NIM (Agentic)" }
       "groq" { "Groq (paid API)" }
       "openrouter" { "OpenRouter (полный API)" }
+      "openrouter-free" { "OpenRouter (free)" }
+      "bai" { "B.AI (api.b.ai/v1)" }
       default { $provSource.ToUpper() }
     }
 

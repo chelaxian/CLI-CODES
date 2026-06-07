@@ -3,7 +3,7 @@
 function Get-ProviderHelpUrl {
   param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("NVIDIA_NIM", "ZAI", "GROQ", "OPENROUTER")]
+    [ValidateSet("NVIDIA_NIM", "ZAI", "GROQ", "OPENROUTER", "BAI")]
     [string]$Provider
   )
 
@@ -12,6 +12,7 @@ function Get-ProviderHelpUrl {
     "ZAI"         { return "https://console.z.ai/" }
     "GROQ"        { return "https://console.groq.com/keys" }
     "OPENROUTER"  { return "https://openrouter.ai/settings/keys" }
+    "BAI"         { return "https://chat.b.ai/key" }
     default       { return "" }
   }
 }
@@ -19,7 +20,7 @@ function Get-ProviderHelpUrl {
 function Get-CurrentApiKey {
   param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("NVIDIA_NIM", "ZAI", "GROQ", "OPENROUTER")]
+    [ValidateSet("NVIDIA_NIM", "ZAI", "GROQ", "OPENROUTER", "BAI")]
     [string]$Provider
   )
 
@@ -62,6 +63,11 @@ function Get-CurrentApiKey {
       if ([string]::IsNullOrWhiteSpace($key)) { $key = $env:OPENROUTER_API_KEY }
       if ([string]::IsNullOrWhiteSpace($key)) { return "" } else { return $key.Trim() }
     }
+    "BAI" {
+      $key = [Environment]::GetEnvironmentVariable("BAI_API_KEY", "User")
+      if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") { $key = $env:BAI_API_KEY }
+      if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") { return "" } else { return $key.Trim() }
+    }
     default { return "" }
   }
 }
@@ -94,7 +100,7 @@ function Read-SecretText {
 function Set-ProviderApiKey {
   param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("NVIDIA_NIM", "ZAI", "GROQ", "OPENROUTER")]
+    [ValidateSet("NVIDIA_NIM", "ZAI", "GROQ", "OPENROUTER", "BAI")]
     [string]$Provider,
     [Parameter(Mandatory = $true)]
     [string]$NewKey
@@ -120,6 +126,10 @@ function Set-ProviderApiKey {
     "OPENROUTER" {
       [Environment]::SetEnvironmentVariable("OPENROUTER_API_KEY", $NewKey.Trim(), "User")
       Write-Host "OpenRouter API ключ обновлён в переменных пользователя." -ForegroundColor Green
+    }
+    "BAI" {
+      [Environment]::SetEnvironmentVariable("BAI_API_KEY", $NewKey.Trim(), "User")
+      Write-Host "B.AI API ключ обновлён в переменных пользователя." -ForegroundColor Green
     }
   }
 }
@@ -153,6 +163,11 @@ function Show-ApiKeyChangeMenu {
       Label = "OpenRouter API ключ"
       HelpUrl = "https://openrouter.ai/settings/keys"
     }
+    @{
+      Id    = "bai"
+      Label = "B.AI API ключ"
+      HelpUrl = "https://chat.b.ai/key"
+    }
   )
 
   while ($true) {
@@ -172,6 +187,7 @@ function Show-ApiKeyChangeMenu {
       "zai" { "ZAI" }
       "groq" { "GROQ" }
       "openrouter" { "OPENROUTER" }
+      "bai" { "BAI" }
       default { $providerId.ToUpper() }
     }
     $currentKey = Get-CurrentApiKey -Provider $envVarName

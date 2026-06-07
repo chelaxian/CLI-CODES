@@ -62,81 +62,20 @@ $script:Profiles = @(
     Description = "Пропуск меню: последний выбранный профиль"
   }
   @{
-    Id          = "zai-glm"
-    Label       = "Z.AI - GLM-4.7 (paid, tool calling)"
+    Id          = "group:zai"
+    Label       = "Z.AI - модели (GLM-5.1 / GLM-4.7 / GLM-4.7-Flash)"
   }
   @{
-    Id          = "nim-mistral-medium"
-    Label       = "NIM - Mistral Medium 3.5 128B (free, tool calling)"
-    NimModel    = "nim-mistral-medium-3.5-128b"
+    Id          = "group:nim"
+    Label       = "NVIDIA NIM - 9 бесплатных agentic моделей"
   }
   @{
-    Id          = "nim-glm51"
-    Label       = "NIM - Z.AI GLM-5.1 (free, tool calling)"
-    NimModel    = "nim-glm-5.1"
+    Id          = "group:openrouter"
+    Label       = "OpenRouter - бесплатные agentic модели"
   }
   @{
-    Id          = "nim-step-3.5-flash"
-    Label       = "NIM - Step 3.5 Flash (free, tool calling)"
-    NimModel    = "nim-step-3.5-flash"
-  }
-  @{
-    Id          = "nim-mistral-large-3"
-    Label       = "NIM - Mistral Large 3 675B (free, tool calling)"
-    NimModel    = "nim-mistral-large-3-675b"
-  }
-  @{
-    Id          = "nim-deepseek-v4-flash"
-    Label       = "NIM - DeepSeek V4 Flash 284B MoE (free)"
-    NimModel    = "nim-deepseek-v4-flash"
-  }
-  @{
-    Id          = "nim-gemma-4-31b"
-    Label       = "NIM - Google Gemma-4 31B (free)"
-    NimModel    = "nim-gemma-4-31b"
-  }
-  @{
-    Id          = "nim-qwen3.5-397b"
-    Label       = "NIM - Qwen 3.5 397B A17B (free)"
-    NimModel    = "nim-qwen3.5-397b-a17b"
-  }
-  @{
-    Id          = "nim-qwen3-next-80b"
-    Label       = "NIM - Qwen 3 Next 80B A3B (free)"
-    NimModel    = "nim-qwen3-next-80b-a3b"
-  }
-  @{
-    Id          = "nim-qwen3-coder-480b"
-    Label       = "NIM - Qwen 3 Coder 480B A35B (free)"
-    NimModel    = "nim-qwen3-coder-480b-a35b"
-  }
-  @{
-    Id          = "zai-glm51"
-    Label       = "Z.AI - GLM-5.1 (paid, tool calling)"
-  }
-  @{
-    Id          = "zai-flash47"
-    Label       = "Z.AI - GLM-4.7-Flash (free, tool calling)"
-  }
-  @{
-    Id          = "zai-flash45"
-    Label       = "Z.AI - GLM-4.5-Flash (free, tool calling)"
-  }
-  @{
-    Id          = "openrouter-deepseek-v4-flash"
-    Label       = "OpenRouter - DeepSeek V4 Flash (free, tool calling)"
-  }
-  @{
-    Id          = "openrouter-qwen3-coder"
-    Label       = "OpenRouter - Qwen3 Coder (free, tool calling)"
-  }
-  @{
-    Id          = "openrouter-nemotron"
-    Label       = "OpenRouter - Nemotron 3 Super 120B (free, tool calling)"
-  }
-  @{
-    Id          = "openrouter-laguna"
-    Label       = "OpenRouter - Poolside Laguna M.1 (free, tool calling, coding)"
+    Id          = "group:bai"
+    Label       = "B.AI - DeepSeek/MiniMax/GLM/Kimi/GPT (OpenAI-compatible)"
   }
   @{
     Id          = "custom-model"
@@ -151,6 +90,41 @@ $script:Profiles = @(
     Label       = "Сменить ключ API провайдера"
   }
 )
+
+# Подменю для каждой группы провайдера
+$script:GroupMenus = @{
+  zai = @(
+    @{ Id = "zai-glm51";   Label = "Z.AI - GLM-5.1 (paid, tool calling)" }
+    @{ Id = "zai-glm";     Label = "Z.AI - GLM-4.7 (paid, tool calling)" }
+    @{ Id = "zai-flash47"; Label = "Z.AI - GLM-4.7-Flash (free, tool calling)" }
+  )
+  nim = @(
+    @{ Id = "nim-mistral-medium";   Label = "NIM - Mistral Medium 3.5 128B (free, tool calling)";     NimModel = "nim-mistral-medium-3.5-128b" }
+    @{ Id = "nim-glm51";            Label = "NIM - Z.AI GLM-5.1 (free, tool calling)";                 NimModel = "nim-glm-5.1" }
+    @{ Id = "nim-step-3.5-flash";   Label = "NIM - Step 3.5 Flash (free, tool calling)";               NimModel = "nim-step-3.5-flash" }
+    @{ Id = "nim-mistral-large-3";  Label = "NIM - Mistral Large 3 675B (free, tool calling)";         NimModel = "nim-mistral-large-3-675b" }
+    @{ Id = "nim-deepseek-v4-flash"; Label = "NIM - DeepSeek V4 Flash 284B MoE (free)";                NimModel = "nim-deepseek-v4-flash" }
+    @{ Id = "nim-gemma-4-31b";      Label = "NIM - Google Gemma-4 31B (free)";                          NimModel = "nim-gemma-4-31b" }
+    @{ Id = "nim-qwen3.5-397b";     Label = "NIM - Qwen 3.5 397B A17B (free)";                          NimModel = "nim-qwen3.5-397b-a17b" }
+    @{ Id = "nim-qwen3-next-80b";   Label = "NIM - Qwen 3 Next 80B A3B (free)";                         NimModel = "nim-qwen3-next-80b-a3b" }
+    @{ Id = "nim-qwen3-coder-480b"; Label = "NIM - Qwen 3 Coder 480B A35B (free)";                      NimModel = "nim-qwen3-coder-480b-a35b" }
+  )
+  openrouter = @(
+    @{ Id = "openrouter-deepseek-v4-flash"; Label = "OpenRouter - DeepSeek V4 Flash (free, tool calling)" }
+    @{ Id = "openrouter-qwen3-coder";       Label = "OpenRouter - Qwen3 Coder (free, tool calling)" }
+    @{ Id = "openrouter-nemotron";          Label = "OpenRouter - Nemotron 3 Super 120B (free, tool calling)" }
+    @{ Id = "openrouter-laguna";            Label = "OpenRouter - Poolside Laguna M.1 (free, tool calling, coding)" }
+  )
+  bai = @(
+    @{ Id = "bai-deepseek-v4-pro";   Label = "B.AI - DeepSeek V4 Pro (agentic)" }
+    @{ Id = "bai-deepseek-v4-flash"; Label = "B.AI - DeepSeek V4 Flash (agentic)" }
+    @{ Id = "bai-minimax-m3";        Label = "B.AI - MiniMax M3 (agentic)" }
+    @{ Id = "bai-minimax-m2.7";      Label = "B.AI - MiniMax M2.7 (fast)" }
+    @{ Id = "bai-glm-5";             Label = "B.AI - GLM-5 (Z.AI)" }
+    @{ Id = "bai-kimi-k2.6";         Label = "B.AI - Kimi K2.6 (Moonshot)" }
+    @{ Id = "bai-gpt-5.5";           Label = "B.AI - GPT-5.5 (OpenAI)" }
+  )
+}
 
 function Get-LauncherState {
   if (-not (Test-Path -LiteralPath $StatePath)) { return $null }
@@ -180,7 +154,14 @@ function Save-LauncherState {
 function Resolve-ProfileFromState($state) {
   if (-not $state -or [string]::IsNullOrWhiteSpace($state.profileId)) { return $null }
   $id = [string]$state.profileId
-  if ($id -in @("nim-mistral-medium", "nim-glm51", "nim-step-3.5-flash", "nim-mistral-large-3", "nim-deepseek-v4-flash", "nim-gemma-4-31b", "nim-qwen3.5-397b", "nim-qwen3-next-80b", "nim-qwen3-coder-480b", "zai-glm", "zai-glm51", "zai-flash47", "zai-flash45", "openrouter-hy3", "openrouter-nemotron", "openrouter-laguna", "custom-qwen-zai", "custom-qwen-zai-general", "custom-qwen-nim", "custom-qwen-groq", "custom-qwen-openrouter")) { return $id }
+  if ($id -in @(
+      "nim-mistral-medium", "nim-glm51", "nim-step-3.5-flash", "nim-mistral-large-3",
+      "nim-deepseek-v4-flash", "nim-gemma-4-31b", "nim-qwen3.5-397b", "nim-qwen3-next-80b", "nim-qwen3-coder-480b",
+      "zai-glm", "zai-glm51", "zai-flash47", "zai-flash45",
+      "openrouter-hy3", "openrouter-nemotron", "openrouter-laguna", "openrouter-deepseek-v4-flash", "openrouter-qwen3-coder",
+      "bai-deepseek-v4-pro", "bai-deepseek-v4-flash", "bai-minimax-m3", "bai-minimax-m2.7", "bai-glm-5", "bai-kimi-k2.6", "bai-gpt-5.5",
+      "custom-qwen-zai", "custom-qwen-zai-general", "custom-qwen-nim", "custom-qwen-groq", "custom-qwen-openrouter", "custom-qwen-bai"
+    )) { return $id }
   return $null
 }
 
@@ -305,6 +286,43 @@ function Invoke-QwenProfile {
       & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider openrouter -ModelId $mid.Trim()
       return
     }
+    "bai-deepseek-v4-pro" {
+      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider bai -ModelId "deepseek-v4-pro"
+      return
+    }
+    "bai-deepseek-v4-flash" {
+      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider bai -ModelId "deepseek-v4-flash"
+      return
+    }
+    "bai-minimax-m3" {
+      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider bai -ModelId "minimax-m3"
+      return
+    }
+    "bai-minimax-m2.7" {
+      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider bai -ModelId "minimax-m2.7"
+      return
+    }
+    "bai-glm-5" {
+      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider bai -ModelId "glm-5"
+      return
+    }
+    "bai-kimi-k2.6" {
+      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider bai -ModelId "kimi-k2.6"
+      return
+    }
+    "bai-gpt-5.5" {
+      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider bai -ModelId "gpt-5.5"
+      return
+    }
+    "custom-qwen-bai" {
+      $st = Get-LauncherState
+      $mid = [string]$st.customModelId
+      if ([string]::IsNullOrWhiteSpace($mid)) {
+        throw "Нет customModelId для custom-qwen-bai. Выберите модель в «Другая модель»."
+      }
+      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider bai -ModelId $mid.Trim()
+      return
+    }
     default {
       throw "Неизвестный профиль: $ProfileId"
     }
@@ -336,13 +354,38 @@ if ($lastId) {
 }
 
 while ($true) {
-  $choice = Show-TuiFramedMenu -AppBrand "Qwen" -Title "Qwen Code - выбор профиля" -Subtitle "OpenAI Coding (Z.AI / NIM) + пресеты" -Items $items -InitialIndex $startIdx -MaxVisible 20
+  $choice = Show-TuiFramedMenu -AppBrand "Qwen" -Title "Qwen Code - выбор провайдера" -Subtitle "Z.AI · NIM · OpenRouter · B.AI" -Items $items -InitialIndex $startIdx -MaxVisible 20
   if (-not $choice) {
     Write-Host "Отменено." -ForegroundColor Yellow
     exit 0
   }
 
   $profileId = [string]$choice.Id
+
+  # Подменю для группы провайдера
+  if ($profileId -like "group:*") {
+    $groupKey = $profileId.Substring("group:".Length)
+    $groupItems = $script:GroupMenus[$groupKey]
+    if (-not $groupItems) {
+      Write-Host "Не найдено подменю для группы: $groupKey" -ForegroundColor Red
+      Start-Sleep -Seconds 2
+      continue
+    }
+    $subTitle = switch ($groupKey) {
+      "zai"        { "Z.AI Coding (paid) + GLM-4.7-Flash (free)" }
+      "nim"        { "NVIDIA NIM - 9 бесплатных agentic моделей" }
+      "openrouter" { "OpenRouter - бесплатные agentic модели" }
+      "bai"        { "B.AI - https://api.b.ai/v1 (OpenAI-compatible)" }
+      default      { "" }
+    }
+    $subChoice = Show-TuiFramedMenu -AppBrand "Qwen" -Title ("Qwen Code - {0}" -f $groupKey.ToUpper()) -Subtitle $subTitle -Items $groupItems -MaxVisible 16 -EscapeAction Back
+    if ($null -eq $subChoice) { exit 0 }
+    if ($true -eq $subChoice.__menuBack) { continue }
+    $profileId = [string]$subChoice.Id
+    Save-LauncherState -ProfileId $profileId
+    Invoke-QwenProfile -ProfileId $profileId
+    exit $LASTEXITCODE
+  }
 
   if ($profileId -eq "custom-model") {
     $w = Invoke-LauncherCustomModelWizard -App "Qwen"
@@ -356,6 +399,7 @@ while ($true) {
       "zai-general" { "custom-qwen-zai-general" }
       "groq" { "custom-qwen-groq" }
       "openrouter" { "custom-qwen-openrouter" }
+      "bai" { "custom-qwen-bai" }
       default { "custom-qwen-nim" }
     }
     Save-LauncherState -ProfileId $newId -Extra @{ customModelId = [string]$w.ModelId }

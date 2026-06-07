@@ -24,19 +24,99 @@ resolve_qwen_exe() {
 
 PROFILES=(
     "last|Запустить с последними настройками (быстрый старт)"
-    "nim-qwen|NVIDIA NIM - Qwen3.5-122B-A10B (tool calling)"
-    "zai-glm|Z.AI - GLM-4.7 (paid, tool calling)"
-    "zai-glm51|Z.AI - GLM-5.1 (paid, tool calling)"
-    "zai-flash47|Z.AI - GLM-4.7-Flash (free, tool calling)"
-    "zai-flash45|Z.AI - GLM-4.5-Flash (free, tool calling)"
-    "openrouter-deepseek-v4-flash|OpenRouter - DeepSeek V4 Flash (free, tool calling)"
-    "openrouter-qwen3-coder|OpenRouter - Qwen3 Coder (free, tool calling)"
-    "openrouter-nemotron|OpenRouter - Nemotron 3 Super 120B (free, tool calling)"
-    "openrouter-laguna|OpenRouter - Poolside Laguna M.1 (free, tool calling, coding)"
+    "group:zai|Z.AI - модели (GLM-5.1 / GLM-4.7 / GLM-4.7-Flash)"
+    "group:nim|NVIDIA NIM - 9 бесплатных agentic моделей"
+    "group:openrouter|OpenRouter - бесплатные agentic модели"
+    "group:bai|B.AI - DeepSeek/MiniMax/GLM/Kimi/GPT (OpenAI-compatible)"
     "custom-model|Другая модель… → выбор провайдера и модели"
     "native-login|Нативный логин (Qwen OAuth / Coding Plan)"
     "change-api-key|Сменить ключ API провайдера"
 )
+
+# Submenus per provider group (must match resolve_profile_from_state / invoke_qwen_profile)
+ZAI_MODELS=(
+    "zai-glm51|Z.AI - GLM-5.1 (paid, tool calling)"
+    "zai-glm|Z.AI - GLM-4.7 (paid, tool calling)"
+    "zai-flash47|Z.AI - GLM-4.7-Flash (free, tool calling)"
+)
+
+NIM_MODELS=(
+    "nim-mistral-medium|NIM - Mistral Medium 3.5 128B (free, tool calling)"
+    "nim-glm51|NIM - Z.AI GLM-5.1 (free, tool calling)"
+    "nim-step-3.5-flash|NIM - Step 3.5 Flash (free, tool calling)"
+    "nim-mistral-large-3|NIM - Mistral Large 3 675B (free, tool calling)"
+    "nim-deepseek-v4-flash|NIM - DeepSeek V4 Flash 284B MoE (free)"
+    "nim-gemma-4-31b|NIM - Google Gemma-4 31B (free)"
+    "nim-qwen3.5-397b|NIM - Qwen 3.5 397B A17B (free)"
+    "nim-qwen3-next-80b|NIM - Qwen 3 Next 80B A3B (free)"
+    "nim-qwen3-coder-480b|NIM - Qwen 3 Coder 480B A35B (free)"
+)
+
+OPENROUTER_MODELS=(
+    "openrouter-deepseek-v4-flash|OpenRouter - DeepSeek V4 Flash (free, tool calling)"
+    "openrouter-qwen3-coder|OpenRouter - Qwen3 Coder (free, tool calling)"
+    "openrouter-nemotron|OpenRouter - Nemotron 3 Super 120B (free, tool calling)"
+    "openrouter-laguna|OpenRouter - Poolside Laguna M.1 (free, tool calling, coding)"
+)
+
+BAI_MODELS=(
+    "bai-deepseek-v4-pro|B.AI - DeepSeek V4 Pro (agentic)"
+    "bai-deepseek-v4-flash|B.AI - DeepSeek V4 Flash (agentic)"
+    "bai-minimax-m3|B.AI - MiniMax M3 (agentic)"
+    "bai-minimax-m2.7|B.AI - MiniMax M2.7 (fast)"
+    "bai-glm-5|B.AI - GLM-5 (Z.AI)"
+    "bai-kimi-k2.6|B.AI - Kimi K2.6 (Moonshot)"
+    "bai-gpt-5.5|B.AI - GPT-5.5 (OpenAI)"
+)
+
+# Show provider-group submenu and return chosen profile id (or "back" on Esc)
+show_submenu_for_group() {
+    local group_key="$1"
+
+    local subtitle=""
+    local -a items=()
+    case "$group_key" in
+        zai)
+            subtitle="Z.AI Coding (paid) + GLM-4.7-Flash (free)"
+            items=("${ZAI_MODELS[@]}")
+            ;;
+        nim)
+            subtitle="NVIDIA NIM - 9 бесплатных agentic моделей"
+            items=("${NIM_MODELS[@]}")
+            ;;
+        openrouter)
+            subtitle="OpenRouter - бесплатные agentic модели"
+            items=("${OPENROUTER_MODELS[@]}")
+            ;;
+        bai)
+            subtitle="B.AI - https://api.b.ai/v1 (OpenAI-compatible)"
+            items=("${BAI_MODELS[@]}")
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+
+    local group_key_upper=$(echo "$group_key" | tr '[:lower:]' '[:upper:]')
+    local title="Qwen Code - $group_key_upper"
+
+    local labels=()
+    local item
+    for item in "${items[@]}"; do
+        labels+=("${item##*|}")
+    done
+
+    local choice
+    choice=$(show_tui_framed_menu "Qwen" "$title" "$subtitle" "${labels[@]}")
+
+    if [ "${choice:-0}" -eq 0 ]; then
+        echo "back"
+        return 0
+    fi
+
+    echo "${items[$((choice-1))]}" | cut -d'|' -f1
+    return 0
+}
 
 get_launcher_state() {
     if [ ! -f "$STATE_FILE" ]; then
@@ -66,7 +146,7 @@ resolve_profile_from_state() {
     local profile_id=$(echo "$state" | grep -o '"profileId":"[^"]*"' | cut -d'"' -f4)
     
     case "$profile_id" in
-        "nim-glm"|"nim-qwen"|"zai-glm"|"zai-glm51"|"zai-flash47"|"zai-flash45"|"openrouter-hy3"|"openrouter-deepseek-v4-flash"|"openrouter-qwen3-coder"|"openrouter-nemotron"|"openrouter-laguna"|"custom-qwen-zai"|"custom-qwen-zai-general"|"custom-qwen-nim"|"custom-qwen-groq"|"custom-qwen-openrouter")
+        "nim-glm"|"nim-qwen"|"nim-mistral-medium"|"nim-glm51"|"nim-step-3.5-flash"|"nim-mistral-large-3"|"nim-deepseek-v4-flash"|"nim-gemma-4-31b"|"nim-qwen3.5-397b"|"nim-qwen3-next-80b"|"nim-qwen3-coder-480b"|"zai-glm"|"zai-glm51"|"zai-flash47"|"zai-flash45"|"openrouter-hy3"|"openrouter-deepseek-v4-flash"|"openrouter-qwen3-coder"|"openrouter-nemotron"|"openrouter-laguna"|"bai-deepseek-v4-pro"|"bai-deepseek-v4-flash"|"bai-minimax-m3"|"bai-minimax-m2.7"|"bai-glm-5"|"bai-kimi-k2.6"|"bai-gpt-5.5"|"custom-qwen-zai"|"custom-qwen-zai-general"|"custom-qwen-nim"|"custom-qwen-groq"|"custom-qwen-openrouter"|"custom-qwen-bai")
             echo "$profile_id"
             return 0
             ;;
@@ -281,6 +361,7 @@ require_api_key_for_profile() {
         nim-*|custom-qwen-nim) env_var="NVIDIA_NIM"; provider_name="NVIDIA NIM"; provider_url="https://build.nvidia.com/api-key" ;;
         zai-*|custom-qwen-zai*) env_var="ZAI"; provider_name="Z.AI"; provider_url="https://console.z.ai/" ;;
         openrouter-*|custom-qwen-openrouter) env_var="OPENROUTER"; provider_name="OpenRouter"; provider_url="https://openrouter.ai/settings/keys" ;;
+        bai-*|custom-qwen-bai) env_var="BAI"; provider_name="B.AI"; provider_url="https://chat.b.ai/key" ;;
         groq-*|custom-qwen-groq*) env_var="GROQ"; provider_name="Groq"; provider_url="https://console.groq.com/keys" ;;
         *) return 0 ;;
     esac
@@ -298,6 +379,33 @@ invoke_qwen_profile() {
             ;;
         "nim-qwen")
             bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider nim -ModelId "qwen/qwen3.5-122b-a10b"
+            ;;
+        "nim-mistral-medium")
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider nim -ModelId "mistralai/mistral-medium-3.5-128b"
+            ;;
+        "nim-glm51")
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider nim -ModelId "z-ai/glm-5.1"
+            ;;
+        "nim-step-3.5-flash")
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider nim -ModelId "stepfun-ai/step-3.5-flash"
+            ;;
+        "nim-mistral-large-3")
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider nim -ModelId "mistralai/mistral-large-3-675b-instruct-2512"
+            ;;
+        "nim-deepseek-v4-flash")
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider nim -ModelId "deepseek-ai/deepseek-v4-flash"
+            ;;
+        "nim-gemma-4-31b")
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider nim -ModelId "google/gemma-4-31b-it"
+            ;;
+        "nim-qwen3.5-397b")
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider nim -ModelId "qwen/qwen3.5-397b-a17b"
+            ;;
+        "nim-qwen3-next-80b")
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider nim -ModelId "qwen/qwen3-next-80b-a3b-instruct"
+            ;;
+        "nim-qwen3-coder-480b")
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider nim -ModelId "qwen/qwen3-coder-480b-a35b-instruct"
             ;;
         "zai-glm")
             bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider zai -ModelId "glm-4.7"
@@ -322,6 +430,27 @@ invoke_qwen_profile() {
             ;;
         "openrouter-laguna")
             bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider openrouter -ModelId "poolside/laguna-m.1:free"
+            ;;
+        "bai-deepseek-v4-pro")
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider bai -ModelId "deepseek-v4-pro"
+            ;;
+        "bai-deepseek-v4-flash")
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider bai -ModelId "deepseek-v4-flash"
+            ;;
+        "bai-minimax-m3")
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider bai -ModelId "minimax-m3"
+            ;;
+        "bai-minimax-m2.7")
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider bai -ModelId "minimax-m2.7"
+            ;;
+        "bai-glm-5")
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider bai -ModelId "glm-5"
+            ;;
+        "bai-kimi-k2.6")
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider bai -ModelId "kimi-k2.6"
+            ;;
+        "bai-gpt-5.5")
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider bai -ModelId "gpt-5.5"
             ;;
         "custom-qwen-zai")
             local state=$(get_launcher_state)
@@ -375,6 +504,15 @@ invoke_qwen_profile() {
             fi
             bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider openrouter -ModelId "$model_id"
             ;;
+        "custom-qwen-bai")
+            local state=$(get_launcher_state)
+            local model_id=$(echo "$state" | grep -o '"customModelId":"[^"]*"' | cut -d'"' -f4)
+            if [ -z "$model_id" ]; then
+                echo -e "${RED}Нет customModelId для custom-qwen-bai. Выберите модель в «Другая модель».${RESET}"
+                return 1
+            fi
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider bai -ModelId "$model_id"
+            ;;
         *)
             echo -e "${RED}Неизвестный профиль: $profile_id${RESET}"
             return 1
@@ -411,7 +549,7 @@ while true; do
     done
     
     local choice
-    choice="$(show_tui_numbered_menu "Qwen" "Qwen Code - выбор профиля" "OpenAI Coding (Z.AI / NIM) + пресеты" "${menu_items[@]}")"
+    choice="$(show_tui_numbered_menu "Qwen" "Qwen Code - выбор провайдера" "Z.AI · NIM · OpenRouter · B.AI" "${menu_items[@]}")"
     
     if [ "${choice:-0}" -eq 0 ]; then
         echo -e "${YELLOW}Отменено.${RESET}"
@@ -421,6 +559,16 @@ while true; do
     local profile_id=$(echo "${PROFILES[$((choice-1))]}" | cut -d'|' -f1)
     
     case "$profile_id" in
+        group:*)
+            local group_key="${profile_id#group:}"
+            local sub_choice
+            sub_choice=$(show_submenu_for_group "$group_key")
+            if [ -z "${sub_choice:-}" ] || [ "$sub_choice" = "back" ]; then
+                continue
+            fi
+            profile_id="$sub_choice"
+            save_launcher_state "$profile_id"
+            ;;
         "native-login")
             qwen_exe=$(resolve_qwen_exe) || true
             if [ -z "${qwen_exe:-}" ]; then
@@ -518,6 +666,8 @@ while true; do
                 new_id="custom-qwen-groq"
             elif [ "$wiz_provider" = "openrouter" ]; then
                 new_id="custom-qwen-openrouter"
+            elif [ "$wiz_provider" = "bai" ]; then
+                new_id="custom-qwen-bai"
             fi
             
             save_launcher_state "$new_id" "\"customModelId\":\"$wiz_model\""

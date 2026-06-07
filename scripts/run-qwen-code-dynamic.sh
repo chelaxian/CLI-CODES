@@ -16,7 +16,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [ -z "$PROVIDER" ] || [ -z "$MODEL_ID" ]; then
-  echo "Usage: $0 -Provider <zai|nim|groq|openrouter> -ModelId <model-id>" >&2
+  echo "Usage: $0 -Provider <zai|zai-general|nim|groq|openrouter|bai> -ModelId <model-id>" >&2
   exit 1
 fi
 
@@ -136,6 +136,16 @@ case "$PROVIDER" in
     fi
     BASE_URL="https://openrouter.ai/api/v1"
     ;;
+  bai)
+    API_KEY="${BAI_API_KEY:-}"
+    if [ -z "$API_KEY" ] || [ "$API_KEY" = "__SET_ME__" ]; then
+      API_KEY=$(get_current_api_key "BAI")
+    fi
+    if [ -z "$API_KEY" ] || [ "$API_KEY" = "__SET_ME__" ]; then
+      API_KEY=$(get_api_key_with_url "B.AI API key: " "https://chat.b.ai/key")
+    fi
+    BASE_URL="https://api.b.ai/v1"
+    ;;
   *)
     echo "Unknown provider: $PROVIDER" >&2
     exit 1
@@ -196,6 +206,10 @@ else
     MAX_TOKENS=8192
     SKIP_STARTUP=',"skipStartupContext":true'
   fi
+  if [ "$PROVIDER" = "bai" ]; then
+    CONTEXT_SIZE=131072
+    MAX_TOKENS=8192
+  fi
   cat > "$QWEN_DIR/settings.json" <<SETTINGS_EOF
 {
   "modelProviders": {
@@ -228,6 +242,9 @@ fi
 export OPENAI_API_KEY="$API_KEY"
 export API_TIMEOUT_MS="600000"
 if [ "$PROVIDER" = "openrouter" ]; then
+  export QWEN_CODE_MAX_OUTPUT_TOKENS="8192"
+  export QWEN_CODE_EMIT_TOOL_USE_SUMMARIES="0"
+elif [ "$PROVIDER" = "bai" ]; then
   export QWEN_CODE_MAX_OUTPUT_TOKENS="8192"
   export QWEN_CODE_EMIT_TOOL_USE_SUMMARIES="0"
 else

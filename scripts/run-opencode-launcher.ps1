@@ -33,72 +33,20 @@ $script:Profiles = @(
     Label = "Запустить с последними настройками (быстрый старт)"
   }
   @{
-    Id    = "zai-glm"
-    Label = "Z.AI - GLM-4.7 (paid, tool calling)"
+    Id    = "group:zai"
+    Label = "Z.AI - модели (GLM-5.1 / GLM-4.7 / GLM-4.7-Flash)"
   }
   @{
-    Id    = "zai-glm51"
-    Label = "Z.AI - GLM-5.1 (paid, tool calling)"
+    Id    = "group:nim"
+    Label = "NVIDIA NIM - 9 бесплатных agentic моделей"
   }
   @{
-    Id    = "zai-flash47"
-    Label = "Z.AI - GLM-4.7-Flash (free, tool calling)"
+    Id    = "group:openrouter"
+    Label = "OpenRouter - бесплатные agentic модели"
   }
   @{
-    Id    = "zai-flash45"
-    Label = "Z.AI - GLM-4.5-Flash (free, tool calling)"
-  }
-  @{
-    Id    = "nim-mistral-medium"
-    Label = "NIM - Mistral Medium 3.5 128B (free, tool calling)"
-  }
-  @{
-    Id    = "nim-glm51"
-    Label = "NIM - Z.AI GLM-5.1 (free, tool calling)"
-  }
-  @{
-    Id    = "nim-step-3.5-flash"
-    Label = "NIM - Step 3.5 Flash (free, tool calling)"
-  }
-  @{
-    Id    = "nim-mistral-large-3"
-    Label = "NIM - Mistral Large 3 675B (free, tool calling)"
-  }
-  @{
-    Id    = "nim-deepseek-v4-flash"
-    Label = "NIM - DeepSeek V4 Flash 284B MoE (free)"
-  }
-  @{
-    Id    = "nim-gemma-4-31b"
-    Label = "NIM - Google Gemma-4 31B (free)"
-  }
-  @{
-    Id    = "nim-qwen3.5-397b"
-    Label = "NIM - Qwen 3.5 397B A17B (free)"
-  }
-  @{
-    Id    = "nim-qwen3-next-80b"
-    Label = "NIM - Qwen 3 Next 80B A3B (free)"
-  }
-  @{
-    Id    = "nim-qwen3-coder-480b"
-    Label = "NIM - Qwen 3 Coder 480B A35B (free)"
-  }
-  @{
-    Id    = "openrouter-deepseek-v4-flash"
-    Label = "OpenRouter - DeepSeek V4 Flash (free, tool calling)"
-  }
-  @{
-    Id    = "openrouter-qwen3-coder"
-    Label = "OpenRouter - Qwen3 Coder (free, tool calling)"
-  }
-  @{
-    Id    = "openrouter-nemotron"
-    Label = "OpenRouter - Nemotron 3 Super 120B (free, tool calling)"
-  }
-  @{
-    Id    = "openrouter-laguna"
-    Label = "OpenRouter - Poolside Laguna M.1 (free, tool calling, coding)"
+    Id    = "group:bai"
+    Label = "B.AI - DeepSeek/MiniMax/GLM/Kimi/GPT (OpenAI-compatible)"
   }
   @{
     Id    = "custom-model"
@@ -113,6 +61,41 @@ $script:Profiles = @(
     Label = "Сменить ключ API провайдера"
   }
 )
+
+# Подменю для каждой группы провайдера
+$script:GroupMenus = @{
+  zai = @(
+    @{ Id = "zai-glm51";   Label = "Z.AI - GLM-5.1 (paid, tool calling)" }
+    @{ Id = "zai-glm";     Label = "Z.AI - GLM-4.7 (paid, tool calling)" }
+    @{ Id = "zai-flash47"; Label = "Z.AI - GLM-4.7-Flash (free, tool calling)" }
+  )
+  nim = @(
+    @{ Id = "nim-mistral-medium";   Label = "NIM - Mistral Medium 3.5 128B (free, tool calling)" }
+    @{ Id = "nim-glm51";            Label = "NIM - Z.AI GLM-5.1 (free, tool calling)" }
+    @{ Id = "nim-step-3.5-flash";   Label = "NIM - Step 3.5 Flash (free, tool calling)" }
+    @{ Id = "nim-mistral-large-3";  Label = "NIM - Mistral Large 3 675B (free, tool calling)" }
+    @{ Id = "nim-deepseek-v4-flash"; Label = "NIM - DeepSeek V4 Flash 284B MoE (free)" }
+    @{ Id = "nim-gemma-4-31b";      Label = "NIM - Google Gemma-4 31B (free)" }
+    @{ Id = "nim-qwen3.5-397b";     Label = "NIM - Qwen 3.5 397B A17B (free)" }
+    @{ Id = "nim-qwen3-next-80b";   Label = "NIM - Qwen 3 Next 80B A3B (free)" }
+    @{ Id = "nim-qwen3-coder-480b"; Label = "NIM - Qwen 3 Coder 480B A35B (free)" }
+  )
+  openrouter = @(
+    @{ Id = "openrouter-deepseek-v4-flash"; Label = "OpenRouter - DeepSeek V4 Flash (free, tool calling)" }
+    @{ Id = "openrouter-qwen3-coder";       Label = "OpenRouter - Qwen3 Coder (free, tool calling)" }
+    @{ Id = "openrouter-nemotron";          Label = "OpenRouter - Nemotron 3 Super 120B (free, tool calling)" }
+    @{ Id = "openrouter-laguna";            Label = "OpenRouter - Poolside Laguna M.1 (free, tool calling, coding)" }
+  )
+  bai = @(
+    @{ Id = "bai-deepseek-v4-pro";   Label = "B.AI - DeepSeek V4 Pro (agentic)" }
+    @{ Id = "bai-deepseek-v4-flash"; Label = "B.AI - DeepSeek V4 Flash (agentic)" }
+    @{ Id = "bai-minimax-m3";        Label = "B.AI - MiniMax M3 (agentic)" }
+    @{ Id = "bai-minimax-m2.7";      Label = "B.AI - MiniMax M2.7 (fast)" }
+    @{ Id = "bai-glm-5";             Label = "B.AI - GLM-5 (Z.AI)" }
+    @{ Id = "bai-kimi-k2.6";         Label = "B.AI - Kimi K2.6 (Moonshot)" }
+    @{ Id = "bai-gpt-5.5";           Label = "B.AI - GPT-5.5 (OpenAI)" }
+  )
+}
 
 function Get-LauncherState {
   if (-not (Test-Path -LiteralPath $StatePath)) { return $null }
@@ -145,8 +128,9 @@ function Resolve-ProfileFromState($state) {
   if ($id -in @("zai-glm", "zai-glm51", "zai-flash47", "zai-flash45",
       "nim-mistral-medium", "nim-glm51", "nim-step-3.5-flash", "nim-mistral-large-3",
       "nim-deepseek-v4-flash", "nim-gemma-4-31b", "nim-qwen3.5-397b", "nim-qwen3-next-80b", "nim-qwen3-coder-480b",
-      "openrouter-hy3", "openrouter-nemotron", "openrouter-laguna",
-      "custom-opencode-zai", "custom-opencode-nim", "custom-opencode-groq", "custom-opencode-openrouter")) { return $id }
+      "openrouter-hy3", "openrouter-nemotron", "openrouter-laguna", "openrouter-deepseek-v4-flash", "openrouter-qwen3-coder",
+      "bai-deepseek-v4-pro", "bai-deepseek-v4-flash", "bai-minimax-m3", "bai-minimax-m2.7", "bai-glm-5", "bai-kimi-k2.6", "bai-gpt-5.5",
+      "custom-opencode-zai", "custom-opencode-nim", "custom-opencode-groq", "custom-opencode-openrouter", "custom-opencode-bai")) { return $id }
   return $null
 }
 
@@ -510,6 +494,107 @@ function Invoke-OpenCodeProfile {
       & $opencodeExe
       return
     }
+    "bai-deepseek-v4-pro" {
+      $apiKey = [Environment]::GetEnvironmentVariable("BAI_API_KEY", "User")
+      if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") { $apiKey = $env:BAI_API_KEY }
+      if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") {
+        $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "B.AI" -HelpUrl "https://chat.b.ai/key"
+      }
+      $configPath = Write-OpenCodeConfig -Provider "bai" -Model "deepseek-v4-pro" -BaseURL "https://api.b.ai/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
+      $env:OPENCODE_CONFIG = $configPath
+      Write-Host "Запуск OpenCode (B.AI DeepSeek V4 Pro)…" -ForegroundColor Cyan
+      & $opencodeExe
+      return
+    }
+    "bai-deepseek-v4-flash" {
+      $apiKey = [Environment]::GetEnvironmentVariable("BAI_API_KEY", "User")
+      if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") { $apiKey = $env:BAI_API_KEY }
+      if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") {
+        $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "B.AI" -HelpUrl "https://chat.b.ai/key"
+      }
+      $configPath = Write-OpenCodeConfig -Provider "bai" -Model "deepseek-v4-flash" -BaseURL "https://api.b.ai/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
+      $env:OPENCODE_CONFIG = $configPath
+      Write-Host "Запуск OpenCode (B.AI DeepSeek V4 Flash)…" -ForegroundColor Cyan
+      & $opencodeExe
+      return
+    }
+    "bai-minimax-m3" {
+      $apiKey = [Environment]::GetEnvironmentVariable("BAI_API_KEY", "User")
+      if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") { $apiKey = $env:BAI_API_KEY }
+      if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") {
+        $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "B.AI" -HelpUrl "https://chat.b.ai/key"
+      }
+      $configPath = Write-OpenCodeConfig -Provider "bai" -Model "minimax-m3" -BaseURL "https://api.b.ai/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
+      $env:OPENCODE_CONFIG = $configPath
+      Write-Host "Запуск OpenCode (B.AI MiniMax M3)…" -ForegroundColor Cyan
+      & $opencodeExe
+      return
+    }
+    "bai-minimax-m2.7" {
+      $apiKey = [Environment]::GetEnvironmentVariable("BAI_API_KEY", "User")
+      if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") { $apiKey = $env:BAI_API_KEY }
+      if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") {
+        $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "B.AI" -HelpUrl "https://chat.b.ai/key"
+      }
+      $configPath = Write-OpenCodeConfig -Provider "bai" -Model "minimax-m2.7" -BaseURL "https://api.b.ai/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
+      $env:OPENCODE_CONFIG = $configPath
+      Write-Host "Запуск OpenCode (B.AI MiniMax M2.7)…" -ForegroundColor Cyan
+      & $opencodeExe
+      return
+    }
+    "bai-glm-5" {
+      $apiKey = [Environment]::GetEnvironmentVariable("BAI_API_KEY", "User")
+      if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") { $apiKey = $env:BAI_API_KEY }
+      if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") {
+        $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "B.AI" -HelpUrl "https://chat.b.ai/key"
+      }
+      $configPath = Write-OpenCodeConfig -Provider "bai" -Model "glm-5" -BaseURL "https://api.b.ai/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
+      $env:OPENCODE_CONFIG = $configPath
+      Write-Host "Запуск OpenCode (B.AI GLM-5)…" -ForegroundColor Cyan
+      & $opencodeExe
+      return
+    }
+    "bai-kimi-k2.6" {
+      $apiKey = [Environment]::GetEnvironmentVariable("BAI_API_KEY", "User")
+      if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") { $apiKey = $env:BAI_API_KEY }
+      if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") {
+        $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "B.AI" -HelpUrl "https://chat.b.ai/key"
+      }
+      $configPath = Write-OpenCodeConfig -Provider "bai" -Model "kimi-k2.6" -BaseURL "https://api.b.ai/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
+      $env:OPENCODE_CONFIG = $configPath
+      Write-Host "Запуск OpenCode (B.AI Kimi K2.6)…" -ForegroundColor Cyan
+      & $opencodeExe
+      return
+    }
+    "bai-gpt-5.5" {
+      $apiKey = [Environment]::GetEnvironmentVariable("BAI_API_KEY", "User")
+      if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") { $apiKey = $env:BAI_API_KEY }
+      if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") {
+        $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "B.AI" -HelpUrl "https://chat.b.ai/key"
+      }
+      $configPath = Write-OpenCodeConfig -Provider "bai" -Model "gpt-5.5" -BaseURL "https://api.b.ai/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
+      $env:OPENCODE_CONFIG = $configPath
+      Write-Host "Запуск OpenCode (B.AI GPT-5.5)…" -ForegroundColor Cyan
+      & $opencodeExe
+      return
+    }
+    "custom-opencode-bai" {
+      $st = Get-LauncherState
+      $mid = [string]$st.customModelId
+      if ([string]::IsNullOrWhiteSpace($mid)) {
+        throw "Нет customModelId. Выберите модель в пункте «Другая модель»."
+      }
+      $apiKey = [Environment]::GetEnvironmentVariable("BAI_API_KEY", "User")
+      if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") { $apiKey = $env:BAI_API_KEY }
+      if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") {
+        $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "B.AI" -HelpUrl "https://chat.b.ai/key"
+      }
+      $configPath = Write-OpenCodeConfig -Provider "bai" -Model $mid.Trim() -BaseURL "https://api.b.ai/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
+      $env:OPENCODE_CONFIG = $configPath
+      Write-Host "Запуск OpenCode (B.AI custom: $($mid.Trim()))…" -ForegroundColor Cyan
+      & $opencodeExe
+      return
+    }
     "openrouter-hy3" {
       $apiKey = [Environment]::GetEnvironmentVariable("OPENROUTER_API_KEY", "User")
       if ([string]::IsNullOrWhiteSpace($apiKey)) { $apiKey = $env:OPENROUTER_API_KEY }
@@ -599,13 +684,38 @@ if ($lastId) {
 }
 
 while ($true) {
-  $choice = Show-TuiFramedMenu -AppBrand "OpenCode" -Title "OpenCode - выбор провайдера" -Subtitle "Z.AI · NIM · OpenRouter (OpenAI-compatible)" -Items $items -InitialIndex $startIdx -MaxVisible 20
+  $choice = Show-TuiFramedMenu -AppBrand "OpenCode" -Title "OpenCode - выбор провайдера" -Subtitle "Z.AI · NIM · OpenRouter · B.AI (OpenAI-compatible)" -Items $items -InitialIndex $startIdx -MaxVisible 20
   if (-not $choice) {
     Write-Host "Отменено." -ForegroundColor Yellow
     exit 0
   }
 
   $profileId = [string]$choice.Id
+
+  # Подменю для группы провайдера
+  if ($profileId -like "group:*") {
+    $groupKey = $profileId.Substring("group:".Length)
+    $groupItems = $script:GroupMenus[$groupKey]
+    if (-not $groupItems) {
+      Write-Host "Не найдено подменю для группы: $groupKey" -ForegroundColor Red
+      Start-Sleep -Seconds 2
+      continue
+    }
+    $subTitle = switch ($groupKey) {
+      "zai"        { "Z.AI Coding (paid) + GLM-4.7-Flash (free)" }
+      "nim"        { "NVIDIA NIM - 9 бесплатных agentic моделей" }
+      "openrouter" { "OpenRouter - бесплатные agentic модели" }
+      "bai"        { "B.AI - https://api.b.ai/v1 (OpenAI-compatible)" }
+      default      { "" }
+    }
+    $subChoice = Show-TuiFramedMenu -AppBrand "OpenCode" -Title ("OpenCode - {0}" -f $groupKey.ToUpper()) -Subtitle $subTitle -Items $groupItems -MaxVisible 16 -EscapeAction Back
+    if ($null -eq $subChoice) { exit 0 }
+    if ($true -eq $subChoice.__menuBack) { continue }
+    $profileId = [string]$subChoice.Id
+    Save-LauncherState -ProfileId $profileId
+    Invoke-OpenCodeProfile -ProfileId $profileId
+    exit $LASTEXITCODE
+  }
 
   if ($profileId -eq "custom-model") {
     $w = Invoke-LauncherCustomModelWizard -App "OpenCode"
@@ -618,6 +728,7 @@ while ($true) {
       "zai" { "custom-opencode-zai" }
       "groq" { "custom-opencode-groq" }
       "openrouter" { "custom-opencode-openrouter" }
+      "bai" { "custom-opencode-bai" }
       default { "custom-opencode-nim" }
     }
     Save-LauncherState -ProfileId $newId -Extra @{ customModelId = [string]$w.ModelId }
