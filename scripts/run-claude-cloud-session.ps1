@@ -131,6 +131,62 @@ function Ensure-ClaudeSettingsNoBom {
   [System.IO.File]::WriteAllText($path, $json, (New-Object System.Text.UTF8Encoding($false)))
 }
 
+function Update-ClaudeSettingsEnv {
+  <#
+    .SYNOPSIS
+      Записывает env-блок в ~/.claude/settings.json, чтобы Claude Code гарантированно
+      подхватил ключ и endpoint. Claude Code в TUI читает env из settings.json с более
+      высоким приоритетом, чем process env (см. 'Using glm-4.7[1m] (from .claude\settings.json)').
+
+    .PARAMETER Path
+      Путь к settings.json (по умолчанию ~/.claude/settings.json).
+
+    .PARAMETER EnvTable
+      Hashtable с переменными для записи в блок env. Значение $null → ключ удаляется.
+  #>
+  param(
+    [string]$Path = (Join-Path $HOME ".claude\settings.json"),
+    [hashtable]$EnvTable = @{}
+  )
+
+  $dir = Split-Path -Parent $Path
+  if (-not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+
+  $obj = $null
+  if (Test-Path -LiteralPath $Path) {
+    try { $obj = (Get-Content -Raw -LiteralPath $Path | ConvertFrom-Json) } catch { $obj = $null }
+  }
+  if (-not $obj) { $obj = [pscustomobject]@{} }
+  if (-not $obj.env) { $obj | Add-Member -NotePropertyName env -NotePropertyValue ([pscustomobject]@{}) -Force }
+
+  # Преобразуем env в Hashtable для удобства
+  $envHash = @{}
+  if ($obj.env.PSObject.Properties) {
+    foreach ($p in $obj.env.PSObject.Properties) { $envHash[$p.Name] = $p.Value }
+  }
+
+  # Базовые env для всех пресетов
+  if (-not $envHash.ContainsKey("CLAUDE_CODE_ATTRIBUTION_HEADER")) { $envHash["CLAUDE_CODE_ATTRIBUTION_HEADER"] = "0" }
+  if (-not $envHash.ContainsKey("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC")) { $envHash["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"] = "1" }
+
+  # Применяем новые значения
+  foreach ($k in $EnvTable.Keys) {
+    $v = $EnvTable[$k]
+    if ($null -eq $v) {
+      $envHash.Remove($k)
+    } else {
+      $envHash[$k] = [string]$v
+    }
+  }
+
+  # Заменяем env-блок целиком
+  $newEnv = [pscustomobject]$envHash
+  $obj.env = $newEnv
+
+  $json = ($obj | ConvertTo-Json -Depth 10)
+  [System.IO.File]::WriteAllText($Path, $json, (New-Object System.Text.UTF8Encoding($false)))
+}
+
 function Test-ClaudeMemTcp37777 {
   $c = $null
   try {
@@ -403,6 +459,18 @@ if ($Provider -eq "zai") {
   $env:ANTHROPIC_DEFAULT_SONNET_MODEL = $zModel
   $env:ANTHROPIC_DEFAULT_HAIKU_MODEL = $zModel
 
+  # Claude Code v2.x читает env из ~/.claude/settings.json с приоритетом над process env.
+  # Записываем ключ + endpoint в settings.json чтобы избежать 'Not logged in'.
+  Update-ClaudeSettingsEnv -EnvTable @{
+    ANTHROPIC_API_KEY             = $ZaiApiKey
+    ANTHROPIC_BASE_URL            = "https://api.z.ai/api/anthropic"
+    ANTHROPIC_DEFAULT_OPUS_MODEL  = $zModel
+    ANTHROPIC_DEFAULT_SONNET_MODEL = $zModel
+    ANTHROPIC_DEFAULT_HAIKU_MODEL = $zModel
+    API_TIMEOUT_MS                = "3000000"
+    ANTHROPIC_AUTH_TOKEN          = $null
+  }
+
   if ($DryRun -ne 0) {
     if (-not (Test-HttpOk -Url "https://api.z.ai/api/anthropic" -TimeoutSec 5)) {
       throw "Z.AI endpoint not reachable: https://api.z.ai/api/anthropic"
@@ -445,6 +513,16 @@ if ($Provider -in @("nim", "nim-qwen")) {
   $env:ANTHROPIC_BASE_URL = ("http://127.0.0.1:{0}" -f $proxyPortResolved)
   $env:API_TIMEOUT_MS = "3000000"
 
+  Update-ClaudeSettingsEnv -EnvTable @{
+    ANTHROPIC_AUTH_TOKEN          = $ProxyAuthToken
+    ANTHROPIC_BASE_URL            = "http://127.0.0.1:$proxyPortResolved"
+    API_TIMEOUT_MS                = "3000000"
+    ANTHROPIC_API_KEY             = $null
+    ANTHROPIC_DEFAULT_OPUS_MODEL  = $null
+    ANTHROPIC_DEFAULT_SONNET_MODEL = $null
+    ANTHROPIC_DEFAULT_HAIKU_MODEL = $null
+  }
+
   if ($DryRun -ne 0) {
     if (-not (Test-HttpResponding -Url ("http://127.0.0.1:{0}/v1/models" -f $proxyPortResolved) -TimeoutSec 3)) {
       throw "free-claude-code not responding on http://127.0.0.1:$proxyPortResolved"
@@ -480,6 +558,17 @@ if ($Provider -eq "openrouter") {
   Remove-Item Env:ANTHROPIC_API_KEY -ErrorAction SilentlyContinue
   $env:ANTHROPIC_BASE_URL = ("http://127.0.0.1:{0}" -f $orPort)
   $env:API_TIMEOUT_MS = "3000000"
+
+  Update-ClaudeSettingsEnv -EnvTable @{
+    ANTHROPIC_AUTH_TOKEN          = $ProxyAuthToken
+    ANTHROPIC_BASE_URL            = "http://127.0.0.1:$orPort"
+    API_TIMEOUT_MS                = "3000000"
+    OPENROUTER_API_KEY            = $orKey
+    ANTHROPIC_API_KEY             = $null
+    ANTHROPIC_DEFAULT_OPUS_MODEL  = $null
+    ANTHROPIC_DEFAULT_SONNET_MODEL = $null
+    ANTHROPIC_DEFAULT_HAIKU_MODEL = $null
+  }
 
   if ($DryRun -ne 0) {
     if (-not (Test-HttpResponding -Url ("http://127.0.0.1:{0}/v1/models" -f $orPort) -TimeoutSec 3)) {
@@ -522,6 +611,18 @@ if ($Provider -eq "bai") {
   Remove-Item Env:ANTHROPIC_API_KEY -ErrorAction SilentlyContinue
   $env:ANTHROPIC_BASE_URL = ("http://127.0.0.1:{0}" -f $baiPort)
   $env:API_TIMEOUT_MS = "3000000"
+
+  Update-ClaudeSettingsEnv -EnvTable @{
+    ANTHROPIC_AUTH_TOKEN          = $ProxyAuthToken
+    ANTHROPIC_BASE_URL            = "http://127.0.0.1:$baiPort"
+    API_TIMEOUT_MS                = "3000000"
+    OPENROUTER_API_KEY            = $baiKey
+    OPENAI_BASE_URL               = "https://api.b.ai/v1"
+    ANTHROPIC_API_KEY             = $null
+    ANTHROPIC_DEFAULT_OPUS_MODEL  = $null
+    ANTHROPIC_DEFAULT_SONNET_MODEL = $null
+    ANTHROPIC_DEFAULT_HAIKU_MODEL = $null
+  }
 
   if ($DryRun -ne 0) {
     if (-not (Test-HttpResponding -Url ("http://127.0.0.1:{0}/v1/models" -f $baiPort) -TimeoutSec 3)) {

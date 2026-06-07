@@ -74,7 +74,10 @@ function Invoke-FreebuffRun {
       Write-Host ""
       Write-Host "Freebuff завершился с кодом $exitCode." -ForegroundColor Yellow
       Write-Host "Если была сетевая ошибка (ECONNRESET/timeout) — проверьте интернет и попробуйте снова." -ForegroundColor Yellow
-      Write-Host "Помочь может ручное обновление Freebuff: npm i -g freebuff@latest" -ForegroundColor DarkGray
+      Write-Host "Возможные причины и решения:" -ForegroundColor Cyan
+      Write-Host "  1) Сервер freebuff временно недоступен — попробуйте позже или через VPN" -ForegroundColor DarkGray
+      Write-Host "  2) Обновите freebuff: npm i -g freebuff@latest" -ForegroundColor DarkGray
+      Write-Host "  3) Альтернатива: npm i -g codebuff (оригинальный Codebuff CLI)" -ForegroundColor DarkGray
       return $false
     }
 

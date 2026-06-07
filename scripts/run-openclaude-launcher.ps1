@@ -18,6 +18,44 @@ function Resolve-OpenClaudeExe {
   return ""
 }
 
+function Update-OpenClaudeSettingsEnv {
+  <#
+    OpenClaude (форк Claude Code) читает env из ~/.openclaude/settings.json.
+    Без записи в settings.json он игнорирует process env и использует дефолтный
+    Gitlawb Opengateway с моделью mimo-v2.5-pro.
+  #>
+  param(
+    [hashtable]$EnvTable = @{}
+  )
+  $path = Join-Path $HOME ".openclaude\settings.json"
+  $dir = Split-Path -Parent $path
+  if (-not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+
+  $obj = $null
+  if (Test-Path -LiteralPath $path) {
+    try { $obj = (Get-Content -Raw -LiteralPath $path | ConvertFrom-Json) } catch { $obj = $null }
+  }
+  if (-not $obj) { $obj = [pscustomobject]@{} }
+  if (-not $obj.env) { $obj | Add-Member -NotePropertyName env -NotePropertyValue ([pscustomobject]@{}) -Force }
+
+  $envHash = @{}
+  if ($obj.env.PSObject.Properties) {
+    foreach ($p in $obj.env.PSObject.Properties) { $envHash[$p.Name] = $p.Value }
+  }
+
+  if (-not $envHash.ContainsKey("CLAUDE_CODE_ATTRIBUTION_HEADER")) { $envHash["CLAUDE_CODE_ATTRIBUTION_HEADER"] = "0" }
+  if (-not $envHash.ContainsKey("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC")) { $envHash["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"] = "1" }
+
+  foreach ($k in $EnvTable.Keys) {
+    $v = $EnvTable[$k]
+    if ($null -eq $v) { $envHash.Remove($k) } else { $envHash[$k] = [string]$v }
+  }
+
+  $obj.env = [pscustomobject]$envHash
+  $json = ($obj | ConvertTo-Json -Depth 10)
+  [System.IO.File]::WriteAllText($path, $json, (New-Object System.Text.UTF8Encoding($false)))
+}
+
 # Главное меню (8 пунктов — Z.AI на первом месте как наиболее совместимый).
 $script:Profiles = @(
   @{ Id = "group:zai";        Label = "Z.AI - Anthropic (GLM-5.1 / GLM-4.7 / Flash) — работает через env" }
@@ -102,6 +140,17 @@ function Invoke-OpenClaudeZaiPreset {
   $env:ANTHROPIC_DEFAULT_SONNET_MODEL = $zSpec.Model
   $env:ANTHROPIC_DEFAULT_HAIKU_MODEL = $zSpec.Model
 
+  # Записываем в ~/.openclaude/settings.json — иначе OpenClaude использует Gitlawb Opengateway.
+  Update-OpenClaudeSettingsEnv -EnvTable @{
+    ANTHROPIC_API_KEY              = $key
+    ANTHROPIC_BASE_URL             = "https://api.z.ai/api/anthropic"
+    ANTHROPIC_DEFAULT_OPUS_MODEL   = $zSpec.Model
+    ANTHROPIC_DEFAULT_SONNET_MODEL = $zSpec.Model
+    ANTHROPIC_DEFAULT_HAIKU_MODEL  = $zSpec.Model
+    API_TIMEOUT_MS                 = "3000000"
+    ANTHROPIC_AUTH_TOKEN           = $null
+  }
+
   $exe = Resolve-OpenClaudeExe
   if (-not $exe) { throw "OpenClaude CLI не найден. Установите: npm install -g @gitlawb/openclaude" }
 
@@ -143,6 +192,21 @@ function Invoke-OpenClaudeOpenAIPreset {
   $env:OPENAI_API_KEY = $key
   $env:OPENAI_BASE_URL = $spec.Base
   $env:OPENAI_MODEL = $spec.Model
+
+  # Также записываем в ~/.openclaude/settings.json → env блок (на случай если
+  # OpenClaude игнорирует process env, как это было с Anthropic transport).
+  Update-OpenClaudeSettingsEnv -EnvTable @{
+    CLAUDE_CODE_USE_OPENAI         = "1"
+    OPENAI_API_KEY                 = $key
+    OPENAI_BASE_URL                = $spec.Base
+    OPENAI_MODEL                   = $spec.Model
+    ANTHROPIC_API_KEY              = $null
+    ANTHROPIC_BASE_URL             = $null
+    ANTHROPIC_AUTH_TOKEN           = $null
+    ANTHROPIC_DEFAULT_OPUS_MODEL   = $null
+    ANTHROPIC_DEFAULT_SONNET_MODEL = $null
+    ANTHROPIC_DEFAULT_HAIKU_MODEL  = $null
+  }
 
   $exe = Resolve-OpenClaudeExe
   if (-not $exe) { throw "OpenClaude CLI не найден. Установите: npm install -g @gitlawb/openclaude" }
@@ -217,6 +281,16 @@ while ($true) {
       $env:ANTHROPIC_DEFAULT_SONNET_MODEL = $mid
       $env:ANTHROPIC_DEFAULT_HAIKU_MODEL = $mid
 
+      Update-OpenClaudeSettingsEnv -EnvTable @{
+        ANTHROPIC_API_KEY              = $key
+        ANTHROPIC_BASE_URL             = "https://api.z.ai/api/anthropic"
+        ANTHROPIC_DEFAULT_OPUS_MODEL   = $mid
+        ANTHROPIC_DEFAULT_SONNET_MODEL = $mid
+        ANTHROPIC_DEFAULT_HAIKU_MODEL  = $mid
+        API_TIMEOUT_MS                 = "3000000"
+        ANTHROPIC_AUTH_TOKEN           = $null
+      }
+
       $exe = Resolve-OpenClaudeExe
       if (-not $exe) { throw "OpenClaude CLI не найден. Установите: npm install -g @gitlawb/openclaude" }
       Clear-Host
@@ -244,6 +318,20 @@ while ($true) {
       $env:OPENAI_API_KEY = $key
       $env:OPENAI_BASE_URL = $spec.Base
       $env:OPENAI_MODEL = $mid
+
+      Update-OpenClaudeSettingsEnv -EnvTable @{
+        CLAUDE_CODE_USE_OPENAI         = "1"
+        OPENAI_API_KEY                 = $key
+        OPENAI_BASE_URL                = $spec.Base
+        OPENAI_MODEL                   = $mid
+        ANTHROPIC_API_KEY              = $null
+        ANTHROPIC_BASE_URL             = $null
+        ANTHROPIC_AUTH_TOKEN           = $null
+        ANTHROPIC_DEFAULT_OPUS_MODEL   = $null
+        ANTHROPIC_DEFAULT_SONNET_MODEL = $null
+        ANTHROPIC_DEFAULT_HAIKU_MODEL  = $null
+      }
+
       $exe = Resolve-OpenClaudeExe
       if (-not $exe) { throw "OpenClaude CLI не найден. Установите: npm install -g @gitlawb/openclaude" }
       Clear-Host
@@ -260,6 +348,18 @@ while ($true) {
     Write-Host "Это сохранит выбранный провайдер в конфиг OpenClaude (~/.openclaude/)." -ForegroundColor DarkGray
     Start-Sleep -Seconds 2
     Remove-Item Env:OPENAI_BASE_URL, Env:OPENAI_MODEL, Env:CLAUDE_CODE_USE_OPENAI, Env:ANTHROPIC_BASE_URL, Env:ANTHROPIC_API_KEY -ErrorAction SilentlyContinue
+    Update-OpenClaudeSettingsEnv -EnvTable @{
+      OPENAI_BASE_URL                = $null
+      OPENAI_MODEL                   = $null
+      CLAUDE_CODE_USE_OPENAI         = $null
+      OPENAI_API_KEY                 = $null
+      ANTHROPIC_API_KEY              = $null
+      ANTHROPIC_BASE_URL             = $null
+      ANTHROPIC_AUTH_TOKEN           = $null
+      ANTHROPIC_DEFAULT_OPUS_MODEL   = $null
+      ANTHROPIC_DEFAULT_SONNET_MODEL = $null
+      ANTHROPIC_DEFAULT_HAIKU_MODEL  = $null
+    }
     $exe = Resolve-OpenClaudeExe
     if (-not $exe) { throw "OpenClaude CLI не найден. Установите: npm install -g @gitlawb/openclaude" }
     Clear-Host
@@ -270,6 +370,18 @@ while ($true) {
 
   if ($profileId -eq "vanilla") {
     Remove-Item Env:OPENAI_BASE_URL, Env:OPENAI_MODEL, Env:CLAUDE_CODE_USE_OPENAI, Env:OPENAI_API_KEY, Env:ANTHROPIC_BASE_URL, Env:ANTHROPIC_API_KEY, Env:ANTHROPIC_AUTH_TOKEN, Env:ANTHROPIC_DEFAULT_OPUS_MODEL, Env:ANTHROPIC_DEFAULT_SONNET_MODEL, Env:ANTHROPIC_DEFAULT_HAIKU_MODEL -ErrorAction SilentlyContinue
+    Update-OpenClaudeSettingsEnv -EnvTable @{
+      OPENAI_BASE_URL                = $null
+      OPENAI_MODEL                   = $null
+      CLAUDE_CODE_USE_OPENAI         = $null
+      OPENAI_API_KEY                 = $null
+      ANTHROPIC_API_KEY              = $null
+      ANTHROPIC_BASE_URL             = $null
+      ANTHROPIC_AUTH_TOKEN           = $null
+      ANTHROPIC_DEFAULT_OPUS_MODEL   = $null
+      ANTHROPIC_DEFAULT_SONNET_MODEL = $null
+      ANTHROPIC_DEFAULT_HAIKU_MODEL  = $null
+    }
     $exe = Resolve-OpenClaudeExe
     if (-not $exe) { throw "OpenClaude CLI не найден. Установите: npm install -g @gitlawb/openclaude" }
     Clear-Host
