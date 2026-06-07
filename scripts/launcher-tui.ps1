@@ -144,7 +144,7 @@ function Write-TuiBannerFreebuff {
 
 function Write-TuiBannerOpenClaude {
   param([int]$InnerWidth)
-  # Однострок: OPEN + CLAUDE (compact ANSI Shadow).
+  # Однострок: OPEN + CLAUDE side-by-side (compact ANSI Shadow).
   $lines = @(
     " ██████╗ ██████╗ ███████╗███╗   ██╗   ██████╗██╗      █████╗ ██╗   ██╗██████╗ ███████╗",
     "██╔═══██╗██╔══██╗██╔════╝████╗  ██║  ██╔════╝██║     ██╔══██╗██║   ██║██╔══██╗██╔════╝",
@@ -345,102 +345,34 @@ function Restore-ProcessEnvFromUser {
 }
 
 # ─── Invoke-ChildCliCatchCtrlC ───────────────────────────────────────────────
-# Runs a child CLI in a SEPARATE window via Start-Process -Wait.
+# Thin wrapper around '& $exe' that swallows PipelineStoppedException so
+# Ctrl+C (which aborts the running child CLI) returns control to the caller
+# instead of aborting the whole launcher script.
 #
-# Why a separate window:
-# - Ctrl+C from Windows Terminal sends CTRL_C_EVENT to every process attached
-#   to the parent console, including the launcher's pwsh.exe. PowerShell
-#   treats this as a pipeline stop and aborts the whole launcher script —
-#   try/catch cannot reliably recover (the exception is re-thrown after the
-#   handler returns).
-# - Qwen Code (Node.js) used to work because qwen-code.cmd exits 0 on Ctrl+C.
-#   claude.exe / openclaude.exe / opencode.exe return STATUS_CONTROL_C_EXIT.
-# - Running the agent in its own window with -Wait lets the user close it
-#   with the X button, ESC (handled by the agent itself), or Ctrl+C (sent
-#   only to the child console), and the launcher re-shows its main menu.
-#
-# Side effect: env vars (Z.AI/NIM/B.AI keys, OPENGATEWAY_API_KEY, etc.) are
-# inherited because Start-Process copies the parent process environment to
-# the child by default.
+# Differences from the previous (broken) Invoke-ChildCliSafe attempt:
+#   - Does NOT temporarily change $ErrorActionPreference.
+#   - Does NOT change $PSNativeCommandUseErrorActionPreference (callers set it).
+#   - Does NOT return $LASTEXITCODE — just runs the CLI and swallows Ctrl+C.
+#   - Works because the caller has already set
+#     $PSNativeCommandUseErrorActionPreference = $false at script top, so
+#     non-zero exit codes never become terminating errors. The only thing we
+#     need to catch here is PipelineStoppedException (Ctrl+C pipeline abort).
 function Invoke-ChildCliCatchCtrlC {
   param(
     [Parameter(Mandatory = $true)][string]$ExePath,
     [string[]]$Arguments = @()
   )
-  if ($ExePath -like "*.cmd" -or $ExePath -like "*.bat") {
-    $filePath = "cmd.exe"
-    $fileArgs = @("/c", "`"$ExePath`"") + $Arguments
-  } else {
-    $filePath = $ExePath
-    $fileArgs = $Arguments
-  }
-
-  $argString = ($fileArgs | ForEach-Object {
-    $a = [string]$_
-    if ($a -match '[\s"]') { '"' + ($a -replace '"', '\"') + '"' } else { $a }
-  }) -join ' '
-
-  Write-Host ""
-  Write-Host "Агент запущен в отдельном окне. Закройте окно агента" -ForegroundColor Cyan
-  Write-Host "(крестик / ESC / Ctrl+C — что поддерживает сам агент)" -ForegroundColor Cyan
-  Write-Host "для возврата в главное меню." -ForegroundColor Cyan
-
   try {
-    $proc = Start-Process -FilePath $filePath -ArgumentList $argString -Wait -PassThru
-    return $proc.ExitCode
+    if ($ExePath -like "*.cmd" -or $ExePath -like "*.bat") {
+      $allArgs = @("/c", $ExePath) + $Arguments
+      & cmd.exe @allArgs
+    } elseif ($Arguments.Count -gt 0) {
+      & $ExePath @Arguments
+    } else {
+      & $ExePath
+    }
   } catch {
-    return -1
-  }
-}
-
-# ─── Invoke-PsScriptInNewWindow ──────────────────────────────────────────────
-# Same idea as Invoke-ChildCliCatchCtrlC but for PowerShell scripts (used by
-# Qwen Code and Claude Code launchers which delegate to a child .ps1).
-function Invoke-PsScriptInNewWindow {
-  param(
-    [Parameter(Mandatory = $true)][string]$ScriptPath,
-    [string[]]$Arguments = @()
-  )
-  $allArgs = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "`"$ScriptPath`"") + $Arguments
-  return (Invoke-ChildCliCatchCtrlC -ExePath "pwsh.exe" -Arguments $allArgs)
-}
-
-# ─── Start-ChildPsScript ─────────────────────────────────────────────────────
-# Run a PowerShell script in a SEPARATE window via pwsh.exe -EncodedCommand,
-# with arguments embedded in the script block.
-#
-# Use this from Qwen Code / Claude Code launchers to delegate to their
-# run-qwen-code-*.ps1 / run-claude-cloud-session.ps1 helpers. EncodedCommand
-# preserves arguments verbatim (no shell quoting headaches) and lets the user
-# close the agent window with the X button / ESC / Ctrl+C while the launcher
-# stays alive in its own console.
-function Start-ChildPsScript {
-  param(
-    [Parameter(Mandatory = $true)][string]$ScriptPath,
-    [string[]]$Arguments = @(),
-    [string]$DotSourceDir
-  )
-  $parts = @()
-  if ($DotSourceDir) {
-    $parts += "Set-Location -LiteralPath '$DotSourceDir'"
-  }
-  $argString = ($Arguments | ForEach-Object {
-    $a = [string]$_
-    if ($a -match '\s|''|"|\\') { "'$($a -replace "'", "''")'" } else { $a }
-  }) -join ' '
-  $parts += "& '$ScriptPath' $argString"
-  $cmdText = ($parts -join "`n")
-  $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($cmdText))
-
-  Write-Host ""
-  Write-Host "Агент запущен в отдельном окне. Закройте окно агента" -ForegroundColor Cyan
-  Write-Host "(крестик / ESC / Ctrl+C — что поддерживает сам агент)" -ForegroundColor Cyan
-  Write-Host "для возврата в главное меню." -ForegroundColor Cyan
-
-  try {
-    $proc = Start-Process -FilePath "pwsh.exe" -ArgumentList @("-NoProfile", "-EncodedCommand", $encoded) -Wait -PassThru
-    return $proc.ExitCode
-  } catch {
-    return -1
+    # Swallow Ctrl+C / pipeline-stopped — return to caller so the launcher
+    # can re-show its main menu.
   }
 }

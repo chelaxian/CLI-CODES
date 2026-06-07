@@ -198,55 +198,68 @@ function Invoke-ClaudeCloudProfile {
 
   switch ($ProfileId) {
     "claude-zai" {
-      Start-ChildPsScript -ScriptPath $SessionScript -Arguments @("-Provider", "zai", "-ClaudeTools", "default", "-ClaudeMemMaxWaitSec", "60", "-SkipCommonPreamble")
+      & $SessionScript -Provider zai -ClaudeTools default `
+        -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     "claude-zai-glm51" {
-      Start-ChildPsScript -ScriptPath $SessionScript -Arguments @("-Provider", "zai", "-ZaiAnthropicModelId", "glm-5.1", "-ClaudeTools", "default", "-ClaudeMemMaxWaitSec", "60", "-SkipCommonPreamble")
+      & $SessionScript -Provider zai -ZaiAnthropicModelId "glm-5.1" -ClaudeTools default `
+        -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     "claude-zai-flash47" {
-      Start-ChildPsScript -ScriptPath $SessionScript -Arguments @("-Provider", "zai", "-ZaiAnthropicModelId", "glm-4.7-flash", "-ClaudeTools", "default", "-ClaudeMemMaxWaitSec", "60", "-SkipCommonPreamble")
+      & $SessionScript -Provider zai -ZaiAnthropicModelId "glm-4.7-flash" -ClaudeTools default `
+        -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     "claude-zai-flash45" {
-      Start-ChildPsScript -ScriptPath $SessionScript -Arguments @("-Provider", "zai", "-ZaiAnthropicModelId", "glm-4.5-flash", "-ClaudeTools", "default", "-ClaudeMemMaxWaitSec", "60", "-SkipCommonPreamble")
+      & $SessionScript -Provider zai -ZaiAnthropicModelId "glm-4.5-flash" -ClaudeTools default `
+        -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     "claude-nim-mistral-medium" {
-      Start-ChildPsScript -ScriptPath $SessionScript -Arguments @("-Provider", "nim", "-NimModel", "nvidia_nim/mistralai/mistral-medium-3.5-128b", "-ClaudeTools", "default", "-ClaudeMemMaxWaitSec", "60", "-SkipCommonPreamble")
+      & $SessionScript -Provider nim -NimModel "nvidia_nim/mistralai/mistral-medium-3.5-128b" -ClaudeTools default `
+        -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     "claude-nim-glm51" {
-      Start-ChildPsScript -ScriptPath $SessionScript -Arguments @("-Provider", "nim", "-NimModel", "nvidia_nim/z-ai/glm-5.1", "-ClaudeTools", "default", "-ClaudeMemMaxWaitSec", "60", "-SkipCommonPreamble")
+      & $SessionScript -Provider nim -NimModel "nvidia_nim/z-ai/glm-5.1" -ClaudeTools default `
+        -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     "claude-nim-step-3.5-flash" {
-      Start-ChildPsScript -ScriptPath $SessionScript -Arguments @("-Provider", "nim", "-NimModel", "nvidia_nim/stepfun-ai/step-3.5-flash", "-ClaudeTools", "default", "-ClaudeMemMaxWaitSec", "60", "-SkipCommonPreamble")
+      & $SessionScript -Provider nim -NimModel "nvidia_nim/stepfun-ai/step-3.5-flash" -ClaudeTools default `
+        -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     "claude-nim-mistral-large-3" {
-      Start-ChildPsScript -ScriptPath $SessionScript -Arguments @("-Provider", "nim", "-NimModel", "nvidia_nim/mistralai/mistral-large-3-675b-instruct-2512", "-ClaudeTools", "default", "-ClaudeMemMaxWaitSec", "60", "-SkipCommonPreamble")
+      & $SessionScript -Provider nim -NimModel "nvidia_nim/mistralai/mistral-large-3-675b-instruct-2512" -ClaudeTools default `
+        -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     "claude-nim-deepseek-v4-flash" {
-      Start-ChildPsScript -ScriptPath $SessionScript -Arguments @("-Provider", "nim", "-NimModel", "nvidia_nim/deepseek-ai/deepseek-v4-flash", "-ClaudeTools", "minimal", "-ClaudeMemMaxWaitSec", "60", "-SkipCommonPreamble")
+      & $SessionScript -Provider nim -NimModel "nvidia_nim/deepseek-ai/deepseek-v4-flash" -ClaudeTools minimal `
+        -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     "claude-nim-gemma-4-31b" {
-      Start-ChildPsScript -ScriptPath $SessionScript -Arguments @("-Provider", "nim", "-NimModel", "nvidia_nim/google/gemma-4-31b-it", "-ClaudeTools", "minimal", "-ClaudeMemMaxWaitSec", "60", "-SkipCommonPreamble")
+      & $SessionScript -Provider nim -NimModel "nvidia_nim/google/gemma-4-31b-it" -ClaudeTools minimal `
+        -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     "claude-nim-qwen3.5-397b" {
-      Start-ChildPsScript -ScriptPath $SessionScript -Arguments @("-Provider", "nim", "-NimModel", "nvidia_nim/qwen/qwen3.5-397b-a17b", "-ClaudeTools", "minimal", "-ClaudeMemMaxWaitSec", "60", "-SkipCommonPreamble")
+      & $SessionScript -Provider nim -NimModel "nvidia_nim/qwen/qwen3.5-397b-a17b" -ClaudeTools minimal `
+        -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     "claude-nim-qwen3-next-80b" {
-      Start-ChildPsScript -ScriptPath $SessionScript -Arguments @("-Provider", "nim", "-NimModel", "nvidia_nim/qwen/qwen3-next-80b-a3b-instruct", "-ClaudeTools", "minimal", "-ClaudeMemMaxWaitSec", "60", "-SkipCommonPreamble")
+      & $SessionScript -Provider nim -NimModel "nvidia_nim/qwen/qwen3-next-80b-a3b-instruct" -ClaudeTools minimal `
+        -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     "claude-nim-qwen3-coder-480b" {
-      Start-ChildPsScript -ScriptPath $SessionScript -Arguments @("-Provider", "nim", "-NimModel", "nvidia_nim/qwen/qwen3-coder-480b-a35b-instruct", "-ClaudeTools", "minimal", "-ClaudeMemMaxWaitSec", "60", "-SkipCommonPreamble")
+      & $SessionScript -Provider nim -NimModel "nvidia_nim/qwen/qwen3-coder-480b-a35b-instruct" -ClaudeTools minimal `
+        -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     # OpenRouter пресеты убраны — используйте «Другая модель…» → OpenRouter.
@@ -256,7 +269,8 @@ function Invoke-ClaudeCloudProfile {
       if ([string]::IsNullOrWhiteSpace($mid)) {
         throw "Нет customModelId в claude-cloud-launcher-state.json. Выберите модель в «Другая модель»."
       }
-      Start-ChildPsScript -ScriptPath $SessionScript -Arguments @("-Provider", "zai", "-ZaiAnthropicModelId", $mid.Trim(), "-ClaudeTools", "default", "-ClaudeMemMaxWaitSec", "25", "-SkipCommonPreamble")
+      & $SessionScript -Provider zai -ZaiAnthropicModelId $mid.Trim() -ClaudeTools default `
+        -ClaudeMemMaxWaitSec 25 -SkipCommonPreamble
       return
     }
     "custom-claude-nim" {
@@ -271,7 +285,8 @@ function Invoke-ClaudeCloudProfile {
       }
       $claudeTools = if (Test-NvidiaNimOpenAiNativeToolCalling $catalog) { "default" } else { "minimal" }
       $port = Get-LauncherFreeTcpPort
-      Start-ChildPsScript -ScriptPath $SessionScript -Arguments @("-Provider", "nim", "-NimModel", $full.Trim(), "-ProxyPort", $port, "-ClaudeTools", $claudeTools, "-ClaudeMemMaxWaitSec", "25", "-SkipCommonPreamble")
+      & $SessionScript -Provider nim -NimModel $full.Trim() -ProxyPort $port -ClaudeTools $claudeTools `
+        -ClaudeMemMaxWaitSec 25 -SkipCommonPreamble
       return
     }
     "custom-claude-openrouter" {
@@ -280,7 +295,8 @@ function Invoke-ClaudeCloudProfile {
       if ([string]::IsNullOrWhiteSpace($mid)) {
         throw "Нет customModelId для custom-claude-openrouter. Выберите модель в «Другая модель»."
       }
-      Start-ChildPsScript -ScriptPath $SessionScript -Arguments @("-Provider", "openrouter", "-ZaiAnthropicModelId", $mid.Trim(), "-ClaudeTools", "default", "-ClaudeMemMaxWaitSec", "25", "-SkipCommonPreamble")
+      & $SessionScript -Provider openrouter -ZaiAnthropicModelId $mid.Trim() -ClaudeTools default `
+        -ClaudeMemMaxWaitSec 25 -SkipCommonPreamble
       return
     }
     "custom-claude-bai" {
