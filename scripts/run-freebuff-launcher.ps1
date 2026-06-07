@@ -10,12 +10,10 @@ $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "launcher-tui.ps1")
 
 function Resolve-FreebuffExe {
-  # Prefer the actual binary (~/.config/manicode/freebuff.exe) when present — it is what
-  # freebuff.cmd delegates to. Calling it directly avoids the cmd wrapper which sometimes
-  # returns non-zero exit codes when the underlying binary returned 0.
-  $binPath = Join-Path $env:USERPROFILE ".config\manicode\freebuff.exe"
-  if (Test-Path -LiteralPath $binPath) { return $binPath }
-
+  # Prefer the npm .cmd wrapper: it spawns the Node CLI which drives the
+  # interactive pseudo-graphical TUI. Calling the underlying native binary
+  # (~/.config/manicode/freebuff.exe) directly bypasses Node's TTY handling
+  # and the Freebuff TUI never renders.
   $cmd = Get-Command freebuff.cmd -ErrorAction SilentlyContinue
   if ($cmd) { return $cmd.Source }
   $cmd = Get-Command freebuff -ErrorAction SilentlyContinue
@@ -70,7 +68,7 @@ function Invoke-FreebuffRun {
   $attempt = 0
   while ($true) {
     $attempt++
-    & $freebuffExe
+    $null = Invoke-ChildCliSafe -ExePath $freebuffExe
     $exitCode = $LASTEXITCODE
 
     if ($exitCode -eq 0) { return $true }
