@@ -255,47 +255,47 @@ function Invoke-ClaudeCloudProfile {
       return
     }
     "claude-nim-mistral-medium" {
-      & $SessionScript -Provider nim -NimModel "mistralai/mistral-medium-3.5-128b" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
+      & $SessionScript -Provider nim -NimModel "mistralai/mistral-medium-3.5-128b" -ClaudeTools default `
         -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     "claude-nim-glm51" {
-      & $SessionScript -Provider nim -NimModel "z-ai/glm-5.1" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
+      & $SessionScript -Provider nim -NimModel "z-ai/glm-5.1" -ClaudeTools default `
         -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     "claude-nim-step-3.5-flash" {
-      & $SessionScript -Provider nim -NimModel "stepfun-ai/step-3.5-flash" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
+      & $SessionScript -Provider nim -NimModel "stepfun-ai/step-3.5-flash" -ClaudeTools default `
         -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     "claude-nim-mistral-large-3" {
-      & $SessionScript -Provider nim -NimModel "mistralai/mistral-large-3-675b-instruct-2512" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools default `
+      & $SessionScript -Provider nim -NimModel "mistralai/mistral-large-3-675b-instruct-2512" -ClaudeTools default `
         -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     "claude-nim-deepseek-v4-flash" {
-      & $SessionScript -Provider nim -NimModel "deepseek-ai/deepseek-v4-flash" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools minimal `
+      & $SessionScript -Provider nim -NimModel "deepseek-ai/deepseek-v4-flash" -ClaudeTools minimal `
         -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     "claude-nim-gemma-4-31b" {
-      & $SessionScript -Provider nim -NimModel "google/gemma-4-31b-it" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools minimal `
+      & $SessionScript -Provider nim -NimModel "google/gemma-4-31b-it" -ClaudeTools minimal `
         -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     "claude-nim-qwen3.5-397b" {
-      & $SessionScript -Provider nim -NimModel "qwen/qwen3.5-397b-a17b" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools minimal `
+      & $SessionScript -Provider nim -NimModel "qwen/qwen3.5-397b-a17b" -ClaudeTools minimal `
         -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     "claude-nim-qwen3-next-80b" {
-      & $SessionScript -Provider nim -NimModel "qwen/qwen3-next-80b-a3b-instruct" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools minimal `
+      & $SessionScript -Provider nim -NimModel "qwen/qwen3-next-80b-a3b-instruct" -ClaudeTools minimal `
         -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
     "claude-nim-qwen3-coder-480b" {
-      & $SessionScript -Provider nim -NimModel "qwen/qwen3-coder-480b-a35b-instruct" -VaultPath $VaultPath -ObsidianExe $ObsidianExe -ClaudeTools minimal `
+      & $SessionScript -Provider nim -NimModel "qwen/qwen3-coder-480b-a35b-instruct" -ClaudeTools minimal `
         -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
       return
     }
