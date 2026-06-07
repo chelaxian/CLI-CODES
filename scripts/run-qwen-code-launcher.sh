@@ -60,13 +60,61 @@ OPENROUTER_MODELS=(
 )
 
 BAI_MODELS=(
+    "bai-gpt-5-nano|B.AI - GPT-5 Nano (OpenAI, agentic)"
+    "bai-gpt-5-mini|B.AI - GPT-5 Mini (OpenAI, agentic)"
+    "bai-gpt-5.2|B.AI - GPT-5.2 (OpenAI, agentic)"
+    "bai-gpt-5.4-nano|B.AI - GPT-5.4 Nano (OpenAI, agentic)"
+    "bai-gpt-5.4-mini|B.AI - GPT-5.4 Mini (OpenAI, agentic)"
+    "bai-gpt-5.4|B.AI - GPT-5.4 (OpenAI, agentic)"
+    "bai-gpt-5.4-pro|B.AI - GPT-5.4 Pro (OpenAI, agentic)"
+    "bai-gpt-5.5|B.AI - GPT-5.5 (OpenAI, agentic)"
+    "bai-gpt-5.5-instant|B.AI - GPT-5.5 Instant (OpenAI, agentic)"
+    "bai-claude-haiku-4.5|B.AI - Claude Haiku 4.5 (Anthropic, agentic)"
+    "bai-claude-sonnet-4.5|B.AI - Claude Sonnet 4.5 (Anthropic, agentic)"
+    "bai-claude-sonnet-4.6|B.AI - Claude Sonnet 4.6 (Anthropic, agentic)"
+    "bai-claude-opus-4.5|B.AI - Claude Opus 4.5 (Anthropic, agentic)"
+    "bai-claude-opus-4.6|B.AI - Claude Opus 4.6 (Anthropic, agentic)"
+    "bai-claude-opus-4.7|B.AI - Claude Opus 4.7 (Anthropic, agentic)"
+    "bai-claude-opus-4.8|B.AI - Claude Opus 4.8 (Anthropic, agentic)"
     "bai-deepseek-v4-pro|B.AI - DeepSeek V4 Pro (agentic)"
     "bai-deepseek-v4-flash|B.AI - DeepSeek V4 Flash (agentic)"
+    "bai-gemini-3.1-pro|B.AI - Gemini 3.1 Pro (Google, agentic)"
+    "bai-gemini-3.5-flash|B.AI - Gemini 3.5 Flash (Google, agentic)"
+    "bai-glm-5|B.AI - GLM-5 (Z.AI)"
+    "bai-glm-5.1|B.AI - GLM-5.1 (Z.AI)"
+    "bai-kimi-k2.5|B.AI - Kimi K2.5 (Moonshot)"
+    "bai-kimi-k2.6|B.AI - Kimi K2.6 (Moonshot)"
     "bai-minimax-m3|B.AI - MiniMax M3 (agentic)"
     "bai-minimax-m2.7|B.AI - MiniMax M2.7 (fast)"
-    "bai-glm-5|B.AI - GLM-5 (Z.AI)"
-    "bai-kimi-k2.6|B.AI - Kimi K2.6 (Moonshot)"
-    "bai-gpt-5.5|B.AI - GPT-5.5 (OpenAI)"
+)
+
+declare -A BAI_MODEL_SPEC=(
+    ["gpt-5-nano"]="128000:16384"
+    ["gpt-5-mini"]="128000:16384"
+    ["gpt-5.2"]="200000:16384"
+    ["gpt-5.4-nano"]="200000:16384"
+    ["gpt-5.4-mini"]="200000:16384"
+    ["gpt-5.4"]="200000:16384"
+    ["gpt-5.4-pro"]="200000:16384"
+    ["gpt-5.5"]="200000:16384"
+    ["gpt-5.5-instant"]="200000:16384"
+    ["claude-haiku-4.5"]="200000:8192"
+    ["claude-sonnet-4.5"]="200000:8192"
+    ["claude-sonnet-4.6"]="200000:8192"
+    ["claude-opus-4.5"]="200000:8192"
+    ["claude-opus-4.6"]="200000:8192"
+    ["claude-opus-4.7"]="200000:8192"
+    ["claude-opus-4.8"]="200000:8192"
+    ["deepseek-v4-pro"]="131072:8192"
+    ["deepseek-v4-flash"]="131072:8192"
+    ["gemini-3.1-pro"]="1000000:8192"
+    ["gemini-3.5-flash"]="1000000:8192"
+    ["glm-5"]="128000:8192"
+    ["glm-5.1"]="128000:8192"
+    ["kimi-k2.5"]="131072:8192"
+    ["kimi-k2.6"]="131072:8192"
+    ["minimax-m3"]="1000000:8192"
+    ["minimax-m2.7"]="1000000:8192"
 )
 
 # Show provider-group submenu and return chosen profile id (or "back" on Esc)
@@ -146,9 +194,17 @@ resolve_profile_from_state() {
     local profile_id=$(echo "$state" | grep -o '"profileId":"[^"]*"' | cut -d'"' -f4)
     
     case "$profile_id" in
-        "nim-glm"|"nim-qwen"|"nim-mistral-medium"|"nim-glm51"|"nim-step-3.5-flash"|"nim-mistral-large-3"|"nim-deepseek-v4-flash"|"nim-gemma-4-31b"|"nim-qwen3.5-397b"|"nim-qwen3-next-80b"|"nim-qwen3-coder-480b"|"zai-glm"|"zai-glm51"|"zai-flash47"|"zai-flash45"|"openrouter-hy3"|"openrouter-deepseek-v4-flash"|"openrouter-qwen3-coder"|"openrouter-nemotron"|"openrouter-laguna"|"bai-deepseek-v4-pro"|"bai-deepseek-v4-flash"|"bai-minimax-m3"|"bai-minimax-m2.7"|"bai-glm-5"|"bai-kimi-k2.6"|"bai-gpt-5.5"|"custom-qwen-zai"|"custom-qwen-zai-general"|"custom-qwen-nim"|"custom-qwen-groq"|"custom-qwen-openrouter"|"custom-qwen-bai")
+        "nim-glm"|"nim-qwen"|"nim-mistral-medium"|"nim-glm51"|"nim-step-3.5-flash"|"nim-mistral-large-3"|"nim-deepseek-v4-flash"|"nim-gemma-4-31b"|"nim-qwen3.5-397b"|"nim-qwen3-next-80b"|"nim-qwen3-coder-480b"|"zai-glm"|"zai-glm51"|"zai-flash47"|"zai-flash45"|"openrouter-hy3"|"openrouter-deepseek-v4-flash"|"openrouter-qwen3-coder"|"openrouter-nemotron"|"openrouter-laguna"|"custom-qwen-zai"|"custom-qwen-zai-general"|"custom-qwen-nim"|"custom-qwen-groq"|"custom-qwen-openrouter"|"custom-qwen-bai")
             echo "$profile_id"
             return 0
+            ;;
+        bai-*)
+            local mid="${profile_id#bai-}"
+            if [ -n "${BAI_MODEL_SPEC[$mid]:-}" ]; then
+                echo "$profile_id"
+                return 0
+            fi
+            return 1
             ;;
         *)
             return 1
@@ -431,26 +487,16 @@ invoke_qwen_profile() {
         "openrouter-laguna")
             bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider openrouter -ModelId "poolside/laguna-m.1:free"
             ;;
-        "bai-deepseek-v4-pro")
-            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider bai -ModelId "deepseek-v4-pro"
-            ;;
-        "bai-deepseek-v4-flash")
-            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider bai -ModelId "deepseek-v4-flash"
-            ;;
-        "bai-minimax-m3")
-            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider bai -ModelId "minimax-m3"
-            ;;
-        "bai-minimax-m2.7")
-            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider bai -ModelId "minimax-m2.7"
-            ;;
-        "bai-glm-5")
-            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider bai -ModelId "glm-5"
-            ;;
-        "bai-kimi-k2.6")
-            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider bai -ModelId "kimi-k2.6"
-            ;;
-        "bai-gpt-5.5")
-            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider bai -ModelId "gpt-5.5"
+        bai-*)
+            local mid="${profile_id#bai-}"
+            local spec="${BAI_MODEL_SPEC[$mid]:-}"
+            if [ -z "$spec" ]; then
+                echo -e "${RED}Unknown B.AI model: $mid${RESET}"
+                return 1
+            fi
+            local ctx="${spec%%:*}"
+            local max="${spec##*:}"
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider bai -ModelId "$mid" --ctx-length "$ctx" --max-tokens "$max"
             ;;
         "custom-qwen-zai")
             local state=$(get_launcher_state)

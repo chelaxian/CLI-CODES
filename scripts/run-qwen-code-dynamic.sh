@@ -6,17 +6,21 @@ set -euo pipefail
 
 PROVIDER=""
 MODEL_ID=""
+CTX_LENGTH_CLI=""
+MAX_TOKENS_CLI=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -Provider) PROVIDER="$2"; shift 2 ;;
     -ModelId) MODEL_ID="$2"; shift 2 ;;
+    --ctx-length) CTX_LENGTH_CLI="$2"; shift 2 ;;
+    --max-tokens) MAX_TOKENS_CLI="$2"; shift 2 ;;
     *) echo "Unknown param: $1" >&2; exit 1 ;;
   esac
 done
 
 if [ -z "$PROVIDER" ] || [ -z "$MODEL_ID" ]; then
-  echo "Usage: $0 -Provider <zai|zai-general|nim|groq|openrouter|bai> -ModelId <model-id>" >&2
+  echo "Usage: $0 -Provider <zai|zai-general|nim|groq|openrouter|bai> -ModelId <model-id> [--ctx-length N] [--max-tokens N]" >&2
   exit 1
 fi
 
@@ -207,8 +211,8 @@ else
     SKIP_STARTUP=',"skipStartupContext":true'
   fi
   if [ "$PROVIDER" = "bai" ]; then
-    CONTEXT_SIZE=131072
-    MAX_TOKENS=8192
+    CONTEXT_SIZE="${CTX_LENGTH_CLI:-131072}"
+    MAX_TOKENS="${MAX_TOKENS_CLI:-8192}"
   fi
   cat > "$QWEN_DIR/settings.json" <<SETTINGS_EOF
 {
@@ -245,7 +249,7 @@ if [ "$PROVIDER" = "openrouter" ]; then
   export QWEN_CODE_MAX_OUTPUT_TOKENS="8192"
   export QWEN_CODE_EMIT_TOOL_USE_SUMMARIES="0"
 elif [ "$PROVIDER" = "bai" ]; then
-  export QWEN_CODE_MAX_OUTPUT_TOKENS="8192"
+  export QWEN_CODE_MAX_OUTPUT_TOKENS="$MAX_TOKENS"
   export QWEN_CODE_EMIT_TOOL_USE_SUMMARIES="0"
 else
   export QWEN_CODE_MAX_OUTPUT_TOKENS="81920"
