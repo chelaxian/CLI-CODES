@@ -143,10 +143,19 @@ function Update-ClaudeSettingsEnv {
 
     .PARAMETER EnvTable
       Hashtable с переменными для записи в блок env. Значение $null → ключ удаляется.
+
+    .PARAMETER ClearTopLevelModel
+      Если $true — удаляет поле верхнего уровня "model" из settings.json.
+      Это нужно при переключении провайдера: settings.model = "sonnet[1m]" имеет
+      более высокий приоритет, чем env ANTHROPIC_DEFAULT_SONNET_MODEL, и Claude Code
+      использует её независимо от endpoint. После очистки Claude Code берёт модель
+      из env ANTHROPIC_DEFAULT_*. Для proxy-провайдеров (NIM/BAI/OR) это безопасно —
+      proxy сам перезаписывает model в запросе.
   #>
   param(
     [string]$Path = (Join-Path $HOME ".claude\settings.json"),
-    [hashtable]$EnvTable = @{}
+    [hashtable]$EnvTable = @{},
+    [switch]$ClearTopLevelModel
   )
 
   $dir = Split-Path -Parent $Path
@@ -182,6 +191,11 @@ function Update-ClaudeSettingsEnv {
   # Заменяем env-блок целиком
   $newEnv = [pscustomobject]$envHash
   $obj.env = $newEnv
+
+  # Опционально: убираем верхнеуровневое поле "model", которое перекрывает env ANTHROPIC_DEFAULT_*.
+  if ($ClearTopLevelModel -and $obj.PSObject.Properties['model']) {
+    $obj.PSObject.Properties.Remove('model')
+  }
 
   $json = ($obj | ConvertTo-Json -Depth 10)
   [System.IO.File]::WriteAllText($Path, $json, (New-Object System.Text.UTF8Encoding($false)))
@@ -393,9 +407,9 @@ function Ensure-FreeClaudeCodeProxy {
       $conn = Get-NetTCPConnection -LocalAddress 127.0.0.1 -LocalPort $Port -State Listen -ErrorAction Stop
       if ($conn) { return }
     } catch {}
-    if ($p -and $p.HasExited) {
-      throw "free-claude-code proxy exited early (exit=$($p.ExitCode)). Logs: $errLog ; $outLog"
-    }
+    # NOTE: не проверяем $p.HasExited — powershell.exe обёртка может завершиться
+    # раньше времени, но uvicorn продолжает работать как дочерний процесс.
+    # Только TCP socket является надёжной проверкой готовности.
     Start-Sleep -Seconds 1
   }
 
@@ -435,6 +449,10 @@ if ($PrepareOnly) {
   exit 0
 }
 
+# СБРОС env от предыдущего провайдера (env vars сохраняются между запусками
+# launcher'а в одном PowerShell процессе и могут конфликтовать).
+Remove-Item Env:OPENAI_BASE_URL, Env:OPENAI_API_KEY, Env:OPENROUTER_API_KEY, Env:BAI_API_KEY, Env:NVIDIA_NIM_API_KEY, Env:ANTHROPIC_AUTH_TOKEN, Env:ANTHROPIC_API_KEY, Env:ANTHROPIC_BASE_URL, Env:ANTHROPIC_DEFAULT_OPUS_MODEL, Env:ANTHROPIC_DEFAULT_SONNET_MODEL, Env:ANTHROPIC_DEFAULT_HAIKU_MODEL -ErrorAction SilentlyContinue
+
 if ($Provider -eq "zai") {
   if (-not $ZaiApiKey -or $ZaiApiKey.Trim().Length -eq 0 -or $ZaiApiKey -eq "__SET_ME__") {
     $ZaiApiKey = [Environment]::GetEnvironmentVariable("ZAI_API_KEY","User")
@@ -462,14 +480,18 @@ if ($Provider -eq "zai") {
   # Claude Code v2.x читает env из ~/.claude/settings.json с приоритетом над process env.
   # Записываем ключ + endpoint в settings.json чтобы избежать 'Not logged in'.
   Update-ClaudeSettingsEnv -EnvTable @{
-    ANTHROPIC_API_KEY             = $ZaiApiKey
-    ANTHROPIC_BASE_URL            = "https://api.z.ai/api/anthropic"
-    ANTHROPIC_DEFAULT_OPUS_MODEL  = $zModel
-    ANTHROPIC_DEFAULT_SONNET_MODEL = $zModel
-    ANTHROPIC_DEFAULT_HAIKU_MODEL = $zModel
-    API_TIMEOUT_MS                = "3000000"
-    ANTHROPIC_AUTH_TOKEN          = $null
-  }
+    ANTHROPIC_API_KEY              = $key
+    ANTHROPIC_BASE_URL             = "https://api.z.ai/api/anthropic"
+    ANTHROPIC_DEFAULT_OPUS_MODEL   = $zaiSpec.Model
+    ANTHROPIC_DEFAULT_SONNET_MODEL = $zaiSpec.Model
+    ANTHROPIC_DEFAULT_HAIKU_MODEL  = $zaiSpec.Model
+    API_TIMEOUT_MS                 = "3000000"
+    ANTHROPIC_AUTH_TOKEN           = $null
+    OPENROUTER_API_KEY             = $null
+    OPENAI_BASE_URL                = $null
+    OPENAI_API_KEY                 = $null
+    NVIDIA_NIM_API_KEY             = $null
+  } -ClearTopLevelModel
 
   if ($DryRun -ne 0) {
     if (-not (Test-HttpOk -Url "https://api.z.ai/api/anthropic" -TimeoutSec 5)) {
@@ -521,7 +543,11 @@ if ($Provider -in @("nim", "nim-qwen")) {
     ANTHROPIC_DEFAULT_OPUS_MODEL  = $null
     ANTHROPIC_DEFAULT_SONNET_MODEL = $null
     ANTHROPIC_DEFAULT_HAIKU_MODEL = $null
-  }
+    OPENROUTER_API_KEY            = $null
+    OPENAI_BASE_URL               = $null
+    OPENAI_API_KEY                = $null
+    BAI_API_KEY                   = $null
+  } -ClearTopLevelModel
 
   if ($DryRun -ne 0) {
     if (-not (Test-HttpResponding -Url ("http://127.0.0.1:{0}/v1/models" -f $proxyPortResolved) -TimeoutSec 3)) {
@@ -568,7 +594,11 @@ if ($Provider -eq "openrouter") {
     ANTHROPIC_DEFAULT_OPUS_MODEL  = $null
     ANTHROPIC_DEFAULT_SONNET_MODEL = $null
     ANTHROPIC_DEFAULT_HAIKU_MODEL = $null
-  }
+    OPENAI_BASE_URL               = $null
+    OPENAI_API_KEY                = $null
+    BAI_API_KEY                   = $null
+    NVIDIA_NIM_API_KEY            = $null
+  } -ClearTopLevelModel
 
   if ($DryRun -ne 0) {
     if (-not (Test-HttpResponding -Url ("http://127.0.0.1:{0}/v1/models" -f $orPort) -TimeoutSec 3)) {
@@ -622,7 +652,10 @@ if ($Provider -eq "bai") {
     ANTHROPIC_DEFAULT_OPUS_MODEL  = $null
     ANTHROPIC_DEFAULT_SONNET_MODEL = $null
     ANTHROPIC_DEFAULT_HAIKU_MODEL = $null
-  }
+    OPENAI_API_KEY                = $null
+    BAI_API_KEY                   = $null
+    NVIDIA_NIM_API_KEY            = $null
+  } -ClearTopLevelModel
 
   if ($DryRun -ne 0) {
     if (-not (Test-HttpResponding -Url ("http://127.0.0.1:{0}/v1/models" -f $baiPort) -TimeoutSec 3)) {

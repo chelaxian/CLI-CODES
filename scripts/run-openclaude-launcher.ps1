@@ -205,7 +205,7 @@ function Invoke-OpenClaudeZaiPreset {
   Clear-Host
   Write-Host "Запуск OpenClaude (Z.AI)..." -ForegroundColor Cyan
   Write-Host "Model: $($zSpec.Model) | Endpoint: https://api.z.ai/api/anthropic" -ForegroundColor DarkGray
-  & $exe
+  & $exe --bare
 }
 
 function Invoke-OpenClaudeOpenAIPreset {
@@ -260,7 +260,7 @@ function Invoke-OpenClaudeOpenAIPreset {
   Write-Host "Запуск OpenClaude..." -ForegroundColor Cyan
   Write-Host "Provider: $($spec.Base) | Model: $($spec.Model)" -ForegroundColor DarkGray
   Write-Host "Provider profile записан в ~/.openclaude/settings.json" -ForegroundColor DarkGray
-  & $exe
+  & $exe --bare
 }
 
 # Главное меню loop
@@ -339,7 +339,7 @@ while ($true) {
       Clear-Host
       Write-Host "Запуск OpenClaude (Z.AI custom)..." -ForegroundColor Cyan
       Write-Host "Model: $mid | Endpoint: https://api.z.ai/api/anthropic" -ForegroundColor DarkGray
-      & $exe
+      & $exe --bare
     } else {
       $spec = switch ($w.Provider) {
         "nim"        { @{ Base = "https://integrate.api.nvidia.com/v1"; KeyEnv = "NVIDIA_NIM_API_KEY" } }
@@ -376,15 +376,15 @@ while ($true) {
       Clear-Host
       Write-Host "Запуск OpenClaude..." -ForegroundColor Cyan
       Write-Host "Provider: $($spec.Base) | Model: $mid" -ForegroundColor DarkGray
-      Write-Host "Provider profile записан в ~/.openclaude/settings.json" -ForegroundColor DarkGray
-      & $exe
+      Write-Host "Provider profile записан в ~/.openclaude.json" -ForegroundColor DarkGray
+      & $exe --bare
     }
     continue
   }
 
   if ($profileId -eq "provider-setup") {
     Write-Host "После запуска выполните /provider для настройки профиля." -ForegroundColor Cyan
-    Write-Host "Это сохранит выбранный провайдер в ~/.openclaude/settings.json -> providerProfiles." -ForegroundColor DarkGray
+    Write-Host "Это сохранит выбранный провайдер в ~/.openclaude.json -> providerProfiles." -ForegroundColor DarkGray
     Start-Sleep -Seconds 2
     Remove-Item Env:OPENAI_BASE_URL, Env:OPENAI_MODEL, Env:CLAUDE_CODE_USE_OPENAI, Env:ANTHROPIC_BASE_URL, Env:ANTHROPIC_API_KEY -ErrorAction SilentlyContinue
     Clear-OpenClaudeProviderProfiles
@@ -392,7 +392,7 @@ while ($true) {
     if (-not $exe) { throw "OpenClaude CLI не найден. Установите: npm install -g @gitlawb/openclaude" }
     Clear-Host
     Write-Host "Запуск OpenClaude (vanilla для /provider setup)..." -ForegroundColor Cyan
-    & $exe
+    & $exe --bare
     continue
   }
 
@@ -403,7 +403,7 @@ while ($true) {
     if (-not $exe) { throw "OpenClaude CLI не найден. Установите: npm install -g @gitlawb/openclaude" }
     Clear-Host
     Write-Host "Запуск OpenClaude (vanilla)..." -ForegroundColor Cyan
-    & $exe
+    & $exe --bare
     continue
   }
 

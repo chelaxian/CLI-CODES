@@ -287,7 +287,10 @@ if ($installChoice -eq "0") {
 # Проверяет наличие CLI на диске (через npm-bin в PATH или жёсткий путь %APPDATA%\npm)
 # и создаёт недостающие ярлыки на рабочем столе для каждого найденного инструмента.
 function Sync-LauncherShortcuts {
-    param([string]$RepoDir)
+    param(
+      [string]$RepoDir,
+      [switch]$Force
+    )
 
     $desktop = [Environment]::GetFolderPath("Desktop")
     if (-not $desktop -or -not (Test-Path -LiteralPath $desktop)) {
@@ -320,11 +323,16 @@ function Sync-LauncherShortcuts {
         $lnkPath = Join-Path $desktop "$Name.lnk"
         $cmdPath = Join-Path $desktop "$Name.cmd"
         $created = $false
-        if (-not (Test-Path -LiteralPath $cmdPath)) {
-            $cmdContent = "@echo off`r`nchcp 65001 >nul 2>`&1`r`npowershell -NoProfile -ExecutionPolicy Bypass -Command `"& '$launcher'`"`r`nif ($LASTEXITCODE -ne 0) pause"
+        # .cmd всегда переписываем (в нём путь к launcher скрипту; при git pull
+        # путь не меняется, но содержимое launcher скрипта обновляется в репозитории).
+        # В Force-режае гарантированно переписываем даже если совпадает.
+        $cmdContent = "@echo off`r`nchcp 65001 >nul 2>`&1`r`npowershell -NoProfile -ExecutionPolicy Bypass -Command `"& '$launcher'`"`r`nif ($LASTEXITCODE -ne 0) pause"
+        if ($Force -or -not (Test-Path -LiteralPath $cmdPath)) {
             [System.IO.File]::WriteAllText($cmdPath, $cmdContent, (New-Object System.Text.UTF8Encoding($false)))
             $created = $true
         }
+        # .lnk создаём только если нет (он указывает на тот же .cmd/launcher путь,
+        # Force не нужен — структура stable).
         if (-not (Test-Path -LiteralPath $lnkPath)) {
             try {
                 $cmdExe = (Get-Command cmd.exe -ErrorAction SilentlyContinue).Source
@@ -357,11 +365,9 @@ function Sync-LauncherShortcuts {
             Write-Status ("  [SKIP] {0} CLI не установлен — ярлык пропущен" -f $entry.Cli) "DarkGray"
             continue
         }
-        if (Test-Path -LiteralPath (Join-Path $desktop "$($entry.Name).lnk")) {
-            $present++
-            continue
-        }
-        if (Test-Path -LiteralPath (Join-Path $desktop "$($entry.Name).cmd")) {
+        $hasLnk = Test-Path -LiteralPath (Join-Path $desktop "$($entry.Name).lnk")
+        $hasCmd = Test-Path -LiteralPath (Join-Path $desktop "$($entry.Name).cmd")
+        if (-not $Force -and ($hasLnk -or $hasCmd)) {
             $present++
             continue
         }
@@ -369,6 +375,8 @@ function Sync-LauncherShortcuts {
         if ($created) {
             Write-Status ("  [+] {0}" -f $entry.Name) "Green"
             $added++
+        } elseif ($Force) {
+            $present++
         }
     }
 
@@ -437,16 +445,40 @@ if ($installChoice -eq "7") {
 
     $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
 
-    # Helper: get installed version (null if not installed)
-    function Get-PkgVersion($cmd) {
-        $c = Get-Command $cmd -ErrorAction SilentlyContinue
-        if ($c) {
-            try {
-                $v = & $cmd --version 2>$null
-                return ($v -join "").Trim()
-            } catch { return "?" }
-        }
-        return $null
+    # Helper: get installed version (null if not installed).
+    # Сначала пробует npm ls (не запускает binary, не триггерит ECONNRESET у freebuff).
+    # Если не получилось — fallback на cmd --version.
+    function Get-PkgVersion($cmd, $npmPkg) {
+      # Prefer npm ls (быстро, не запускает binary, безопасно для freebuff)
+      if ($npmPkg) {
+        try {
+          $json = (& npm.cmd ls -g $npmPkg --depth=0 --json 2>$null) -join ""
+          if ($json) {
+            $parsed = $json | ConvertFrom-Json
+            $dep = $parsed.dependencies.PSObject.Properties[$npmPkg]
+            if ($dep -and $dep.Value.version) {
+              return [string]$dep.Value.version
+            }
+            # Может быть установлен под другим именем (peers/optional deps)
+            # fallback ниже.
+          }
+        } catch {}
+      }
+      # Fallback: cmd --version. Парсим только SEMVER (до пробела/конца),
+      # т.к. claude/openclaude возвращают "2.1.168 (Claude Code)".
+      $c = Get-Command $cmd -ErrorAction SilentlyContinue
+      if ($c) {
+        try {
+          $v = (& $cmd --version 2>$null) -join ""
+          $v = $v.Trim()
+          # Extract leading semver-like token (digits + dots + dashes)
+          if ($v -match '(\d+(?:\.\d+)*(?:[-+][0-9A-Za-z.-]*)?)') {
+            return $Matches[1]
+          }
+          return $v
+        } catch { return "?" }
+      }
+      return $null
     }
 
     # Helper: get latest version from npm registry (null if unknown)
@@ -467,16 +499,22 @@ if ($installChoice -eq "7") {
     )
 
     foreach ($pkg in $pkgs) {
-        $before = Get-PkgVersion $pkg.Cmd
+        $before = Get-PkgVersion -cmd $pkg.Cmd -npmPkg $pkg.NpmPkg
         $latest = Get-LatestNpmVersion $pkg.NpmPkg
 
-        # Already installed AND matches latest published version → skip
+        # Already installed AND matches latest published version → skip npm install
         if ($before -and $latest -and $before -eq $latest) {
             Write-Status ("  [OK] {0} v{1} (уже актуально)" -f $pkg.Name, $before) "DarkGray"
             continue
         }
 
-        # Installed but outdated, or npm registry unreachable → upgrade
+        # Installed but no registry info → assume up-to-date (offline / npm registry unreachable)
+        if ($before -and -not $latest) {
+            Write-Status ("  [OK] {0} v{1} (без проверки registry)" -f $pkg.Name, $before) "DarkGray"
+            continue
+        }
+
+        # Installed but outdated → upgrade
         if ($before) {
             $target = if ($latest) { $latest } else { "latest" }
             Write-Status ("  → {0}: {1} → {2}" -f $pkg.Name, $before, $target) "Cyan"
@@ -488,7 +526,7 @@ if ($installChoice -eq "7") {
         if ($LASTEXITCODE -ne 0 -and $pkg.Fallback) {
             & npm.cmd install -g "$($pkg.Fallback)@latest" 2>$null
         }
-        $after = Get-PkgVersion $pkg.Cmd
+        $after = Get-PkgVersion -cmd $pkg.Cmd -npmPkg $pkg.NpmPkg
         if ($after) {
             $verInfo = if ($before -and $before -ne $after) { "($before → $after)" } else { "($after)" }
             Write-Status ("  [OK] {0} {1}" -f $pkg.Name, $verInfo) "Green"
@@ -533,11 +571,11 @@ if ($installChoice -eq "7") {
 
     $ErrorActionPreference = $prevEAP
 
-    # Синхронизация ярлыков: после обновления проверяем, что для всех установленных
-    # CLI ярлыки на рабочем столе присутствуют (создаём недостающие).
+    # Синхронизация ярлыков: в [7] update всегда переписываем .cmd/.lnk,
+    # чтобы в .cmd обновились пути к launcher скриптам после git pull.
     Write-Host ""
-    Write-Status "Проверка ярлыков на рабочем столе..." "Cyan"
-    Sync-LauncherShortcuts -RepoDir $InstallDir
+    Write-Status "Обновление ярлыков на рабочем столе..." "Cyan"
+    Sync-LauncherShortcuts -RepoDir $InstallDir -Force
 
     Write-Host ""
     Write-Status "======================================================================" "Green"

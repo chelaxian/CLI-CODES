@@ -437,12 +437,12 @@ function Get-OpenRouterBundledFreeModelIds {
 }
 
 # Bundled Agentic-подмножество OpenRouter: только free-модели с поддержкой tools,
-# соответствующие OpenRouter preset из launchers (deepseek-v4-flash, qwen3-coder, nemotron, laguna).
+# соответствующие OpenRouter preset из launchers. Проверено 2026-06-07.
 # Используется как fallback, если /api/v1/models недоступен или вернул пустоту
 # для категории openrouter-agentic в launcher-custom-model-wizard.ps1.
 function Get-OpenRouterBundledAgenticModelIds {
   $raw = @(
-    "deepseek/deepseek-v4-flash:free"
+    "deepseek/deepseek-chat-v3.1:free"
     "qwen/qwen3-coder:free"
     "nvidia/nemotron-3-super-120b-a12b:free"
     "poolside/laguna-m.1:free"
