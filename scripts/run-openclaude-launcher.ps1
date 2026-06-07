@@ -18,15 +18,37 @@ function Resolve-OpenClaudeExe {
   return ""
 }
 
-function Update-OpenClaudeSettingsEnv {
+function Set-OpenClaudeProviderProfile {
   <#
-    OpenClaude (форк Claude Code) читает env из ~/.openclaude/settings.json.
-    Без записи в settings.json он игнорирует process env и использует дефолтный
-    Gitlawb Opengateway с моделью mimo-v2.5-pro.
+    OpenClaude (форк Claude Code) использует систему provider profiles:
+    ~/.openclaude/settings.json -> providerProfiles[] + activeProviderProfileId.
+    При старте вызывается applyProviderProfileToProcessEnv(activeProfile) — это
+    ПОЛНОСТЬЮ перезаписывает process env (включая ANTHROPIC_*/OPENAI_*).
+    Поэтому env-блок в settings.json игнорируется; нужно писать provider profile.
+
+    .PARAMETER ProfileId
+      Статический ID профиля (для UPSERT — повторный запуск обновит, не дублируя).
+    .PARAMETER Provider
+      "anthropic" — Anthropic-compatible (Z.AI, Anthropic).
+      "openai" — OpenAI-compatible (NIM, B.AI, OpenRouter, Groq).
+    .PARAMETER Name
+      Human-readable имя профиля.
+    .PARAMETER BaseUrl
+      API endpoint.
+    .PARAMETER ApiKey
+      Ключ API.
+    .PARAMETER Model
+      Идентификатор модели.
   #>
   param(
-    [hashtable]$EnvTable = @{}
+    [Parameter(Mandatory)][string]$ProfileId,
+    [Parameter(Mandatory)][string]$Provider,
+    [Parameter(Mandatory)][string]$Name,
+    [Parameter(Mandatory)][string]$BaseUrl,
+    [Parameter(Mandatory)][string]$ApiKey,
+    [Parameter(Mandatory)][string]$Model
   )
+
   $path = Join-Path $HOME ".openclaude\settings.json"
   $dir = Split-Path -Parent $path
   if (-not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
@@ -36,32 +58,69 @@ function Update-OpenClaudeSettingsEnv {
     try { $obj = (Get-Content -Raw -LiteralPath $path | ConvertFrom-Json) } catch { $obj = $null }
   }
   if (-not $obj) { $obj = [pscustomobject]@{} }
-  if (-not $obj.env) { $obj | Add-Member -NotePropertyName env -NotePropertyValue ([pscustomobject]@{}) -Force }
 
+  # UPSERT providerProfiles[]
+  $profiles = @()
+  if ($obj.PSObject.Properties['providerProfiles'] -and $obj.providerProfiles) {
+    $profiles = @($obj.providerProfiles)
+  }
+  $profiles = @($profiles | Where-Object { $_.id -ne $ProfileId })
+
+  $newProfile = [pscustomobject]@{
+    id       = $ProfileId
+    provider = $Provider
+    name     = $Name
+    baseUrl  = $BaseUrl
+    apiKey   = $ApiKey
+    model    = $Model
+  }
+  $profiles += $newProfile
+
+  $obj | Add-Member -NotePropertyName providerProfiles -NotePropertyValue $profiles -Force
+  $obj | Add-Member -NotePropertyName activeProviderProfileId -NotePropertyValue $ProfileId -Force
+
+  # Также поддерживаем минимальный env-блок (бэкфол для parts of OpenClaude что читает env)
+  if (-not $obj.PSObject.Properties['env'] -or -not $obj.env) {
+    $obj | Add-Member -NotePropertyName env -NotePropertyValue ([pscustomobject]@{}) -Force
+  }
   $envHash = @{}
   if ($obj.env.PSObject.Properties) {
     foreach ($p in $obj.env.PSObject.Properties) { $envHash[$p.Name] = $p.Value }
   }
-
   if (-not $envHash.ContainsKey("CLAUDE_CODE_ATTRIBUTION_HEADER")) { $envHash["CLAUDE_CODE_ATTRIBUTION_HEADER"] = "0" }
   if (-not $envHash.ContainsKey("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC")) { $envHash["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"] = "1" }
-
-  foreach ($k in $EnvTable.Keys) {
-    $v = $EnvTable[$k]
-    if ($null -eq $v) { $envHash.Remove($k) } else { $envHash[$k] = [string]$v }
-  }
-
   $obj.env = [pscustomobject]$envHash
+
+  $json = ($obj | ConvertTo-Json -Depth 10)
+  [System.IO.File]::WriteAllText($path, $json, (New-Object System.Text.UTF8Encoding($false)))
+}
+
+function Clear-OpenClaudeProviderProfiles {
+  <#
+    Удаляет все providerProfiles и activeProviderProfileId — OpenClaude возвращается
+    к дефолтному gateway (Gitlawb Opengateway). Используется для vanilla / /provider setup.
+  #>
+  param()
+  $path = Join-Path $HOME ".openclaude\settings.json"
+  if (-not (Test-Path -LiteralPath $path)) { return }
+
+  $obj = $null
+  try { $obj = (Get-Content -Raw -LiteralPath $path | ConvertFrom-Json) } catch { return }
+  if (-not $obj) { return }
+
+  $obj | Add-Member -NotePropertyName providerProfiles -NotePropertyValue @() -Force
+  $obj | Add-Member -NotePropertyName activeProviderProfileId -NotePropertyValue $null -Force
+
   $json = ($obj | ConvertTo-Json -Depth 10)
   [System.IO.File]::WriteAllText($path, $json, (New-Object System.Text.UTF8Encoding($false)))
 }
 
 # Главное меню (8 пунктов — Z.AI на первом месте как наиболее совместимый).
 $script:Profiles = @(
-  @{ Id = "group:zai";        Label = "Z.AI - Anthropic (GLM-5.1 / GLM-4.7 / Flash) — работает через env" }
-  @{ Id = "group:nim";        Label = "NVIDIA NIM - agentic модели (требует /provider setup)" }
-  @{ Id = "group:bai";        Label = "B.AI - agentic модели (требует /provider setup)" }
-  @{ Id = "group:openrouter"; Label = "OpenRouter - бесплатные agentic (требует /provider setup)" }
+  @{ Id = "group:zai";        Label = "Z.AI - Anthropic (GLM-5.1 / GLM-4.7 / Flash)" }
+  @{ Id = "group:nim";        Label = "NVIDIA NIM - agentic модели" }
+  @{ Id = "group:bai";        Label = "B.AI - agentic модели" }
+  @{ Id = "group:openrouter"; Label = "OpenRouter - бесплатные agentic" }
   @{ Id = "custom-model";     Label = "Другая модель (каталог Z.AI / NIM / B.AI / OpenRouter)" }
   @{ Id = "provider-setup";   Label = "OpenClaude /provider setup (интерактивный выбор)" }
   @{ Id = "vanilla";          Label = "Запустить OpenClaude без presetа" }
@@ -140,16 +199,16 @@ function Invoke-OpenClaudeZaiPreset {
   $env:ANTHROPIC_DEFAULT_SONNET_MODEL = $zSpec.Model
   $env:ANTHROPIC_DEFAULT_HAIKU_MODEL = $zSpec.Model
 
-  # Записываем в ~/.openclaude/settings.json — иначе OpenClaude использует Gitlawb Opengateway.
-  Update-OpenClaudeSettingsEnv -EnvTable @{
-    ANTHROPIC_API_KEY              = $key
-    ANTHROPIC_BASE_URL             = "https://api.z.ai/api/anthropic"
-    ANTHROPIC_DEFAULT_OPUS_MODEL   = $zSpec.Model
-    ANTHROPIC_DEFAULT_SONNET_MODEL = $zSpec.Model
-    ANTHROPIC_DEFAULT_HAIKU_MODEL  = $zSpec.Model
-    API_TIMEOUT_MS                 = "3000000"
-    ANTHROPIC_AUTH_TOKEN           = $null
-  }
+  # Записываем provider profile в ~/.openclaude/settings.json.
+  # OpenClaude при старте вызывает applyProviderProfileToProcessEnv(profile),
+  # что полностью переопределяет process env. Поэтому profiles > env vars.
+  Set-OpenClaudeProviderProfile `
+    -ProfileId "zai-$($zSpec.Model)-anthropic" `
+    -Provider  "anthropic" `
+    -Name      "Z.AI $($zSpec.Model)" `
+    -BaseUrl   "https://api.z.ai/api/anthropic" `
+    -ApiKey    $key `
+    -Model     $zSpec.Model
 
   $exe = Resolve-OpenClaudeExe
   if (-not $exe) { throw "OpenClaude CLI не найден. Установите: npm install -g @gitlawb/openclaude" }
@@ -193,20 +252,17 @@ function Invoke-OpenClaudeOpenAIPreset {
   $env:OPENAI_BASE_URL = $spec.Base
   $env:OPENAI_MODEL = $spec.Model
 
-  # Также записываем в ~/.openclaude/settings.json → env блок (на случай если
-  # OpenClaude игнорирует process env, как это было с Anthropic transport).
-  Update-OpenClaudeSettingsEnv -EnvTable @{
-    CLAUDE_CODE_USE_OPENAI         = "1"
-    OPENAI_API_KEY                 = $key
-    OPENAI_BASE_URL                = $spec.Base
-    OPENAI_MODEL                   = $spec.Model
-    ANTHROPIC_API_KEY              = $null
-    ANTHROPIC_BASE_URL             = $null
-    ANTHROPIC_AUTH_TOKEN           = $null
-    ANTHROPIC_DEFAULT_OPUS_MODEL   = $null
-    ANTHROPIC_DEFAULT_SONNET_MODEL = $null
-    ANTHROPIC_DEFAULT_HAIKU_MODEL  = $null
-  }
+  # Записываем provider profile (OpenAI-compat) в ~/.openclaude/settings.json.
+  # OpenClaude при старте вызывает applyProviderProfileToProcessEnv(profile),
+  # что автоматически выставит CLAUDE_CODE_USE_OPENAI + OPENAI_* env vars.
+  $profileName = "$providerName $($spec.Model)"
+  Set-OpenClaudeProviderProfile `
+    -ProfileId "$PresetId-openai" `
+    -Provider  "openai" `
+    -Name      $profileName `
+    -BaseUrl   $spec.Base `
+    -ApiKey    $key `
+    -Model     $spec.Model
 
   $exe = Resolve-OpenClaudeExe
   if (-not $exe) { throw "OpenClaude CLI не найден. Установите: npm install -g @gitlawb/openclaude" }
@@ -214,13 +270,13 @@ function Invoke-OpenClaudeOpenAIPreset {
   Clear-Host
   Write-Host "Запуск OpenClaude..." -ForegroundColor Cyan
   Write-Host "Provider: $($spec.Base) | Model: $($spec.Model)" -ForegroundColor DarkGray
-  Write-Host "Подсказка: если OpenClaude не увидел preset, запустите /provider setup внутри CLI" -ForegroundColor Yellow
+  Write-Host "Provider profile записан в ~/.openclaude/settings.json" -ForegroundColor DarkGray
   & $exe
 }
 
 # Главное меню loop
 while ($true) {
-  $choice = Show-TuiFramedMenu -AppBrand "OpenClaude" -Title "OpenClaude - выбор профиля" -Subtitle "Z.AI (Anthropic) · NIM/B.AI/OpenRouter (через /provider)" -Items $script:Profiles -MaxVisible 14
+  $choice = Show-TuiFramedMenu -AppBrand "OpenClaude" -Title "OpenClaude - выбор профиля" -Subtitle "Z.AI · NIM · B.AI · OpenRouter — provider profiles" -Items $script:Profiles -MaxVisible 14
   if (-not $choice) {
     Write-Host "Отменено." -ForegroundColor Yellow
     exit 0
@@ -237,10 +293,10 @@ while ($true) {
       continue
     }
     $subTitle = switch ($groupKey) {
-      "zai"        { "Z.AI - Anthropic-compatible (работает через env без /provider)" }
-      "nim"        { "NVIDIA NIM - OpenAI-compatible (нужен /provider setup)" }
-      "bai"        { "B.AI - https://api.b.ai/v1 (нужен /provider setup)" }
-      "openrouter" { "OpenRouter - бесплатные модели (нужен /provider setup)" }
+      "zai"        { "Z.AI - Anthropic-compatible" }
+      "nim"        { "NVIDIA NIM - OpenAI-compatible" }
+      "bai"        { "B.AI - https://api.b.ai/v1" }
+      "openrouter" { "OpenRouter - бесплатные модели" }
       default      { "" }
     }
     $subChoice = Show-TuiFramedMenu -AppBrand "OpenClaude" -Title ("OpenClaude - {0}" -f $groupKey.ToUpper()) -Subtitle $subTitle -Items $groupItems -MaxVisible 14 -EscapeAction Back
@@ -281,15 +337,13 @@ while ($true) {
       $env:ANTHROPIC_DEFAULT_SONNET_MODEL = $mid
       $env:ANTHROPIC_DEFAULT_HAIKU_MODEL = $mid
 
-      Update-OpenClaudeSettingsEnv -EnvTable @{
-        ANTHROPIC_API_KEY              = $key
-        ANTHROPIC_BASE_URL             = "https://api.z.ai/api/anthropic"
-        ANTHROPIC_DEFAULT_OPUS_MODEL   = $mid
-        ANTHROPIC_DEFAULT_SONNET_MODEL = $mid
-        ANTHROPIC_DEFAULT_HAIKU_MODEL  = $mid
-        API_TIMEOUT_MS                 = "3000000"
-        ANTHROPIC_AUTH_TOKEN           = $null
-      }
+      Set-OpenClaudeProviderProfile `
+        -ProfileId "zai-custom-$mid-anthropic" `
+        -Provider  "anthropic" `
+        -Name      "Z.AI $mid" `
+        -BaseUrl   "https://api.z.ai/api/anthropic" `
+        -ApiKey    $key `
+        -Model     $mid
 
       $exe = Resolve-OpenClaudeExe
       if (-not $exe) { throw "OpenClaude CLI не найден. Установите: npm install -g @gitlawb/openclaude" }
@@ -307,8 +361,8 @@ while ($true) {
       }
       $key = [Environment]::GetEnvironmentVariable($spec.KeyEnv, "User")
       if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") { $key = (Get-ChildItem env: | Where-Object { $_.Name -eq $spec.KeyEnv } | Select-Object -First 1).Value }
+      $providerName = switch ($w.Provider) { "nim" { "NVIDIA NIM" }; "bai" { "B.AI" }; "openrouter" { "OpenRouter" }; "groq" { "Groq" }; default { "Provider" } }
       if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") {
-        $providerName = switch ($w.Provider) { "nim" { "NVIDIA NIM" }; "bai" { "B.AI" }; "openrouter" { "OpenRouter" }; "groq" { "Groq" }; default { "Provider" } }
         $helpUrl = switch ($w.Provider) { "nim" { "https://build.nvidia.com/api-key" }; "bai" { "https://chat.b.ai/key" }; "openrouter" { "https://openrouter.ai/settings/keys" }; "groq" { "https://console.groq.com/keys" }; default { "" } }
         $key = Resolve-ApiKeyOrPrompt -CurrentKey $key -ProviderName $providerName -HelpUrl $helpUrl
       }
@@ -319,25 +373,21 @@ while ($true) {
       $env:OPENAI_BASE_URL = $spec.Base
       $env:OPENAI_MODEL = $mid
 
-      Update-OpenClaudeSettingsEnv -EnvTable @{
-        CLAUDE_CODE_USE_OPENAI         = "1"
-        OPENAI_API_KEY                 = $key
-        OPENAI_BASE_URL                = $spec.Base
-        OPENAI_MODEL                   = $mid
-        ANTHROPIC_API_KEY              = $null
-        ANTHROPIC_BASE_URL             = $null
-        ANTHROPIC_AUTH_TOKEN           = $null
-        ANTHROPIC_DEFAULT_OPUS_MODEL   = $null
-        ANTHROPIC_DEFAULT_SONNET_MODEL = $null
-        ANTHROPIC_DEFAULT_HAIKU_MODEL  = $null
-      }
+      $profileId = "$($w.Provider)-custom-$mid-openai"
+      Set-OpenClaudeProviderProfile `
+        -ProfileId $profileId `
+        -Provider  "openai" `
+        -Name      "$providerName $mid" `
+        -BaseUrl   $spec.Base `
+        -ApiKey    $key `
+        -Model     $mid
 
       $exe = Resolve-OpenClaudeExe
       if (-not $exe) { throw "OpenClaude CLI не найден. Установите: npm install -g @gitlawb/openclaude" }
       Clear-Host
       Write-Host "Запуск OpenClaude..." -ForegroundColor Cyan
       Write-Host "Provider: $($spec.Base) | Model: $mid" -ForegroundColor DarkGray
-      Write-Host "Подсказка: если OpenClaude не увидел preset, запустите /provider setup внутри CLI" -ForegroundColor Yellow
+      Write-Host "Provider profile записан в ~/.openclaude/settings.json" -ForegroundColor DarkGray
       & $exe
     }
     continue
@@ -345,21 +395,10 @@ while ($true) {
 
   if ($profileId -eq "provider-setup") {
     Write-Host "После запуска выполните /provider для настройки профиля." -ForegroundColor Cyan
-    Write-Host "Это сохранит выбранный провайдер в конфиг OpenClaude (~/.openclaude/)." -ForegroundColor DarkGray
+    Write-Host "Это сохранит выбранный провайдер в ~/.openclaude/settings.json -> providerProfiles." -ForegroundColor DarkGray
     Start-Sleep -Seconds 2
     Remove-Item Env:OPENAI_BASE_URL, Env:OPENAI_MODEL, Env:CLAUDE_CODE_USE_OPENAI, Env:ANTHROPIC_BASE_URL, Env:ANTHROPIC_API_KEY -ErrorAction SilentlyContinue
-    Update-OpenClaudeSettingsEnv -EnvTable @{
-      OPENAI_BASE_URL                = $null
-      OPENAI_MODEL                   = $null
-      CLAUDE_CODE_USE_OPENAI         = $null
-      OPENAI_API_KEY                 = $null
-      ANTHROPIC_API_KEY              = $null
-      ANTHROPIC_BASE_URL             = $null
-      ANTHROPIC_AUTH_TOKEN           = $null
-      ANTHROPIC_DEFAULT_OPUS_MODEL   = $null
-      ANTHROPIC_DEFAULT_SONNET_MODEL = $null
-      ANTHROPIC_DEFAULT_HAIKU_MODEL  = $null
-    }
+    Clear-OpenClaudeProviderProfiles
     $exe = Resolve-OpenClaudeExe
     if (-not $exe) { throw "OpenClaude CLI не найден. Установите: npm install -g @gitlawb/openclaude" }
     Clear-Host
@@ -370,18 +409,7 @@ while ($true) {
 
   if ($profileId -eq "vanilla") {
     Remove-Item Env:OPENAI_BASE_URL, Env:OPENAI_MODEL, Env:CLAUDE_CODE_USE_OPENAI, Env:OPENAI_API_KEY, Env:ANTHROPIC_BASE_URL, Env:ANTHROPIC_API_KEY, Env:ANTHROPIC_AUTH_TOKEN, Env:ANTHROPIC_DEFAULT_OPUS_MODEL, Env:ANTHROPIC_DEFAULT_SONNET_MODEL, Env:ANTHROPIC_DEFAULT_HAIKU_MODEL -ErrorAction SilentlyContinue
-    Update-OpenClaudeSettingsEnv -EnvTable @{
-      OPENAI_BASE_URL                = $null
-      OPENAI_MODEL                   = $null
-      CLAUDE_CODE_USE_OPENAI         = $null
-      OPENAI_API_KEY                 = $null
-      ANTHROPIC_API_KEY              = $null
-      ANTHROPIC_BASE_URL             = $null
-      ANTHROPIC_AUTH_TOKEN           = $null
-      ANTHROPIC_DEFAULT_OPUS_MODEL   = $null
-      ANTHROPIC_DEFAULT_SONNET_MODEL = $null
-      ANTHROPIC_DEFAULT_HAIKU_MODEL  = $null
-    }
+    Clear-OpenClaudeProviderProfiles
     $exe = Resolve-OpenClaudeExe
     if (-not $exe) { throw "OpenClaude CLI не найден. Установите: npm install -g @gitlawb/openclaude" }
     Clear-Host
