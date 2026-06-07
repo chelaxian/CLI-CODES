@@ -679,9 +679,9 @@ try {
   # Without --bare, Claude Code v2.x shows "Not logged in" for any 3P provider because
   # it tries OAuth first and refuses to fall through to the env API key.
   if ($ClaudeTools -eq "default") {
-    $null = Invoke-ChildCliSafe -ExePath $claudeExe -Arguments @("--bare")
+    & $claudeExe --bare
   } else {
-    $null = Invoke-ChildCliSafe -ExePath $claudeExe -Arguments @("--bare", "--tools", $ClaudeTools)
+    & $claudeExe --bare --tools $ClaudeTools
   }
 } finally {
   Pop-Location

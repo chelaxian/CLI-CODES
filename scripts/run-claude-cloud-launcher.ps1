@@ -48,9 +48,16 @@ function Invoke-CliCommand {
     [Parameter(Mandatory = $true)][string]$ExePath,
     [string[]]$Arguments = @()
   )
-  # Delegate to the safe wrapper from launcher-tui.ps1 so Ctrl+C / non-zero
-  # exits don't terminate the launcher — we'll return to the main menu.
-  Invoke-ChildCliSafe -ExePath $ExePath -Arguments $Arguments | Out-Null
+  if ($ExePath -like "*.cmd" -or $ExePath -like "*.bat") {
+    $allArgs = @("/c", $ExePath) + $Arguments
+    & cmd.exe @allArgs
+  } else {
+    if ($Arguments.Count -gt 0) {
+      & $ExePath @Arguments
+    } else {
+      & $ExePath
+    }
+  }
 }
 
 if (-not (Test-Path -LiteralPath $SessionScript)) {

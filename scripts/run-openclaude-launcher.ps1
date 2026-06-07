@@ -221,7 +221,7 @@ function Invoke-OpenClaudeZaiPreset {
   Clear-Host
   Write-Host "Запуск OpenClaude (Z.AI)..." -ForegroundColor Cyan
   Write-Host "Model: $($zSpec.Model) | Endpoint: https://api.z.ai/api/anthropic" -ForegroundColor DarkGray
-  Invoke-ChildCliSafe -ExePath $exe -Arguments @("--bare")
+  & $exe --bare
 }
 
 function Invoke-OpenClaudeOpenAIPreset {
@@ -276,7 +276,7 @@ function Invoke-OpenClaudeOpenAIPreset {
   Write-Host "Запуск OpenClaude..." -ForegroundColor Cyan
   Write-Host "Provider: $($spec.Base) | Model: $($spec.Model)" -ForegroundColor DarkGray
   Write-Host "Provider profile записан в ~/.openclaude/settings.json" -ForegroundColor DarkGray
-  Invoke-ChildCliSafe -ExePath $exe -Arguments @("--bare")
+  & $exe --bare
 }
 
 # Главное меню loop
@@ -355,7 +355,7 @@ while ($true) {
       Clear-Host
       Write-Host "Запуск OpenClaude (Z.AI custom)..." -ForegroundColor Cyan
       Write-Host "Model: $mid | Endpoint: https://api.z.ai/api/anthropic" -ForegroundColor DarkGray
-      Invoke-ChildCliSafe -ExePath $exe -Arguments @("--bare")
+      & $exe --bare
     } else {
       $spec = switch ($w.Provider) {
         "nim"        { @{ Base = "https://integrate.api.nvidia.com/v1"; KeyEnv = "NVIDIA_NIM_API_KEY" } }
@@ -393,7 +393,7 @@ while ($true) {
       Write-Host "Запуск OpenClaude..." -ForegroundColor Cyan
       Write-Host "Provider: $($spec.Base) | Model: $mid" -ForegroundColor DarkGray
       Write-Host "Provider profile записан в ~/.openclaude.json" -ForegroundColor DarkGray
-      Invoke-ChildCliSafe -ExePath $exe -Arguments @("--bare")
+      & $exe --bare
     }
     continue
   }
@@ -403,30 +403,23 @@ while ($true) {
     Write-Host "Это сохранит выбранный провайдер в ~/.openclaude.json -> providerProfiles." -ForegroundColor DarkGray
     Start-Sleep -Seconds 2
     Remove-Item Env:OPENAI_BASE_URL, Env:OPENAI_MODEL, Env:CLAUDE_CODE_USE_OPENAI, Env:ANTHROPIC_BASE_URL, Env:ANTHROPIC_API_KEY -ErrorAction SilentlyContinue
-    # OpenClaude default provider is Gitlawb Opengateway, which requires OPENGATEWAY_API_KEY.
-    # Re-hydrate it from User env so /provider can validate keys interactively.
-    Restore-ProcessEnvFromUser -Key "OPENGATEWAY_API_KEY"
-    Restore-ProcessEnvFromUser -Key "OPENAI_API_KEY"
     Clear-OpenClaudeProviderProfiles
     $exe = Resolve-OpenClaudeExe
     if (-not $exe) { throw "OpenClaude CLI не найден. Установите: npm install -g @gitlawb/openclaude" }
     Clear-Host
     Write-Host "Запуск OpenClaude (vanilla для /provider setup)..." -ForegroundColor Cyan
-    Invoke-ChildCliSafe -ExePath $exe -Arguments @("--bare")
+    & $exe --bare
     continue
   }
 
   if ($profileId -eq "vanilla") {
     Remove-Item Env:OPENAI_BASE_URL, Env:OPENAI_MODEL, Env:CLAUDE_CODE_USE_OPENAI, Env:OPENAI_API_KEY, Env:ANTHROPIC_BASE_URL, Env:ANTHROPIC_API_KEY, Env:ANTHROPIC_AUTH_TOKEN, Env:ANTHROPIC_DEFAULT_OPUS_MODEL, Env:ANTHROPIC_DEFAULT_SONNET_MODEL, Env:ANTHROPIC_DEFAULT_HAIKU_MODEL -ErrorAction SilentlyContinue
-    # OpenClaude default = Gitlawb Opengateway → requires OPENGATEWAY_API_KEY.
-    Restore-ProcessEnvFromUser -Key "OPENGATEWAY_API_KEY"
-    Restore-ProcessEnvFromUser -Key "OPENAI_API_KEY"
     Clear-OpenClaudeProviderProfiles
     $exe = Resolve-OpenClaudeExe
     if (-not $exe) { throw "OpenClaude CLI не найден. Установите: npm install -g @gitlawb/openclaude" }
     Clear-Host
     Write-Host "Запуск OpenClaude (vanilla)..." -ForegroundColor Cyan
-    Invoke-ChildCliSafe -ExePath $exe -Arguments @("--bare")
+    & $exe --bare
     continue
   }
 
