@@ -111,7 +111,6 @@ $script:Profiles = @(
   @{ Id = "group:nim";        Label = "NVIDIA NIM - agentic модели" }
   @{ Id = "group:bai";        Label = "B.AI - agentic модели" }
   @{ Id = "custom-model";     Label = "Другая модель (каталог Z.AI / NIM / B.AI / OpenRouter)" }
-  @{ Id = "provider-setup";   Label = "OpenClaude /provider setup (интерактивный выбор)" }
   @{ Id = "vanilla";          Label = "Запустить OpenClaude без presetа" }
   @{ Id = "change-api-key";   Label = "Сменить ключ API провайдера" }
 )
@@ -310,9 +309,9 @@ while ($true) {
     $subId = [string]$subChoice.Id
 
     if ($groupKey -eq "zai") {
-      Invoke-OpenClaudeZaiPreset -PresetId $subId
+      try { Invoke-OpenClaudeZaiPreset -PresetId $subId } catch { Write-Host "" }
     } else {
-      Invoke-OpenClaudeOpenAIPreset -PresetId $subId
+      try { Invoke-OpenClaudeOpenAIPreset -PresetId $subId } catch { Write-Host "" }
     }
     continue
   }
@@ -355,7 +354,7 @@ while ($true) {
       Clear-Host
       Write-Host "Запуск OpenClaude (Z.AI custom)..." -ForegroundColor Cyan
       Write-Host "Model: $mid | Endpoint: https://api.z.ai/api/anthropic" -ForegroundColor DarkGray
-      Invoke-ChildCliCatchCtrlC -ExePath $exe -Arguments @("--bare")
+      try { Invoke-ChildCliCatchCtrlC -ExePath $exe -Arguments @("--bare") } catch { Write-Host "" }
     } else {
       $spec = switch ($w.Provider) {
         "nim"        { @{ Base = "https://integrate.api.nvidia.com/v1"; KeyEnv = "NVIDIA_NIM_API_KEY" } }
@@ -393,25 +392,8 @@ while ($true) {
       Write-Host "Запуск OpenClaude..." -ForegroundColor Cyan
       Write-Host "Provider: $($spec.Base) | Model: $mid" -ForegroundColor DarkGray
       Write-Host "Provider profile записан в ~/.openclaude.json" -ForegroundColor DarkGray
-      Invoke-ChildCliCatchCtrlC -ExePath $exe -Arguments @("--bare")
+      try { Invoke-ChildCliCatchCtrlC -ExePath $exe -Arguments @("--bare") } catch { Write-Host "" }
     }
-    continue
-  }
-
-  if ($profileId -eq "provider-setup") {
-    Write-Host "После запуска выполните /provider для настройки профиля." -ForegroundColor Cyan
-    Write-Host "Это сохранит выбранный провайдер в ~/.openclaude.json -> providerProfiles." -ForegroundColor DarkGray
-    Start-Sleep -Seconds 2
-    Remove-Item Env:OPENAI_BASE_URL, Env:OPENAI_MODEL, Env:CLAUDE_CODE_USE_OPENAI, Env:ANTHROPIC_BASE_URL, Env:ANTHROPIC_API_KEY -ErrorAction SilentlyContinue
-    # Re-hydrate keys from User scope so /provider can validate them interactively.
-    Restore-ProcessEnvFromUser -Key "OPENGATEWAY_API_KEY"
-    Restore-ProcessEnvFromUser -Key "OPENAI_API_KEY"
-    Clear-OpenClaudeProviderProfiles
-    $exe = Resolve-OpenClaudeExe
-    if (-not $exe) { throw "OpenClaude CLI не найден. Установите: npm install -g @gitlawb/openclaude" }
-    Clear-Host
-    Write-Host "Запуск OpenClaude (vanilla для /provider setup)..." -ForegroundColor Cyan
-    Invoke-ChildCliCatchCtrlC -ExePath $exe -Arguments @("--bare")
     continue
   }
 
@@ -425,7 +407,7 @@ while ($true) {
     if (-not $exe) { throw "OpenClaude CLI не найден. Установите: npm install -g @gitlawb/openclaude" }
     Clear-Host
     Write-Host "Запуск OpenClaude (vanilla)..." -ForegroundColor Cyan
-    Invoke-ChildCliCatchCtrlC -ExePath $exe -Arguments @("--bare")
+    try { Invoke-ChildCliCatchCtrlC -ExePath $exe -Arguments @("--bare") } catch { Write-Host "" }
     continue
   }
 
