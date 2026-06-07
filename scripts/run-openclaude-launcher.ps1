@@ -124,17 +124,25 @@ $script:GroupMenus = @{
     @{ Id = "zai-flash47"; Label = "Z.AI - GLM-4.7-Flash (free, Anthropic-compatible)" }
   )
   nim = @(
-    @{ Id = "nim-qwen3.5-122b";    Label = "NIM - Qwen3.5-122B-A10B (free, baseline)" }
-    @{ Id = "nim-mistral-medium";  Label = "NIM - Mistral Medium 3.5 128B (free, agentic)" }
-    @{ Id = "nim-glm51";           Label = "NIM - Z.AI GLM-5.1 (free, agentic)" }
-    @{ Id = "nim-deepseek-v4";     Label = "NIM - DeepSeek V4 Flash 284B MoE (free)" }
+    @{ Id = "nim-mistral-medium";   Label = "NIM - Mistral Medium 3.5 128B (free, tool calling)" }
+    @{ Id = "nim-glm51";            Label = "NIM - Z.AI GLM-5.1 (free, tool calling)" }
+    @{ Id = "nim-step-3.5-flash";   Label = "NIM - Step 3.5 Flash (free, tool calling)" }
+    @{ Id = "nim-mistral-large-3";  Label = "NIM - Mistral Large 3 675B (free, tool calling)" }
+    @{ Id = "nim-deepseek-v4-flash"; Label = "NIM - DeepSeek V4 Flash 284B MoE (free)" }
+    @{ Id = "nim-gemma-4-31b";      Label = "NIM - Google Gemma-4 31B (free)" }
+    @{ Id = "nim-qwen3.5-397b";     Label = "NIM - Qwen 3.5 397B A17B (free)" }
+    @{ Id = "nim-qwen3-next-80b";   Label = "NIM - Qwen 3 Next 80B A3B (free)" }
+    @{ Id = "nim-qwen3-coder-480b"; Label = "NIM - Qwen 3 Coder 480B A35B (free)" }
   )
   bai = @(
     @{ Id = "bai-gpt-5.5";           Label = "B.AI - GPT-5.5 (OpenAI, agentic)" }
     @{ Id = "bai-claude-sonnet-4.6"; Label = "B.AI - Claude Sonnet 4.6 (Anthropic, agentic)" }
+    @{ Id = "bai-claude-opus-4.7";   Label = "B.AI - Claude Opus 4.7 (Anthropic, agentic)" }
     @{ Id = "bai-deepseek-v4-pro";   Label = "B.AI - DeepSeek V4 Pro (agentic)" }
+    @{ Id = "bai-gemini-3.1-pro";    Label = "B.AI - Gemini 3.1 Pro (Google, agentic)" }
     @{ Id = "bai-glm-5.1";           Label = "B.AI - GLM-5.1 (Z.AI)" }
     @{ Id = "bai-kimi-k2.5";         Label = "B.AI - Kimi K2.5 (Moonshot)" }
+    @{ Id = "bai-minimax-m3";        Label = "B.AI - MiniMax M3 (agentic)" }
   )
   openrouter = @(
     @{ Id = "openrouter-laguna";     Label = "OpenRouter - Poolside Laguna M.1 (free, coding, text-only)" }
@@ -153,15 +161,23 @@ $script:ZaiPresetSpec = @{
 }
 
 $script:PresetSpec = @{
-  "nim-qwen3.5-122b" = @{ Base = "https://integrate.api.nvidia.com/v1"; Model = "qwen/qwen3.5-122b-a10b";        KeyEnv = "NVIDIA_NIM_API_KEY" }
-  "nim-mistral-medium" = @{ Base = "https://integrate.api.nvidia.com/v1"; Model = "mistralai/mistral-medium-3.5-128b"; KeyEnv = "NVIDIA_NIM_API_KEY" }
-  "nim-glm51" = @{ Base = "https://integrate.api.nvidia.com/v1"; Model = "z-ai/glm-5.1";                          KeyEnv = "NVIDIA_NIM_API_KEY" }
-  "nim-deepseek-v4" = @{ Base = "https://integrate.api.nvidia.com/v1"; Model = "deepseek-ai/deepseek-v4-flash";    KeyEnv = "NVIDIA_NIM_API_KEY" }
+  "nim-mistral-medium"   = @{ Base = "https://integrate.api.nvidia.com/v1"; Model = "mistralai/mistral-medium-3.5-128b";          KeyEnv = "NVIDIA_NIM_API_KEY" }
+  "nim-glm51"            = @{ Base = "https://integrate.api.nvidia.com/v1"; Model = "z-ai/glm-5.1";                                KeyEnv = "NVIDIA_NIM_API_KEY" }
+  "nim-step-3.5-flash"   = @{ Base = "https://integrate.api.nvidia.com/v1"; Model = "stepfun-ai/step-3.5-flash";                  KeyEnv = "NVIDIA_NIM_API_KEY" }
+  "nim-mistral-large-3"  = @{ Base = "https://integrate.api.nvidia.com/v1"; Model = "mistralai/mistral-large-3-675b-instruct-2512"; KeyEnv = "NVIDIA_NIM_API_KEY" }
+  "nim-deepseek-v4-flash" = @{ Base = "https://integrate.api.nvidia.com/v1"; Model = "deepseek-ai/deepseek-v4-flash";             KeyEnv = "NVIDIA_NIM_API_KEY" }
+  "nim-gemma-4-31b"      = @{ Base = "https://integrate.api.nvidia.com/v1"; Model = "google/gemma-4-31b-it";                      KeyEnv = "NVIDIA_NIM_API_KEY" }
+  "nim-qwen3.5-397b"     = @{ Base = "https://integrate.api.nvidia.com/v1"; Model = "qwen/qwen3.5-397b-a17b";                     KeyEnv = "NVIDIA_NIM_API_KEY" }
+  "nim-qwen3-next-80b"   = @{ Base = "https://integrate.api.nvidia.com/v1"; Model = "qwen/qwen3-next-80b-a3b-instruct";           KeyEnv = "NVIDIA_NIM_API_KEY" }
+  "nim-qwen3-coder-480b" = @{ Base = "https://integrate.api.nvidia.com/v1"; Model = "qwen/qwen3-coder-480b-a35b-instruct";         KeyEnv = "NVIDIA_NIM_API_KEY" }
   "bai-gpt-5.5" = @{ Base = "https://api.b.ai/v1"; Model = "gpt-5.5";                                              KeyEnv = "BAI_API_KEY" }
   "bai-claude-sonnet-4.6" = @{ Base = "https://api.b.ai/v1"; Model = "claude-sonnet-4.6";                          KeyEnv = "BAI_API_KEY" }
+  "bai-claude-opus-4.7" = @{ Base = "https://api.b.ai/v1"; Model = "claude-opus-4.7";                              KeyEnv = "BAI_API_KEY" }
   "bai-deepseek-v4-pro" = @{ Base = "https://api.b.ai/v1"; Model = "deepseek-v4-pro";                              KeyEnv = "BAI_API_KEY" }
+  "bai-gemini-3.1-pro" = @{ Base = "https://api.b.ai/v1"; Model = "gemini-3.1-pro";                                KeyEnv = "BAI_API_KEY" }
   "bai-glm-5.1" = @{ Base = "https://api.b.ai/v1"; Model = "glm-5.1";                                              KeyEnv = "BAI_API_KEY" }
   "bai-kimi-k2.5" = @{ Base = "https://api.b.ai/v1"; Model = "kimi-k2.5";                                          KeyEnv = "BAI_API_KEY" }
+  "bai-minimax-m3" = @{ Base = "https://api.b.ai/v1"; Model = "minimax-m3";                                        KeyEnv = "BAI_API_KEY" }
   "openrouter-laguna" = @{ Base = "https://openrouter.ai/api/v1"; Model = "poolside/laguna-m.1:free";              KeyEnv = "OPENROUTER_API_KEY" }
   "openrouter-qwen3-coder" = @{ Base = "https://openrouter.ai/api/v1"; Model = "qwen/qwen3-coder:free";            KeyEnv = "OPENROUTER_API_KEY" }
 }

@@ -1,10 +1,21 @@
 [CmdletBinding()]
 param()
 
+# In PS 7.4+ $PSNativeCommandUseErrorActionPreference defaults to $true, which converts
+# any native command with non-zero exit code into a terminating error when EAP="Stop".
+# Freebuff may exit with non-zero code (auto-update check, CDN block, Ctrl+C, etc),
+# so we disable this behaviour for the launcher — we'll inspect $LASTEXITCODE manually.
+$PSNativeCommandUseErrorActionPreference = $false
 $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "launcher-tui.ps1")
 
 function Resolve-FreebuffExe {
+  # Prefer the actual binary (~/.config/manicode/freebuff.exe) when present — it is what
+  # freebuff.cmd delegates to. Calling it directly avoids the cmd wrapper which sometimes
+  # returns non-zero exit codes when the underlying binary returned 0.
+  $binPath = Join-Path $env:USERPROFILE ".config\manicode\freebuff.exe"
+  if (Test-Path -LiteralPath $binPath) { return $binPath }
+
   $cmd = Get-Command freebuff.cmd -ErrorAction SilentlyContinue
   if ($cmd) { return $cmd.Source }
   $cmd = Get-Command freebuff -ErrorAction SilentlyContinue

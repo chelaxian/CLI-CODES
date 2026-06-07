@@ -91,7 +91,7 @@ function Read-SecretText {
 function Set-ProviderApiKey {
   param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("NVIDIA_NIM", "ZAI", "GROQ", "OPENROUTER", "BAI")]
+    [ValidateSet("NVIDIA_NIM", "ZAI", "GROQ", "OPENROUTER", "BAI", "OPENGATEWAY")]
     [string]$Provider,
     [Parameter(Mandatory = $true)]
     [string]$NewKey
@@ -188,6 +188,7 @@ function Show-ApiKeyChangeMenu {
       "groq" { "GROQ" }
       "openrouter" { "OPENROUTER" }
       "bai" { "BAI" }
+      "opengateway" { "OPENGATEWAY" }
       default { $providerId.ToUpper() }
     }
     $currentKey = Get-CurrentApiKey -Provider $envVarName

@@ -72,10 +72,6 @@ $script:Profiles = @(
   # OpenRouter убран из пресетов (429 rate-limit / 404).
   # Используйте «Другая модель…» → OpenRouter для ручного выбора.
   @{
-    Id    = "group:nim"
-    Label = "NVIDIA NIM - 9 бесплатных agentic моделей"
-  }
-  @{
     Id          = "custom-model"
     Label       = "Другая модель… → выбор провайдера и модели"
   }
