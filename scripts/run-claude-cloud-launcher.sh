@@ -57,13 +57,63 @@ OPENROUTER_MODELS=(
 )
 
 BAI_MODELS=(
+    "claude-bai-gpt-5-nano|B.AI - GPT-5 Nano (OpenAI, agentic)"
+    "claude-bai-gpt-5-mini|B.AI - GPT-5 Mini (OpenAI, agentic)"
+    "claude-bai-gpt-5.2|B.AI - GPT-5.2 (OpenAI, agentic)"
+    "claude-bai-gpt-5.4-nano|B.AI - GPT-5.4 Nano (OpenAI, agentic)"
+    "claude-bai-gpt-5.4-mini|B.AI - GPT-5.4 Mini (OpenAI, agentic)"
+    "claude-bai-gpt-5.4|B.AI - GPT-5.4 (OpenAI, agentic)"
+    "claude-bai-gpt-5.4-pro|B.AI - GPT-5.4 Pro (OpenAI, agentic)"
+    "claude-bai-gpt-5.5|B.AI - GPT-5.5 (OpenAI, agentic)"
+    "claude-bai-gpt-5.5-instant|B.AI - GPT-5.5 Instant (OpenAI, agentic)"
+    "claude-bai-claude-haiku-4.5|B.AI - Claude Haiku 4.5 (Anthropic, agentic)"
+    "claude-bai-claude-sonnet-4.5|B.AI - Claude Sonnet 4.5 (Anthropic, agentic)"
+    "claude-bai-claude-sonnet-4.6|B.AI - Claude Sonnet 4.6 (Anthropic, agentic)"
+    "claude-bai-claude-opus-4.5|B.AI - Claude Opus 4.5 (Anthropic, agentic)"
+    "claude-bai-claude-opus-4.6|B.AI - Claude Opus 4.6 (Anthropic, agentic)"
+    "claude-bai-claude-opus-4.7|B.AI - Claude Opus 4.7 (Anthropic, agentic)"
+    "claude-bai-claude-opus-4.8|B.AI - Claude Opus 4.8 (Anthropic, agentic)"
     "claude-bai-deepseek-v4-pro|B.AI - DeepSeek V4 Pro (agentic)"
     "claude-bai-deepseek-v4-flash|B.AI - DeepSeek V4 Flash (agentic)"
+    "claude-bai-gemini-3.1-pro|B.AI - Gemini 3.1 Pro (Google, agentic)"
+    "claude-bai-gemini-3.5-flash|B.AI - Gemini 3.5 Flash (Google, agentic)"
+    "claude-bai-glm-5|B.AI - GLM-5 (Z.AI)"
+    "claude-bai-glm-5.1|B.AI - GLM-5.1 (Z.AI)"
+    "claude-bai-kimi-k2.5|B.AI - Kimi K2.5 (Moonshot)"
+    "claude-bai-kimi-k2.6|B.AI - Kimi K2.6 (Moonshot)"
     "claude-bai-minimax-m3|B.AI - MiniMax M3 (agentic)"
     "claude-bai-minimax-m2.7|B.AI - MiniMax M2.7 (fast)"
-    "claude-bai-glm-5|B.AI - GLM-5 (Z.AI)"
-    "claude-bai-kimi-k2.6|B.AI - Kimi K2.6 (Moonshot)"
-    "claude-bai-gpt-5.5|B.AI - GPT-5.5 (OpenAI)"
+)
+
+# B.AI model_id (WITHOUT claude-bai- prefix) -> "context_window:max_tokens".
+# Used to validate wildcard claude-bai-* profile IDs and as a future routing hint source.
+declare -A BAI_MODEL_SPEC=(
+    ["gpt-5-nano"]="128000:16384"
+    ["gpt-5-mini"]="128000:16384"
+    ["gpt-5.2"]="200000:16384"
+    ["gpt-5.4-nano"]="200000:16384"
+    ["gpt-5.4-mini"]="200000:16384"
+    ["gpt-5.4"]="200000:16384"
+    ["gpt-5.4-pro"]="200000:16384"
+    ["gpt-5.5"]="200000:16384"
+    ["gpt-5.5-instant"]="200000:16384"
+    ["claude-haiku-4.5"]="200000:8192"
+    ["claude-sonnet-4.5"]="200000:8192"
+    ["claude-sonnet-4.6"]="200000:8192"
+    ["claude-opus-4.5"]="200000:8192"
+    ["claude-opus-4.6"]="200000:8192"
+    ["claude-opus-4.7"]="200000:8192"
+    ["claude-opus-4.8"]="200000:8192"
+    ["deepseek-v4-pro"]="131072:8192"
+    ["deepseek-v4-flash"]="131072:8192"
+    ["gemini-3.1-pro"]="1000000:8192"
+    ["gemini-3.5-flash"]="1000000:8192"
+    ["glm-5"]="128000:8192"
+    ["glm-5.1"]="128000:8192"
+    ["kimi-k2.5"]="131072:8192"
+    ["kimi-k2.6"]="131072:8192"
+    ["minimax-m3"]="1000000:8192"
+    ["minimax-m2.7"]="1000000:8192"
 )
 
 # Submenu subtitles per group
@@ -107,13 +157,19 @@ resolve_profile_from_state() {
         "claude-nim-qwen3.5-397b"|"claude-nim-qwen3-next-80b"|"claude-nim-qwen3-coder-480b"| \
         "claude-openrouter-hy3"|"claude-openrouter-nemotron"|"claude-openrouter-laguna"| \
         "claude-openrouter-deepseek-v4-flash"|"claude-openrouter-qwen3-coder"| \
-        "claude-bai-deepseek-v4-pro"|"claude-bai-deepseek-v4-flash"| \
-        "claude-bai-minimax-m3"|"claude-bai-minimax-m2.7"|"claude-bai-glm-5"| \
-        "claude-bai-kimi-k2.6"|"claude-bai-gpt-5.5"| \
         "custom-claude-zai"|"custom-claude-zai-general"|"custom-claude-nim"| \
         "custom-claude-openrouter"|"custom-claude-bai")
             echo "$profile_id"
             return 0
+            ;;
+        claude-bai-*)
+            # Wildcard: any claude-bai-* profile is valid iff its model_id is in BAI_MODEL_SPEC.
+            local mid="${profile_id#claude-bai-}"
+            if [[ -n "${BAI_MODEL_SPEC[$mid]:-}" ]]; then
+                echo "$profile_id"
+                return 0
+            fi
+            return 1
             ;;
         *)
             return 1
@@ -416,23 +472,26 @@ invoke_claude_cloud_profile() {
             export ANTHROPIC_DEFAULT_HAIKU_MODEL="$fcc_model"
             export API_TIMEOUT_MS="3000000"
             ;;
-        claude-bai*|custom-claude-bai*)
+        claude-bai-*|custom-claude-bai*)
             # B.AI rides the open_router transport but routes to https://api.b.ai/v1 via OPENAI_BASE_URL.
-            local fcc_model="open_router/deepseek-v4-flash"
-            case "$profile_id" in
-                "claude-bai-deepseek-v4-pro")   fcc_model="open_router/deepseek-v4-pro" ;;
-                "claude-bai-deepseek-v4-flash") fcc_model="open_router/deepseek-v4-flash" ;;
-                "claude-bai-minimax-m3")        fcc_model="open_router/minimax-m3" ;;
-                "claude-bai-minimax-m2.7")      fcc_model="open_router/minimax-m2.7" ;;
-                "claude-bai-glm-5")             fcc_model="open_router/glm-5" ;;
-                "claude-bai-kimi-k2.6")         fcc_model="open_router/kimi-k2.6" ;;
-                "claude-bai-gpt-5.5")           fcc_model="open_router/gpt-5.5" ;;
-                "custom-claude-bai")
-                    local st=$(get_launcher_state)
-                    local cm=$(echo "$st" | grep -o '"customModelId":"[^"]*"' | cut -d'"' -f4)
-                    if [ -n "$cm" ]; then fcc_model="open_router/$cm"; fi
-                    ;;
-            esac
+            # Wildcard: model_id (without claude-bai- prefix) is validated against BAI_MODEL_SPEC.
+            local mid="${profile_id#claude-bai-}"
+            local fcc_model
+            if [ "$profile_id" = "custom-claude-bai" ]; then
+                local st=$(get_launcher_state)
+                local cm=$(echo "$st" | grep -o '"customModelId":"[^"]*"' | cut -d'"' -f4)
+                if [ -z "$cm" ]; then
+                    printf "${RED}Нет customModelId. Выберите модель в «Другая модель».${RESET}\n" >&3
+                    return 1
+                fi
+                fcc_model="open_router/$cm"
+            else
+                if [ -z "${BAI_MODEL_SPEC[$mid]:-}" ]; then
+                    printf "${RED}Неизвестная B.AI модель: $mid${RESET}\n" >&3
+                    return 1
+                fi
+                fcc_model="open_router/$mid"
+            fi
             local bai_extra_env='OPENAI_BASE_URL="https://api.b.ai/v1"'
             local proxy_port
             proxy_port=$(ensure_fcc_proxy "bai" "$fcc_model" "8085" "$bai_extra_env") || {
