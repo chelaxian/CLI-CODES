@@ -1,4 +1,4 @@
-﻿[CmdletBinding(DefaultParameterSetName = "Full")]
+[CmdletBinding(DefaultParameterSetName = "Full")]
 param(
   [Parameter(ParameterSetName = "Full", Mandatory = $true)]
   [ValidateSet("zai", "nim", "nim-qwen", "openrouter", "bai")]
@@ -679,9 +679,9 @@ try {
   # Without --bare, Claude Code v2.x shows "Not logged in" for any 3P provider because
   # it tries OAuth first and refuses to fall through to the env API key.
   if ($ClaudeTools -eq "default") {
-    & $claudeExe --bare
+    Invoke-ChildCliCatchCtrlC -ExePath $claudeExe -Arguments @("--bare")
   } else {
-    & $claudeExe --bare --tools $ClaudeTools
+    Invoke-ChildCliCatchCtrlC -ExePath $claudeExe -Arguments @("--bare", "--tools", $ClaudeTools)
   }
 } finally {
   Pop-Location

@@ -333,3 +333,51 @@ function Show-TuiWaitFrame {
   Write-TuiRow -Text ("".PadRight($inner)) -InnerWidth $inner
   Write-Host ($b.BL + (Repeat-TuiChar $b.H ($frameW - 2)) + $b.BR) -ForegroundColor Cyan
 }
+
+# ─── Restore-ProcessEnvFromUser ──────────────────────────────────────────────
+# Copies a User-scope environment variable into the current process scope.
+# Used after `Remove-Item Env:` clears process env to make sure API keys that
+# the user set via "Сменить ключ API провайдера" (which writes User scope) are
+# still visible to child CLIs that default to that provider.
+function Restore-ProcessEnvFromUser {
+  param([Parameter(Mandatory = $true)][string]$Key)
+  $val = [Environment]::GetEnvironmentVariable($Key, "User")
+  if ([string]::IsNullOrWhiteSpace($val) -or $val -eq "__SET_ME__") {
+    Remove-Item -Path ("Env:" + $Key) -ErrorAction SilentlyContinue
+    return
+  }
+  Set-Item -Path ("Env:" + $Key) -Value $val
+}
+
+# ─── Invoke-ChildCliCatchCtrlC ───────────────────────────────────────────────
+# Thin wrapper around '& $exe' that swallows PipelineStoppedException so
+# Ctrl+C (which aborts the running child CLI) returns control to the caller
+# instead of aborting the whole launcher script.
+#
+# Differences from the previous (broken) Invoke-ChildCliSafe attempt:
+#   - Does NOT temporarily change $ErrorActionPreference.
+#   - Does NOT change $PSNativeCommandUseErrorActionPreference (callers set it).
+#   - Does NOT return $LASTEXITCODE — just runs the CLI and swallows Ctrl+C.
+#   - Works because the caller has already set
+#     $PSNativeCommandUseErrorActionPreference = $false at script top, so
+#     non-zero exit codes never become terminating errors. The only thing we
+#     need to catch here is PipelineStoppedException (Ctrl+C pipeline abort).
+function Invoke-ChildCliCatchCtrlC {
+  param(
+    [Parameter(Mandatory = $true)][string]$ExePath,
+    [string[]]$Arguments = @()
+  )
+  try {
+    if ($ExePath -like "*.cmd" -or $ExePath -like "*.bat") {
+      $allArgs = @("/c", $ExePath) + $Arguments
+      & cmd.exe @allArgs
+    } elseif ($Arguments.Count -gt 0) {
+      & $ExePath @Arguments
+    } else {
+      & $ExePath
+    }
+  } catch {
+    # Swallow Ctrl+C / pipeline-stopped — return to caller so the launcher
+    # can re-show its main menu.
+  }
+}

@@ -48,16 +48,7 @@ function Invoke-CliCommand {
     [Parameter(Mandatory = $true)][string]$ExePath,
     [string[]]$Arguments = @()
   )
-  if ($ExePath -like "*.cmd" -or $ExePath -like "*.bat") {
-    $allArgs = @("/c", $ExePath) + $Arguments
-    & cmd.exe @allArgs
-  } else {
-    if ($Arguments.Count -gt 0) {
-      & $ExePath @Arguments
-    } else {
-      & $ExePath
-    }
-  }
+  Invoke-ChildCliCatchCtrlC -ExePath $ExePath -Arguments $Arguments
 }
 
 if (-not (Test-Path -LiteralPath $SessionScript)) {

@@ -4,6 +4,10 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+# Native commands (opencode.exe) при Ctrl+C возвращают non-zero exit code, что в PS 7.4+
+# превращается в исключение и пробрасывается до верха, ломая TUI launcher'а.
+# Явно отключаем эту трансформацию — exit code читаем через $LASTEXITCODE сам.
+$PSNativeCommandUseErrorActionPreference = $false
 
 . (Join-Path $PSScriptRoot "ensure-streaming-friendly-terminal.ps1")
 . (Join-Path $PSScriptRoot "launcher-tui.ps1")
@@ -219,16 +223,7 @@ function Invoke-CliCommand {
     [Parameter(Mandatory = $true)][string]$ExePath,
     [string[]]$Arguments = @()
   )
-  if ($ExePath -like "*.cmd" -or $ExePath -like "*.bat") {
-    $allArgs = @("/c", $ExePath) + $Arguments
-    & cmd.exe @allArgs
-  } else {
-    if ($Arguments.Count -gt 0) {
-      & $ExePath @Arguments
-    } else {
-      & $ExePath
-    }
-  }
+  Invoke-ChildCliCatchCtrlC -ExePath $ExePath -Arguments $Arguments
 }
 
 function Write-OpenCodeConfig {
@@ -316,7 +311,7 @@ function Invoke-OpenCodeProfile {
       $configPath = Write-OpenCodeConfig -Provider "zai" -Model "glm-4.7" -BaseURL "https://api.z.ai/api/coding/paas/v4" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
       $env:OPENCODE_CONFIG = $configPath
       Write-Host "Запуск OpenCode (Z.AI GLM-4.7)…" -ForegroundColor Cyan
-      & $opencodeExe
+      Invoke-ChildCliCatchCtrlC -ExePath $opencodeExe
       return
     }
     "zai-glm51" {
@@ -337,7 +332,7 @@ function Invoke-OpenCodeProfile {
       $configPath = Write-OpenCodeConfig -Provider "zai" -Model "glm-5.1" -BaseURL "https://api.z.ai/api/coding/paas/v4" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
       $env:OPENCODE_CONFIG = $configPath
       Write-Host "Запуск OpenCode (Z.AI GLM-5.1)…" -ForegroundColor Cyan
-      & $opencodeExe
+      Invoke-ChildCliCatchCtrlC -ExePath $opencodeExe
       return
     }
     "zai-flash47" {
@@ -351,7 +346,7 @@ function Invoke-OpenCodeProfile {
       $configPath = Write-OpenCodeConfig -Provider "zai" -Model "glm-4.7-flash" -BaseURL "https://api.z.ai/api/coding/paas/v4" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
       $env:OPENCODE_CONFIG = $configPath
       Write-Host "Запуск OpenCode (Z.AI GLM-4.7-Flash)…" -ForegroundColor Cyan
-      & $opencodeExe
+      Invoke-ChildCliCatchCtrlC -ExePath $opencodeExe
       return
     }
     "zai-flash45" {
@@ -365,7 +360,7 @@ function Invoke-OpenCodeProfile {
       $configPath = Write-OpenCodeConfig -Provider "zai" -Model "glm-4.5-flash" -BaseURL "https://api.z.ai/api/coding/paas/v4" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
       $env:OPENCODE_CONFIG = $configPath
       Write-Host "Запуск OpenCode (Z.AI GLM-4.5-Flash)…" -ForegroundColor Cyan
-      & $opencodeExe
+      Invoke-ChildCliCatchCtrlC -ExePath $opencodeExe
       return
     }
     "nim-mistral-medium" {
@@ -377,7 +372,7 @@ function Invoke-OpenCodeProfile {
       $configPath = Write-OpenCodeConfig -Provider "nvidia-nim" -Model "mistralai/mistral-medium-3.5-128b" -BaseURL "https://integrate.api.nvidia.com/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
       $env:OPENCODE_CONFIG = $configPath
       Write-Host "Запуск OpenCode (NVIDIA NIM Mistral Medium 3.5 128B)…" -ForegroundColor Cyan
-      & $opencodeExe
+      Invoke-ChildCliCatchCtrlC -ExePath $opencodeExe
       return
     }
     "nim-glm51" {
@@ -389,7 +384,7 @@ function Invoke-OpenCodeProfile {
       $configPath = Write-OpenCodeConfig -Provider "nvidia-nim" -Model "z-ai/glm-5.1" -BaseURL "https://integrate.api.nvidia.com/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
       $env:OPENCODE_CONFIG = $configPath
       Write-Host "Запуск OpenCode (NVIDIA NIM Z.AI GLM-5.1)…" -ForegroundColor Cyan
-      & $opencodeExe
+      Invoke-ChildCliCatchCtrlC -ExePath $opencodeExe
       return
     }
     "nim-step-3.5-flash" {
@@ -401,7 +396,7 @@ function Invoke-OpenCodeProfile {
       $configPath = Write-OpenCodeConfig -Provider "nvidia-nim" -Model "stepfun-ai/step-3.5-flash" -BaseURL "https://integrate.api.nvidia.com/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
       $env:OPENCODE_CONFIG = $configPath
       Write-Host "Запуск OpenCode (NVIDIA NIM Step 3.5 Flash)…" -ForegroundColor Cyan
-      & $opencodeExe
+      Invoke-ChildCliCatchCtrlC -ExePath $opencodeExe
       return
     }
     "nim-mistral-large-3" {
@@ -413,7 +408,7 @@ function Invoke-OpenCodeProfile {
       $configPath = Write-OpenCodeConfig -Provider "nvidia-nim" -Model "mistralai/mistral-large-3-675b-instruct-2512" -BaseURL "https://integrate.api.nvidia.com/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
       $env:OPENCODE_CONFIG = $configPath
       Write-Host "Запуск OpenCode (NVIDIA NIM Mistral Large 3 675B)…" -ForegroundColor Cyan
-      & $opencodeExe
+      Invoke-ChildCliCatchCtrlC -ExePath $opencodeExe
       return
     }
     "nim-deepseek-v4-flash" {
@@ -425,7 +420,7 @@ function Invoke-OpenCodeProfile {
       $configPath = Write-OpenCodeConfig -Provider "nvidia-nim" -Model "deepseek-ai/deepseek-v4-flash" -BaseURL "https://integrate.api.nvidia.com/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
       $env:OPENCODE_CONFIG = $configPath
       Write-Host "Запуск OpenCode (NVIDIA NIM DeepSeek V4 Flash)…" -ForegroundColor Cyan
-      & $opencodeExe
+      Invoke-ChildCliCatchCtrlC -ExePath $opencodeExe
       return
     }
     "nim-gemma-4-31b" {
@@ -437,7 +432,7 @@ function Invoke-OpenCodeProfile {
       $configPath = Write-OpenCodeConfig -Provider "nvidia-nim" -Model "google/gemma-4-31b-it" -BaseURL "https://integrate.api.nvidia.com/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
       $env:OPENCODE_CONFIG = $configPath
       Write-Host "Запуск OpenCode (NVIDIA NIM Gemma-4 31B)…" -ForegroundColor Cyan
-      & $opencodeExe
+      Invoke-ChildCliCatchCtrlC -ExePath $opencodeExe
       return
     }
     "nim-qwen3.5-397b" {
@@ -449,7 +444,7 @@ function Invoke-OpenCodeProfile {
       $configPath = Write-OpenCodeConfig -Provider "nvidia-nim" -Model "qwen/qwen3.5-397b-a17b" -BaseURL "https://integrate.api.nvidia.com/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
       $env:OPENCODE_CONFIG = $configPath
       Write-Host "Запуск OpenCode (NVIDIA NIM Qwen 3.5 397B)…" -ForegroundColor Cyan
-      & $opencodeExe
+      Invoke-ChildCliCatchCtrlC -ExePath $opencodeExe
       return
     }
     "nim-qwen3-next-80b" {
@@ -461,7 +456,7 @@ function Invoke-OpenCodeProfile {
       $configPath = Write-OpenCodeConfig -Provider "nvidia-nim" -Model "qwen/qwen3-next-80b-a3b-instruct" -BaseURL "https://integrate.api.nvidia.com/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
       $env:OPENCODE_CONFIG = $configPath
       Write-Host "Запуск OpenCode (NVIDIA NIM Qwen 3 Next 80B)…" -ForegroundColor Cyan
-      & $opencodeExe
+      Invoke-ChildCliCatchCtrlC -ExePath $opencodeExe
       return
     }
     "nim-qwen3-coder-480b" {
@@ -473,7 +468,7 @@ function Invoke-OpenCodeProfile {
       $configPath = Write-OpenCodeConfig -Provider "nvidia-nim" -Model "qwen/qwen3-coder-480b-a35b-instruct" -BaseURL "https://integrate.api.nvidia.com/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
       $env:OPENCODE_CONFIG = $configPath
       Write-Host "Запуск OpenCode (NVIDIA NIM Qwen 3 Coder 480B)…" -ForegroundColor Cyan
-      & $opencodeExe
+      Invoke-ChildCliCatchCtrlC -ExePath $opencodeExe
       return
     }
     "custom-opencode-zai" {
@@ -492,7 +487,7 @@ function Invoke-OpenCodeProfile {
       $configPath = Write-OpenCodeConfig -Provider "zai" -Model $mid.Trim() -BaseURL "https://api.z.ai/api/coding/paas/v4" -ApiKey $apiKey
       $env:OPENCODE_CONFIG = $configPath
       Write-Host "Запуск OpenCode (Z.AI custom: $($mid.Trim()))…" -ForegroundColor Cyan
-      & $opencodeExe
+      Invoke-ChildCliCatchCtrlC -ExePath $opencodeExe
       return
     }
     "custom-opencode-nim" {
@@ -509,7 +504,7 @@ function Invoke-OpenCodeProfile {
       $configPath = Write-OpenCodeConfig -Provider "nvidia-nim" -Model $mid.Trim() -BaseURL "https://integrate.api.nvidia.com/v1" -ApiKey $apiKey
       $env:OPENCODE_CONFIG = $configPath
       Write-Host "Запуск OpenCode (NVIDIA NIM custom: $($mid.Trim()))…" -ForegroundColor Cyan
-      & $opencodeExe
+      Invoke-ChildCliCatchCtrlC -ExePath $opencodeExe
       return
     }
     "custom-opencode-groq" {
@@ -526,7 +521,7 @@ function Invoke-OpenCodeProfile {
       $configPath = Write-OpenCodeConfig -Provider "groq" -Model $mid.Trim() -BaseURL "https://api.groq.com/openai/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
       $env:OPENCODE_CONFIG = $configPath
       Write-Host "Запуск OpenCode (Groq custom: $($mid.Trim()))…" -ForegroundColor Cyan
-      & $opencodeExe
+      Invoke-ChildCliCatchCtrlC -ExePath $opencodeExe
       return
     }
     "custom-opencode-openrouter" {
@@ -543,7 +538,7 @@ function Invoke-OpenCodeProfile {
       $configPath = Write-OpenCodeConfig -Provider "openrouter" -Model $mid.Trim() -BaseURL "https://openrouter.ai/api/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 16384
       $env:OPENCODE_CONFIG = $configPath
       Write-Host "Запуск OpenCode (OpenRouter custom: $($mid.Trim()))…" -ForegroundColor Cyan
-      & $opencodeExe
+      Invoke-ChildCliCatchCtrlC -ExePath $opencodeExe
       return
     }
     "custom-opencode-bai" {
@@ -560,7 +555,7 @@ function Invoke-OpenCodeProfile {
       $configPath = Write-OpenCodeConfig -Provider "bai" -Model $mid.Trim() -BaseURL "https://api.b.ai/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
       $env:OPENCODE_CONFIG = $configPath
       Write-Host "Запуск OpenCode (B.AI custom: $($mid.Trim()))…" -ForegroundColor Cyan
-      & $opencodeExe
+      Invoke-ChildCliCatchCtrlC -ExePath $opencodeExe
       return
     }
     "openrouter-hy3" {
@@ -570,7 +565,7 @@ function Invoke-OpenCodeProfile {
       $configPath = Write-OpenCodeConfig -Provider "openrouter" -Model "deepseek/deepseek-chat-v3.1:free" -BaseURL "https://openrouter.ai/api/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 1048576
       $env:OPENCODE_CONFIG = $configPath
       Write-Host "Запуск OpenCode (OpenRouter DeepSeek Chat V3.1)…" -ForegroundColor Cyan
-      & $opencodeExe
+      Invoke-ChildCliCatchCtrlC -ExePath $opencodeExe
       return
     }
     "openrouter-deepseek-v4-flash" {
@@ -582,7 +577,7 @@ function Invoke-OpenCodeProfile {
       $configPath = Write-OpenCodeConfig -Provider "openrouter" -Model "deepseek/deepseek-chat-v3.1:free" -BaseURL "https://openrouter.ai/api/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 1048576
       $env:OPENCODE_CONFIG = $configPath
       Write-Host "Запуск OpenCode (OpenRouter DeepSeek V4 Flash)…" -ForegroundColor Cyan
-      & $opencodeExe
+      Invoke-ChildCliCatchCtrlC -ExePath $opencodeExe
       return
     }
     "openrouter-qwen3-coder" {
@@ -594,7 +589,7 @@ function Invoke-OpenCodeProfile {
       $configPath = Write-OpenCodeConfig -Provider "openrouter" -Model "qwen/qwen3-coder:free" -BaseURL "https://openrouter.ai/api/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 262000
       $env:OPENCODE_CONFIG = $configPath
       Write-Host "Запуск OpenCode (OpenRouter Qwen3 Coder)…" -ForegroundColor Cyan
-      & $opencodeExe
+      Invoke-ChildCliCatchCtrlC -ExePath $opencodeExe
       return
     }
     "openrouter-nemotron" {
@@ -604,7 +599,7 @@ function Invoke-OpenCodeProfile {
       $configPath = Write-OpenCodeConfig -Provider "openrouter" -Model "nvidia/nemotron-3-super-120b-a12b:free" -BaseURL "https://openrouter.ai/api/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 262144
       $env:OPENCODE_CONFIG = $configPath
       Write-Host "Запуск OpenCode (OpenRouter Nemotron 3 Super)…" -ForegroundColor Cyan
-      & $opencodeExe
+      Invoke-ChildCliCatchCtrlC -ExePath $opencodeExe
       return
     }
     "openrouter-laguna" {
@@ -614,7 +609,7 @@ function Invoke-OpenCodeProfile {
       $configPath = Write-OpenCodeConfig -Provider "openrouter" -Model "poolside/laguna-m.1:free" -BaseURL "https://openrouter.ai/api/v1" -ApiKey $apiKey -MaxTokens 8192 -ContextLength 131072
       $env:OPENCODE_CONFIG = $configPath
       Write-Host "Запуск OpenCode (OpenRouter Poolside Laguna M.1)…" -ForegroundColor Cyan
-      & $opencodeExe
+      Invoke-ChildCliCatchCtrlC -ExePath $opencodeExe
       return
     }
     default {
@@ -630,7 +625,7 @@ function Invoke-OpenCodeProfile {
         $configPath = Write-OpenCodeConfig -Provider "bai" -Model $mid -BaseURL "https://api.b.ai/v1" -ApiKey $apiKey -MaxTokens $spec.Max -ContextLength $spec.Ctx
         $env:OPENCODE_CONFIG = $configPath
         Write-Host "Запуск OpenCode (B.AI ${mid})…" -ForegroundColor Cyan
-        & $opencodeExe
+        Invoke-ChildCliCatchCtrlC -ExePath $opencodeExe
         return
       }
       throw "Неизвестный профиль: $ProfileId"
