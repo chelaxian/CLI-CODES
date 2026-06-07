@@ -2,6 +2,7 @@
 param()
 
 $ErrorActionPreference = "Stop"
+$PSNativeCommandUseErrorActionPreference = $false
 . (Join-Path $PSScriptRoot "launcher-tui.ps1")
 . (Join-Path $PSScriptRoot "launcher-api-keys.ps1")
 . (Join-Path $PSScriptRoot "launcher-provider-models.ps1")
@@ -137,8 +138,8 @@ $script:GroupMenus = @{
     @{ Id = "bai-kimi-k2.5";         Label = "B.AI - Kimi K2.5 (Moonshot)" }
   )
   openrouter = @(
-    @{ Id = "openrouter-laguna";     Label = "OpenRouter - Poolside Laguna M.1 (free, coding)" }
-    @{ Id = "openrouter-qwen3-coder"; Label = "OpenRouter - Qwen3 Coder (free)" }
+    @{ Id = "openrouter-laguna";     Label = "OpenRouter - Poolside Laguna M.1 (free, coding, text-only)" }
+    @{ Id = "openrouter-qwen3-coder"; Label = "OpenRouter - Qwen3 Coder (free, text-only)" }
   )
 }
 

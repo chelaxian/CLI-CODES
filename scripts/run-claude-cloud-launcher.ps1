@@ -4,6 +4,10 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+# Native commands (claude.exe) при Ctrl+C возвращают non-zero exit code, что в PS 7.4+
+# превращается в исключение и пробрасывается до верха, ломая TUI launcher'а.
+# Явно отключаем эту трансформацию — exit code читаем через $LASTEXITCODE сам.
+$PSNativeCommandUseErrorActionPreference = $false
 
 . (Join-Path $PSScriptRoot "ensure-streaming-friendly-terminal.ps1")
 . (Join-Path $PSScriptRoot "launcher-tui.ps1")
@@ -77,10 +81,8 @@ $script:Profiles = @(
     Id    = "group:openrouter"
     Label = "OpenRouter - бесплатные agentic модели"
   }
-  @{
-    Id    = "group:bai"
-    Label = "B.AI - DeepSeek/MiniMax/GLM/Kimi/GPT (Anthropic-compatible)"
-  }
+  # B.AI не поддерживается в Claude Code v2.x (native binary не умеет OpenAI-compat,
+  # free-claude-code не имеет b_ai в SUPPORTED_PROVIDER_IDS). Используйте OpenClaude launcher.
   @{
     Id    = "custom-model"
     Label = "Другая модель… → выбор провайдера и модели"
@@ -146,37 +148,10 @@ $script:GroupMenus = @{
     @{ Id = "claude-nim-qwen3-coder-480b"; Label = "NIM - Qwen 3 Coder 480B A35B (free)" }
   )
   openrouter = @(
-    @{ Id = "claude-openrouter-deepseek-v4-flash"; Label = "OpenRouter - DeepSeek V4 Flash (free, tool calling)" }
-    @{ Id = "claude-openrouter-qwen3-coder";       Label = "OpenRouter - Qwen3 Coder (free, tool calling)" }
-    @{ Id = "claude-openrouter-nemotron";          Label = "OpenRouter - Nemotron 3 Super 120B (free, tool calling)" }
-    @{ Id = "claude-openrouter-laguna";            Label = "OpenRouter - Poolside Laguna M.1 (free, tool calling, coding)" }
-  )
-  bai = @(
-    @{ Id = "claude-bai-gpt-5-nano";        Label = "B.AI - GPT-5 Nano (OpenAI, agentic)" }
-    @{ Id = "claude-bai-gpt-5-mini";        Label = "B.AI - GPT-5 Mini (OpenAI, agentic)" }
-    @{ Id = "claude-bai-gpt-5.2";           Label = "B.AI - GPT-5.2 (OpenAI, agentic)" }
-    @{ Id = "claude-bai-gpt-5.4-nano";      Label = "B.AI - GPT-5.4 Nano (OpenAI, agentic)" }
-    @{ Id = "claude-bai-gpt-5.4-mini";      Label = "B.AI - GPT-5.4 Mini (OpenAI, agentic)" }
-    @{ Id = "claude-bai-gpt-5.4";           Label = "B.AI - GPT-5.4 (OpenAI, agentic)" }
-    @{ Id = "claude-bai-gpt-5.4-pro";       Label = "B.AI - GPT-5.4 Pro (OpenAI, agentic)" }
-    @{ Id = "claude-bai-gpt-5.5";           Label = "B.AI - GPT-5.5 (OpenAI, agentic)" }
-    @{ Id = "claude-bai-gpt-5.5-instant";   Label = "B.AI - GPT-5.5 Instant (OpenAI, agentic)" }
-    @{ Id = "claude-bai-claude-haiku-4.5";  Label = "B.AI - Claude Haiku 4.5 (Anthropic, agentic)" }
-    @{ Id = "claude-bai-claude-sonnet-4.5"; Label = "B.AI - Claude Sonnet 4.5 (Anthropic, agentic)" }
-    @{ Id = "claude-bai-claude-sonnet-4.6"; Label = "B.AI - Claude Sonnet 4.6 (Anthropic, agentic)" }
-    @{ Id = "claude-bai-claude-opus-4.5";   Label = "B.AI - Claude Opus 4.5 (Anthropic, agentic)" }
-    @{ Id = "claude-bai-claude-opus-4.6";   Label = "B.AI - Claude Opus 4.6 (Anthropic, agentic)" }
-    @{ Id = "claude-bai-claude-opus-4.7";   Label = "B.AI - Claude Opus 4.7 (Anthropic, agentic)" }
-    @{ Id = "claude-bai-claude-opus-4.8";   Label = "B.AI - Claude Opus 4.8 (Anthropic, agentic)" }
-    @{ Id = "claude-bai-deepseek-v4-pro";   Label = "B.AI - DeepSeek V4 Pro (agentic) [use OpenClaude]" }
-    @{ Id = "claude-bai-deepseek-v4-flash"; Label = "B.AI - DeepSeek V4 Flash (agentic) [use OpenClaude]" }
-    @{ Id = "claude-bai-gemini-3.1-pro";    Label = "B.AI - Gemini 3.1 Pro (Google, agentic) [use OpenClaude]" }
-    @{ Id = "claude-bai-gemini-3.5-flash";  Label = "B.AI - Gemini 3.5 Flash (Google, agentic) [use OpenClaude]" }
-    @{ Id = "claude-bai-glm-5";             Label = "B.AI - GLM-5 (Z.AI) [use OpenClaude]" }
-    @{ Id = "claude-bai-glm-5.1";           Label = "B.AI - GLM-5.1 (Z.AI) [use OpenClaude]" }
-    @{ Id = "claude-bai-kimi-k2.5";         Label = "B.AI - Kimi K2.5 (Moonshot) [use OpenClaude]" }
-    @{ Id = "claude-bai-minimax-m3";        Label = "B.AI - MiniMax M3 (agentic) [use OpenClaude]" }
-    @{ Id = "claude-bai-minimax-m2.7";      Label = "B.AI - MiniMax M2.7 (fast) [use OpenClaude]" }
+    @{ Id = "claude-openrouter-deepseek-v4-flash"; Label = "OpenRouter - DeepSeek V4 Flash (free, text-only)" }
+    @{ Id = "claude-openrouter-qwen3-coder";       Label = "OpenRouter - Qwen3 Coder (free, text-only)" }
+    @{ Id = "claude-openrouter-nemotron";          Label = "OpenRouter - Nemotron 3 Super 120B (free, text-only)" }
+    @{ Id = "claude-openrouter-laguna";            Label = "OpenRouter - Poolside Laguna M.1 (free, text-only, coding)" }
   )
 }
 
@@ -397,7 +372,7 @@ if ($Quick -or $env:CLAUDE_CLOUD_LAUNCHER_QUICK -eq "1") {
     Start-Sleep -Seconds 3
     exit 2
   }
-  Invoke-ClaudeCloudProfile -ProfileId $resolvedId
+  try { Invoke-ClaudeCloudProfile -ProfileId $resolvedId } catch { Write-Host "" }
   exit $LASTEXITCODE
 }
 
@@ -414,7 +389,7 @@ if ($lastId) {
 }
 
 while ($true) {
-  $choice = Show-TuiFramedMenu -AppBrand "Claude" -Title "Claude Code (облако) - провайдер" -Subtitle "Z.AI · NIM · OpenRouter · B.AI (через free-claude-code)" -Items $items -InitialIndex $startIdx -MaxVisible 20
+  $choice = Show-TuiFramedMenu -AppBrand "Claude" -Title "Claude Code (облако) - провайдер" -Subtitle "Z.AI · NIM · OpenRouter (через free-claude-code)" -Items $items -InitialIndex $startIdx -MaxVisible 20
   if (-not $choice) {
     Write-Host "Отменено." -ForegroundColor Yellow
     exit 0
@@ -443,7 +418,7 @@ while ($true) {
     if ($true -eq $subChoice.__menuBack) { continue }
     $profileId = [string]$subChoice.Id
     Save-LauncherState -ProfileId $profileId
-    Invoke-ClaudeCloudProfile -ProfileId $profileId
+    try { Invoke-ClaudeCloudProfile -ProfileId $profileId } catch { Write-Host "" }
     continue
   }
 
@@ -457,19 +432,22 @@ while ($true) {
     switch ($w.Provider) {
       "zai" {
         Save-LauncherState -ProfileId "custom-claude-zai" -Extra @{ customModelId = [string]$w.ModelId }
-        Invoke-ClaudeCloudProfile -ProfileId "custom-claude-zai"
+        try { Invoke-ClaudeCloudProfile -ProfileId "custom-claude-zai" } catch { Write-Host "" }
       }
       "openrouter" {
         Save-LauncherState -ProfileId "custom-claude-openrouter" -Extra @{ customModelId = [string]$w.ModelId }
-        Invoke-ClaudeCloudProfile -ProfileId "custom-claude-openrouter"
+        try { Invoke-ClaudeCloudProfile -ProfileId "custom-claude-openrouter" } catch { Write-Host "" }
       }
+      # B.AI wizard-выбор перенаправляем на OpenClaude
       "bai" {
-        Save-LauncherState -ProfileId "custom-claude-bai" -Extra @{ customModelId = [string]$w.ModelId }
-        Invoke-ClaudeCloudProfile -ProfileId "custom-claude-bai"
+        Write-Host ""
+        Write-Host "B.AI в Claude Code не поддерживается." -ForegroundColor Yellow
+        Write-Host "Используйте OpenClaude launcher." -ForegroundColor Cyan
+        Start-Sleep -Seconds 3
       }
       default {
         Save-LauncherState -ProfileId "custom-claude-nim" -Extra @{ customNimModel = [string]$w.ClaudeNimModel }
-        Invoke-ClaudeCloudProfile -ProfileId "custom-claude-nim"
+        try { Invoke-ClaudeCloudProfile -ProfileId "custom-claude-nim" } catch { Write-Host "" }
       }
     }
     continue
@@ -562,6 +540,6 @@ while ($true) {
     Save-LauncherState -ProfileId $profileId
   }
 
-  Invoke-ClaudeCloudProfile -ProfileId $profileId
+  try { Invoke-ClaudeCloudProfile -ProfileId $profileId } catch { Write-Host "" }
   continue
 }

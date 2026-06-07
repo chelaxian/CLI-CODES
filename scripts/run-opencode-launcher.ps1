@@ -112,10 +112,10 @@ $script:GroupMenus = @{
     @{ Id = "nim-qwen3-coder-480b"; Label = "NIM - Qwen 3 Coder 480B A35B (free)" }
   )
   openrouter = @(
-    @{ Id = "openrouter-deepseek-v4-flash"; Label = "OpenRouter - DeepSeek V4 Flash (free, tool calling)" }
-    @{ Id = "openrouter-qwen3-coder";       Label = "OpenRouter - Qwen3 Coder (free, tool calling)" }
-    @{ Id = "openrouter-nemotron";          Label = "OpenRouter - Nemotron 3 Super 120B (free, tool calling)" }
-    @{ Id = "openrouter-laguna";            Label = "OpenRouter - Poolside Laguna M.1 (free, tool calling, coding)" }
+    @{ Id = "openrouter-deepseek-v4-flash"; Label = "OpenRouter - DeepSeek V4 Flash (free, text-only — no images)" }
+    @{ Id = "openrouter-qwen3-coder";       Label = "OpenRouter - Qwen3 Coder (free, text-only — no images)" }
+    @{ Id = "openrouter-nemotron";          Label = "OpenRouter - Nemotron 3 Super 120B (free, text-only — no images)" }
+    @{ Id = "openrouter-laguna";            Label = "OpenRouter - Poolside Laguna M.1 (free, text-only — no images, coding)" }
   )
   bai = @(
     @{ Id = "bai-gpt-5-nano";        Label = "B.AI - GPT-5 Nano (OpenAI, agentic)" }
