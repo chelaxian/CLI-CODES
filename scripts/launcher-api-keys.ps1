@@ -3,55 +3,40 @@
 function Get-ProviderHelpUrl {
   param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("NVIDIA_NIM", "ZAI", "GROQ", "OPENROUTER", "BAI")]
+    [ValidateSet("NVIDIA_NIM", "ZAI", "GROQ", "OPENROUTER", "BAI", "OPENGATEWAY")]
     [string]$Provider
   )
 
   switch ($Provider) {
-    "NVIDIA_NIM"  { return "https://build.nvidia.com/api-key" }
-    "ZAI"         { return "https://console.z.ai/" }
-    "GROQ"        { return "https://console.groq.com/keys" }
-    "OPENROUTER"  { return "https://openrouter.ai/settings/keys" }
-    "BAI"         { return "https://chat.b.ai/key" }
-    default       { return "" }
+    "NVIDIA_NIM"    { return "https://build.nvidia.com/api-key" }
+    "ZAI"           { return "https://console.z.ai/" }
+    "GROQ"          { return "https://console.groq.com/keys" }
+    "OPENROUTER"    { return "https://openrouter.ai/settings/keys" }
+    "BAI"           { return "https://chat.b.ai/key" }
+    "OPENGATEWAY"   { return "https://gitlawb.com/opengateway/keys" }
+    default         { return "" }
   }
 }
 
 function Get-CurrentApiKey {
   param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet("NVIDIA_NIM", "ZAI", "GROQ", "OPENROUTER", "BAI")]
+    [ValidateSet("NVIDIA_NIM", "ZAI", "GROQ", "OPENROUTER", "BAI", "OPENGATEWAY")]
     [string]$Provider
   )
 
   switch ($Provider) {
     "NVIDIA_NIM" {
       $key = [Environment]::GetEnvironmentVariable("NVIDIA_NIM_API_KEY", "User")
-      if ([string]::IsNullOrWhiteSpace($key)) {
-        $key = $env:NVIDIA_NIM_API_KEY
-      }
-      if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") {
-        return ""
-      } else {
-        return $key.Trim()
-      }
+      if ([string]::IsNullOrWhiteSpace($key)) { $key = $env:NVIDIA_NIM_API_KEY }
+      if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") { return "" } else { return $key.Trim() }
     }
     "ZAI" {
       $key = [Environment]::GetEnvironmentVariable("ZAI_API_KEY", "User")
-      if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") {
-        $key = $env:ZAI_API_KEY
-      }
-      if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") {
-        $key = [Environment]::GetEnvironmentVariable("OPENAI_API_KEY", "User")
-      }
-      if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") {
-        $key = $env:OPENAI_API_KEY
-      }
-      if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") {
-        return ""
-      } else {
-        return $key.Trim()
-      }
+      if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") { $key = $env:ZAI_API_KEY }
+      if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") { $key = [Environment]::GetEnvironmentVariable("OPENAI_API_KEY", "User") }
+      if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") { $key = $env:OPENAI_API_KEY }
+      if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") { return "" } else { return $key.Trim() }
     }
     "GROQ" {
       $key = [Environment]::GetEnvironmentVariable("GROQ_API_KEY", "User")
@@ -66,6 +51,12 @@ function Get-CurrentApiKey {
     "BAI" {
       $key = [Environment]::GetEnvironmentVariable("BAI_API_KEY", "User")
       if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") { $key = $env:BAI_API_KEY }
+      if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") { return "" } else { return $key.Trim() }
+    }
+    "OPENGATEWAY" {
+      $key = [Environment]::GetEnvironmentVariable("OPENGATEWAY_API_KEY", "User")
+      if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") { $key = $env:OPENGATEWAY_API_KEY }
+      if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") { $key = $env:OPENAI_API_KEY }
       if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") { return "" } else { return $key.Trim() }
     }
     default { return "" }
@@ -131,6 +122,10 @@ function Set-ProviderApiKey {
       [Environment]::SetEnvironmentVariable("BAI_API_KEY", $NewKey.Trim(), "User")
       Write-Host "B.AI API ключ обновлён в переменных пользователя." -ForegroundColor Green
     }
+    "OPENGATEWAY" {
+      [Environment]::SetEnvironmentVariable("OPENGATEWAY_API_KEY", $NewKey.Trim(), "User")
+      Write-Host "OpenGateway API ключ обновлён в переменных пользователя." -ForegroundColor Green
+    }
   }
 }
 
@@ -167,6 +162,11 @@ function Show-ApiKeyChangeMenu {
       Id    = "bai"
       Label = "B.AI API ключ"
       HelpUrl = "https://chat.b.ai/key"
+    }
+    @{
+      Id    = "opengateway"
+      Label = "OpenGateway API ключ (Gitlawb)"
+      HelpUrl = "https://gitlawb.com/opengateway/keys"
     }
   )
 

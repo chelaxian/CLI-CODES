@@ -19,6 +19,23 @@ function Resolve-OpenClaudeExe {
   return ""
 }
 
+# Wrapper для запуска child CLI в той же консоли, но в ОТДЕЛЬНОМ child process.
+# &-оператор пробрасывает Ctrl+C как PipelineStoppedException наверх, что ломает
+# TUI launcher даже с try/catch. Start-Process -Wait -NoNewWindow создаёт child
+# process и блокирует текущий поток до его завершения. При Ctrl+C в child:
+# 1) child получает SIGINT и сам корректно завершается
+# 2) WaitForExit() возвращает
+# 3) Launcher продолжает main loop — нет проброса исключения.
+function Invoke-ChildCli {
+  param(
+    [Parameter(Mandatory = $true)][string]$FilePath,
+    [string[]]$ArgumentList = @()
+  )
+  $proc = Start-Process -FilePath $FilePath -ArgumentList $ArgumentList -Wait -PassThru -NoNewWindow
+  if ($proc) { return $proc.ExitCode }
+  return -1
+}
+
 function Set-OpenClaudeProviderProfile {
   <#
     OpenClaude (форк Claude Code) использует систему provider profiles.
@@ -206,7 +223,7 @@ function Invoke-OpenClaudeZaiPreset {
   Clear-Host
   Write-Host "Запуск OpenClaude (Z.AI)..." -ForegroundColor Cyan
   Write-Host "Model: $($zSpec.Model) | Endpoint: https://api.z.ai/api/anthropic" -ForegroundColor DarkGray
-  try { & $exe --bare } catch { Write-Host "" }
+  $null = Invoke-ChildCli -FilePath $exe -ArgumentList @("--bare")
 }
 
 function Invoke-OpenClaudeOpenAIPreset {
@@ -261,7 +278,7 @@ function Invoke-OpenClaudeOpenAIPreset {
   Write-Host "Запуск OpenClaude..." -ForegroundColor Cyan
   Write-Host "Provider: $($spec.Base) | Model: $($spec.Model)" -ForegroundColor DarkGray
   Write-Host "Provider profile записан в ~/.openclaude/settings.json" -ForegroundColor DarkGray
-  try { & $exe --bare } catch { Write-Host "" }
+  $null = Invoke-ChildCli -FilePath $exe -ArgumentList @("--bare")
 }
 
 # Главное меню loop
@@ -318,7 +335,7 @@ while ($true) {
       if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") {
         $key = Resolve-ApiKeyOrPrompt -CurrentKey $key -ProviderName "Z.AI" -HelpUrl "https://console.z.ai/"
       }
-      Remove-Item Env:CLAUDE_CODE_USE_OPENAI, Env:OPENAI_BASE_URL, Env:OPENAI_MODEL, Env:OPENAI_API_KEY -ErrorAction SilentlyContinue
+  Remove-Item Env:CLAUDE_CODE_USE_OPENAI, Env:OPENAI_BASE_URL, Env:OPENAI_MODEL, Env:OPENAI_API_KEY, Env:OPENGATEWAY_API_KEY -ErrorAction SilentlyContinue
       $env:ANTHROPIC_API_KEY = $key
       Remove-Item Env:ANTHROPIC_AUTH_TOKEN -ErrorAction SilentlyContinue
       $env:ANTHROPIC_BASE_URL = "https://api.z.ai/api/anthropic"
@@ -340,7 +357,7 @@ while ($true) {
       Clear-Host
       Write-Host "Запуск OpenClaude (Z.AI custom)..." -ForegroundColor Cyan
       Write-Host "Model: $mid | Endpoint: https://api.z.ai/api/anthropic" -ForegroundColor DarkGray
-      try { & $exe --bare } catch { Write-Host "" }
+      $null = Invoke-ChildCli -FilePath $exe -ArgumentList @("--bare")
     } else {
       $spec = switch ($w.Provider) {
         "nim"        { @{ Base = "https://integrate.api.nvidia.com/v1"; KeyEnv = "NVIDIA_NIM_API_KEY" } }
@@ -378,7 +395,7 @@ while ($true) {
       Write-Host "Запуск OpenClaude..." -ForegroundColor Cyan
       Write-Host "Provider: $($spec.Base) | Model: $mid" -ForegroundColor DarkGray
       Write-Host "Provider profile записан в ~/.openclaude.json" -ForegroundColor DarkGray
-      try { & $exe --bare } catch { Write-Host "" }
+      $null = Invoke-ChildCli -FilePath $exe -ArgumentList @("--bare")
     }
     continue
   }
@@ -393,7 +410,7 @@ while ($true) {
     if (-not $exe) { throw "OpenClaude CLI не найден. Установите: npm install -g @gitlawb/openclaude" }
     Clear-Host
     Write-Host "Запуск OpenClaude (vanilla для /provider setup)..." -ForegroundColor Cyan
-    try { & $exe --bare } catch { Write-Host "" }
+    $null = Invoke-ChildCli -FilePath $exe -ArgumentList @("--bare")
     continue
   }
 
@@ -404,7 +421,7 @@ while ($true) {
     if (-not $exe) { throw "OpenClaude CLI не найден. Установите: npm install -g @gitlawb/openclaude" }
     Clear-Host
     Write-Host "Запуск OpenClaude (vanilla)..." -ForegroundColor Cyan
-    try { & $exe --bare } catch { Write-Host "" }
+    $null = Invoke-ChildCli -FilePath $exe -ArgumentList @("--bare")
     continue
   }
 

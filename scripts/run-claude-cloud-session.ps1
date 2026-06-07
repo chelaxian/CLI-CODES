@@ -679,18 +679,15 @@ try {
   # Without --bare, Claude Code v2.x shows "Not logged in" for any 3P provider because
   # it tries OAuth first and refuses to fall through to the env API key.
   #
-  # try/catch глотает PipelineStoppedException, возникающую при Ctrl+C в TUI Claude Code:
-  # PowerShell получает SIGINT вместе с child process и пытается остановить pipeline.
-  # Без try/catch скрипт launcher'а тоже завершается и не возвращается в TUI меню.
-  try {
-    if ($ClaudeTools -eq "default") {
-      & $claudeExe --bare
-    } else {
-      & $claudeExe --bare --tools $ClaudeTools
-    }
-  } catch {
-    Write-Host ""
-  }
+  # IMPORTANT: запуск через Start-Process -Wait -NoNewWindow, а не через оператор &.
+  # & пробрасывает Ctrl+C как PipelineStoppedException вверх по стеку, что ломает
+  # родительский TUI launcher даже с try/catch. Start-Process создаёт отдельный
+  # child process в той же консоли, но WaitForExit() корректно возвращает управление
+  # после того как child сам обработает Ctrl+C и выйдет — без проброса исключения.
+  $args = @("--bare")
+  if ($ClaudeTools -ne "default") { $args += @("--tools", $ClaudeTools) }
+  $proc = Start-Process -FilePath $claudeExe -ArgumentList $args -Wait -PassThru -NoNewWindow
+  if ($proc) { $script:LASTCHILD_EXITCODE = $proc.ExitCode }
 } finally {
   Pop-Location
 }

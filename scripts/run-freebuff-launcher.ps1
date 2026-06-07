@@ -59,13 +59,25 @@ function Invoke-FreebuffRun {
     Write-Host "Если текущая версия Freebuff игнорирует FREEBUFF_MODEL, используйте встроенный выбор." -ForegroundColor DarkGray
   }
 
+  $binPath = Join-Path $env:USERPROFILE ".config\manicode\freebuff.exe"
+  if (-not (Test-Path -LiteralPath $binPath)) {
+    Write-Host ""
+    Write-Host "ВНИМАНИЕ: binary Freebuff (~50MB) отсутствует. Сейчас будет попытка скачивания" -ForegroundColor Yellow
+    Write-Host "с https://codebuff.com. Если через 30 сек нет прогресса — у вас CDN-блокировка" -ForegroundColor Yellow
+    Write-Host "РКН/TLS-SNI в регионе. ВКЛЮЧИТЕ VPN и повторите (binary качается один раз," -ForegroundColor Yellow
+    Write-Host "далее работает офлайн)." -ForegroundColor Yellow
+    Write-Host ""
+  }
+
   # Обёртка с retry для сетевых ошибок (ECONNRESET и подобных).
+  # Start-Process вместо &-оператора для корректной обработки Ctrl+C: & пробрасывает
+  # PipelineStoppedException наверх, ломая родительский TUI launcher.
   $maxRetries = 2
   $attempt = 0
   while ($true) {
     $attempt++
-    & $freebuffExe
-    $exitCode = $LASTEXITCODE
+    $proc = Start-Process -FilePath $freebuffExe -Wait -PassThru -NoNewWindow
+    $exitCode = if ($proc) { $proc.ExitCode } else { 1 }
 
     if ($exitCode -eq 0) { return $true }
 
