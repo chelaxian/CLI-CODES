@@ -82,13 +82,16 @@ function Invoke-LauncherCustomModelWizard {
 
   $brand = $App
   $provItems = @(
-    [pscustomobject]@{ Id = "zai"; Label = "Z.AI - Coding / Anthropic (GET /models по вашему ключу)" }
-    [pscustomobject]@{ Id = "nim"; Label = "NVIDIA NIM - полный каталог (GET /v1/models)" }
-    [pscustomobject]@{ Id = "nim-agentic"; Label = "NVIDIA NIM - только Agentic модели (фильтр build.nvidia.com Agentic)" }
-    [pscustomobject]@{ Id = "groq"; Label = "Groq - полный каталог моделей (paid, GET /v1/models)" }
-    [pscustomobject]@{ Id = "openrouter"; Label = "OpenRouter - полный каталог моделей (GET /v1/models)" }
-    [pscustomobject]@{ Id = "openrouter-free"; Label = "OpenRouter - только бесплатные модели (pricing = 0)" }
-    [pscustomobject]@{ Id = "bai"; Label = "B.AI - полный каталог (https://api.b.ai/v1/models)" }
+    [pscustomobject]@{ Id = "zai-all";            Label = "Z.AI - все модели (Coding API, paid)" }
+    [pscustomobject]@{ Id = "nim-all";            Label = "NVIDIA NIM - все модели (free + preview)" }
+    [pscustomobject]@{ Id = "nim-free";           Label = "NVIDIA NIM - только бесплатные (free preview catalog)" }
+    [pscustomobject]@{ Id = "nim-agentic";        Label = "NVIDIA NIM - только Agentic (tool calling, build.nvidia.com filter)" }
+    [pscustomobject]@{ Id = "groq-all";           Label = "Groq - все модели (paid, /v1/models)" }
+    [pscustomobject]@{ Id = "openrouter-all";     Label = "OpenRouter - все модели" }
+    [pscustomobject]@{ Id = "openrouter-free";    Label = "OpenRouter - только бесплатные (pricing=0)" }
+    [pscustomobject]@{ Id = "openrouter-agentic"; Label = "OpenRouter - только Agentic (supported_parameters: tools)" }
+    [pscustomobject]@{ Id = "bai-all";            Label = "B.AI - все модели (api.b.ai/v1)" }
+    [pscustomobject]@{ Id = "bai-agentic";        Label = "B.AI - только Agentic (tool/function calling)" }
   )
 
   # Groq не поддерживается для Claude Code (ограничение free-claude-code: nvidia_nim transport)
@@ -104,22 +107,27 @@ function Invoke-LauncherCustomModelWizard {
 
     $ids = @()
     try {
-      if ($provSource -eq "zai") {
+      if ($provSource -eq "zai-all") {
         Show-TuiWaitFrame -AppBrand $brand -Message "Загрузка каталога моделей с API…"
         $key = Resolve-ZaiKeyForWizard
         $ids = @(Get-ZaiCodingModelIdsFromApi -ApiKey $key)
       }
-      elseif ($provSource -eq "nim") {
+      elseif ($provSource -eq "nim-all") {
         Show-TuiWaitFrame -AppBrand $brand -Message "Загрузка каталога NVIDIA NIM (полный список)…"
         $key = Resolve-NimKeyForWizard
         $ids = @(Get-NvidiaNimModelIdsFromApi -ApiKey $key)
+      }
+      elseif ($provSource -eq "nim-free") {
+        Show-TuiWaitFrame -AppBrand $brand -Message "Загрузка каталога NVIDIA NIM (только free preview)…"
+        $key = Resolve-NimKeyForWizard
+        $ids = @(Get-NvidiaNimModelIdsFromApi -ApiKey $key -FilterToBundledFreeCatalog)
       }
       elseif ($provSource -eq "nim-agentic") {
         Show-TuiWaitFrame -AppBrand $brand -Message "Загрузка каталога NVIDIA NIM (Agentic фильтр)…"
         $key = Resolve-NimKeyForWizard
         $ids = @(Get-NvidiaNimModelIdsFromApi -ApiKey $key -AgenticOnly)
       }
-      elseif ($provSource -eq "groq") {
+      elseif ($provSource -eq "groq-all") {
         Show-TuiWaitFrame -AppBrand $brand -Message "Загрузка каталога Groq (paid)…"
         $key = Resolve-GroqKeyForWizard
         try {
@@ -134,7 +142,7 @@ function Invoke-LauncherCustomModelWizard {
           $ids = @(Get-GroqBundledFreeModelIds)
         }
       }
-      elseif ($provSource -eq "openrouter") {
+      elseif ($provSource -eq "openrouter-all") {
         Show-TuiWaitFrame -AppBrand $brand -Message "Загрузка каталога OpenRouter (все модели)…"
         $key = Resolve-OpenRouterKeyForWizard
         $ids = @(Get-OpenRouterModelIdsFromApi -ApiKey $key)
@@ -148,13 +156,39 @@ function Invoke-LauncherCustomModelWizard {
           $ids = @(Get-OpenRouterBundledFreeModelIds)
         }
       }
-      elseif ($provSource -eq "bai") {
+      elseif ($provSource -eq "openrouter-agentic") {
+        Show-TuiWaitFrame -AppBrand $brand -Message "Загрузка каталога OpenRouter (Agentic: tools)…"
+        $key = Resolve-OpenRouterKeyForWizard
+        $ids = @(Get-OpenRouterAgenticModelIdsFromApi -ApiKey $key)
+        if ($ids.Count -eq 0) {
+          # Fallback на встроенный список Agentic
+          $ids = @(Get-OpenRouterBundledAgenticModelIds)
+        }
+      }
+      elseif ($provSource -eq "bai-all") {
         Show-TuiWaitFrame -AppBrand $brand -Message "Загрузка каталога B.AI (https://api.b.ai/v1/models)…"
         $key = Resolve-BaiKeyForWizard
         $ids = @(Get-BaiModelIdsFromApi -ApiKey $key)
         if ($ids.Count -eq 0) {
           # Fallback на встроенный список популярных моделей B.AI
           $ids = @(Get-BaiBundledPopularModelIds)
+        }
+      }
+      elseif ($provSource -eq "bai-agentic") {
+        Show-TuiWaitFrame -AppBrand $brand -Message "Загрузка каталога B.AI (Agentic фильтр)…"
+        $key = Resolve-BaiKeyForWizard
+        $apiIds = @(Get-BaiModelIdsFromApi -ApiKey $key)
+        if ($apiIds.Count -gt 0) {
+          # Пересечение ответа API с bundled Agentic whitelist
+          $allowAgentic = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+          foreach ($x in @(Get-BaiBundledAgenticModelIds)) { [void]$allowAgentic.Add($x) }
+          $ids = @($apiIds | Where-Object { $allowAgentic.Contains($_) })
+        } else {
+          $ids = @()
+        }
+        if ($ids.Count -eq 0) {
+          # Fallback: API пуст или пересечение пустое — берём bundled Agentic напрямую
+          $ids = @(Get-BaiBundledAgenticModelIds)
         }
       }
       else {
@@ -174,22 +208,29 @@ function Invoke-LauncherCustomModelWizard {
       return $null
     }
 
-    $prov = if ($provSource -eq "nim-agentic") { "nim" }
-            elseif ($provSource -eq "nim") { "nim" }
-            elseif ($provSource -eq "groq") { "groq" }
-            elseif ($provSource -eq "openrouter") { "openrouter" }
+    $prov = if ($provSource -eq "zai-all") { "zai" }
+            elseif ($provSource -eq "nim-all") { "nim" }
+            elseif ($provSource -eq "nim-free") { "nim" }
+            elseif ($provSource -eq "nim-agentic") { "nim" }
+            elseif ($provSource -eq "groq-all") { "groq" }
+            elseif ($provSource -eq "openrouter-all") { "openrouter" }
             elseif ($provSource -eq "openrouter-free") { "openrouter" }
-            elseif ($provSource -eq "bai") { "bai" }
+            elseif ($provSource -eq "openrouter-agentic") { "openrouter" }
+            elseif ($provSource -eq "bai-all") { "bai" }
+            elseif ($provSource -eq "bai-agentic") { "bai" }
             else { $provSource }
     $provLabel = switch ($provSource) {
-      "zai" { "Z.AI Coding" }
-      "nim" { "NIM (полный API)" }
-      "nim-agentic" { "NIM (Agentic)" }
-      "groq" { "Groq (paid API)" }
-      "openrouter" { "OpenRouter (полный API)" }
-      "openrouter-free" { "OpenRouter (free)" }
-      "bai" { "B.AI (api.b.ai/v1)" }
-      default { $provSource.ToUpper() }
+      "zai-all"            { "Z.AI (все)" }
+      "nim-all"            { "NIM (полный)" }
+      "nim-free"           { "NIM (free)" }
+      "nim-agentic"        { "NIM (Agentic)" }
+      "groq-all"           { "Groq (paid)" }
+      "openrouter-all"     { "OpenRouter (все)" }
+      "openrouter-free"    { "OpenRouter (free)" }
+      "openrouter-agentic" { "OpenRouter (Agentic)" }
+      "bai-all"            { "B.AI (все)" }
+      "bai-agentic"        { "B.AI (Agentic)" }
+      default              { $provSource.ToUpper() }
     }
 
     $modelItems = foreach ($id in $ids) {

@@ -234,6 +234,25 @@ function Get-OpenRouterFreeModelIdsFromApi {
   return $free
 }
 
+# OpenRouter: фильтрация по supported_parameters. Каждая модель в /api/v1/models
+# содержит массив supported_parameters (например ["tools", "tool_choice", "reasoning", ...]).
+# Модели с "tools" поддерживают Agentic / function calling, что нужно для Qwen Code / Claude Code.
+function Get-OpenRouterAgenticModelIdsFromApi {
+  param([Parameter(Mandatory = $true)][string]$ApiKey)
+  $hdr = @{ "Authorization" = "Bearer $ApiKey"; "Content-Type" = "application/json" }
+  try {
+    $resp = Invoke-LauncherJsonGet -Uri "https://openrouter.ai/api/v1/models" -Headers $hdr
+  } catch {
+    return @()
+  }
+  if (-not $resp -or -not $resp.data) { return @() }
+  # -contains для строковых массивов в PowerShell case-insensitive (CaseInsensitiveComparer).
+  $agentic = @($resp.data | Where-Object {
+      $_.supported_parameters -and ($_.supported_parameters -contains "tools")
+    } | Sort-Object -Property id | ForEach-Object { $_.id })
+  return $agentic
+}
+
 # ─── B.AI (https://api.b.ai/v1) ─────────────────────────────────────────────
 # Совместим с OpenAI endpoint-ами. Получение ключа: https://chat.b.ai/key
 function Get-BaiModelIdsFromApi {
@@ -413,6 +432,20 @@ function Get-OpenRouterBundledFreeModelIds {
     "rekaai/reka-flash-3:free"
     "nousresearch/deephermes-3-llama-3-8b-preview:free"
     "allenai/molmo-7b-d-0924:free"
+  )
+  return ($raw | ForEach-Object { $_.Trim() } | Where-Object { $_ } | Sort-Object -Unique)
+}
+
+# Bundled Agentic-подмножество OpenRouter: только free-модели с поддержкой tools,
+# соответствующие OpenRouter preset из launchers (deepseek-v4-flash, qwen3-coder, nemotron, laguna).
+# Используется как fallback, если /api/v1/models недоступен или вернул пустоту
+# для категории openrouter-agentic в launcher-custom-model-wizard.ps1.
+function Get-OpenRouterBundledAgenticModelIds {
+  $raw = @(
+    "deepseek/deepseek-v4-flash:free"
+    "qwen/qwen3-coder:free"
+    "nvidia/nemotron-3-super-120b-a12b:free"
+    "poolside/laguna-m.1:free"
   )
   return ($raw | ForEach-Object { $_.Trim() } | Where-Object { $_ } | Sort-Object -Unique)
 }
