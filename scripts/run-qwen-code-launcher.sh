@@ -26,7 +26,8 @@ PROFILES=(
     "last|Запустить с последними настройками (быстрый старт)"
     "group:zai|Z.AI - модели (GLM-5.1 / GLM-4.7 / GLM-4.7-Flash)"
     "group:nim|NVIDIA NIM - 9 бесплатных agentic моделей"
-    "group:openrouter|OpenRouter - бесплатные agentic модели"
+    # OpenRouter убран из пресетов (429 rate-limit / 404).
+    # Используйте «Другая модель…» → OpenRouter для ручного выбора.
     "group:bai|B.AI - DeepSeek/MiniMax/GLM/Kimi/GPT (OpenAI-compatible)"
     "custom-model|Другая модель… → выбор провайдера и модели"
     "native-login|Нативный логин (Qwen OAuth / Coding Plan)"
@@ -475,18 +476,6 @@ invoke_qwen_profile() {
         "zai-flash45")
             bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider zai -ModelId "glm-4.5-flash"
             ;;
-        "openrouter-deepseek-v4-flash")
-            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider openrouter -ModelId "deepseek/deepseek-chat-v3.1:free"
-            ;;
-        "openrouter-qwen3-coder")
-            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider openrouter -ModelId "qwen/qwen3-coder:free"
-            ;;
-        "openrouter-nemotron")
-            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider openrouter -ModelId "nvidia/nemotron-3-super-120b-a12b:free"
-            ;;
-        "openrouter-laguna")
-            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider openrouter -ModelId "poolside/laguna-m.1:free"
-            ;;
         bai-*)
             local mid="${profile_id#bai-}"
             local spec="${BAI_MODEL_SPEC[$mid]:-}"
@@ -749,3 +738,4 @@ while true; do
 done
 }
 main "$@"
+

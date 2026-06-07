@@ -23,10 +23,7 @@ function Resolve-FreebuffExe {
 # основаны на названиях моделей из FAQ и могут не влиять на реальный выбор (Freebuff автоматически
 # подбирает модель под задачу). В случае игнорирования Freebuff просто использует свой default.
 $items = @(
-  [pscustomobject]@{ Id = "deepseek-v4-pro";   Label = "DeepSeek V4 Pro - smartest (основной agent)" },
-  [pscustomobject]@{ Id = "deepseek-v4-flash"; Label = "DeepSeek V4 Flash - most efficient (основной agent)" },
-  [pscustomobject]@{ Id = "gpt-5.4";           Label = "GPT-5.4 - deep thinking (нужна подписка ChatGPT)" },
-  [pscustomobject]@{ Id = "builtin";           Label = "Запустить Freebuff с встроенным выбором модели" }
+  [pscustomobject]@{ Id = "vanilla"; Label = "Запустить Freebuff (встроенный выбор модели)" }
 )
 
 $freebuffExe = Resolve-FreebuffExe
@@ -35,16 +32,9 @@ if (-not $freebuffExe) { throw "Freebuff CLI не найден. Установи
 function Invoke-FreebuffRun {
   param([string]$ModelId)
 
-  # Сбрасываем env от предыдущих запусков
+  # Сбрасываем env от предыдущих запусков — запускаем ванильный freebuff
   Remove-Item Env:FREEBUFF_MODEL -ErrorAction SilentlyContinue
 
-  if ($ModelId -and $ModelId -ne "builtin") {
-    $env:FREEBUFF_MODEL = $ModelId
-  }
-
-  # Подавляем авто-обновление freebuff CLI / Codebuff. ECONNRESET при старте
-  # обычно означает, что freebuff пытается скачать обновление агентов/моделей.
-  # Эти env переменные попытка отключить HTTP-проверки обновлений.
   $env:CODEBUFF_AUTO_UPDATE_DISABLED = "1"
   $env:CODEBUFF_SKIP_UPDATE = "1"
   $env:FREEBUFF_SKIP_UPDATE = "1"
@@ -52,12 +42,8 @@ function Invoke-FreebuffRun {
   $env:NPM_CONFIG_FUND = "false"
 
   Clear-Host
-  Write-Host "Запуск Freebuff..." -ForegroundColor Cyan
-  if ($env:FREEBUFF_MODEL) {
-    Write-Host "Предпочтительная модель: $env:FREEBUFF_MODEL" -ForegroundColor DarkGray
-    Write-Host "Freebuff автоматически выбирает модель под задачу (file picker, planner, editor)." -ForegroundColor DarkGray
-    Write-Host "Если текущая версия Freebuff игнорирует FREEBUFF_MODEL, используйте встроенный выбор." -ForegroundColor DarkGray
-  }
+  Write-Host "Запуск Freebuff (ванильный)..." -ForegroundColor Cyan
+  Write-Host "Freebuff сам выберет модель под задачу (file picker, planner, editor)." -ForegroundColor DarkGray
 
   $binPath = Join-Path $env:USERPROFILE ".config\manicode\freebuff.exe"
   if (-not (Test-Path -LiteralPath $binPath)) {
@@ -69,19 +55,15 @@ function Invoke-FreebuffRun {
     Write-Host ""
   }
 
-  # Обёртка с retry для сетевых ошибок (ECONNRESET и подобных).
-  # Start-Process вместо &-оператора для корректной обработки Ctrl+C: & пробрасывает
-  # PipelineStoppedException наверх, ломая родительский TUI launcher.
   $maxRetries = 2
   $attempt = 0
   while ($true) {
     $attempt++
-    $proc = Start-Process -FilePath $freebuffExe -Wait -PassThru -NoNewWindow
-    $exitCode = if ($proc) { $proc.ExitCode } else { 1 }
+    & $freebuffExe
+    $exitCode = $LASTEXITCODE
 
     if ($exitCode -eq 0) { return $true }
 
-    # Не network-ошибка — не retry
     if ($attempt -ge $maxRetries) {
       Write-Host ""
       Write-Host "Freebuff завершился с кодом $exitCode." -ForegroundColor Yellow

@@ -678,16 +678,11 @@ try {
   # --bare skips OAuth/keychain reads and uses ONLY ANTHROPIC_API_KEY (env or settings).
   # Without --bare, Claude Code v2.x shows "Not logged in" for any 3P provider because
   # it tries OAuth first and refuses to fall through to the env API key.
-  #
-  # IMPORTANT: запуск через Start-Process -Wait -NoNewWindow, а не через оператор &.
-  # & пробрасывает Ctrl+C как PipelineStoppedException вверх по стеку, что ломает
-  # родительский TUI launcher даже с try/catch. Start-Process создаёт отдельный
-  # child process в той же консоли, но WaitForExit() корректно возвращает управление
-  # после того как child сам обработает Ctrl+C и выйдет — без проброса исключения.
-  $args = @("--bare")
-  if ($ClaudeTools -ne "default") { $args += @("--tools", $ClaudeTools) }
-  $proc = Start-Process -FilePath $claudeExe -ArgumentList $args -Wait -PassThru -NoNewWindow
-  if ($proc) { $script:LASTCHILD_EXITCODE = $proc.ExitCode }
+  if ($ClaudeTools -eq "default") {
+    & $claudeExe --bare
+  } else {
+    & $claudeExe --bare --tools $ClaudeTools
+  }
 } finally {
   Pop-Location
 }

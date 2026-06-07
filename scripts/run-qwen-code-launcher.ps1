@@ -69,13 +69,11 @@ $script:Profiles = @(
     Id          = "group:nim"
     Label       = "NVIDIA NIM - 9 бесплатных agentic моделей"
   }
+  # OpenRouter убран из пресетов (429 rate-limit / 404).
+  # Используйте «Другая модель…» → OpenRouter для ручного выбора.
   @{
-    Id          = "group:openrouter"
-    Label       = "OpenRouter - бесплатные agentic модели"
-  }
-  @{
-    Id          = "group:bai"
-    Label       = "B.AI - DeepSeek/MiniMax/GLM/Kimi/GPT (OpenAI-compatible)"
+    Id    = "group:nim"
+    Label = "NVIDIA NIM - 9 бесплатных agentic моделей"
   }
   @{
     Id          = "custom-model"
@@ -140,12 +138,7 @@ $script:GroupMenus = @{
     @{ Id = "nim-qwen3-next-80b";   Label = "NIM - Qwen 3 Next 80B A3B (free)";                         NimModel = "nim-qwen3-next-80b-a3b" }
     @{ Id = "nim-qwen3-coder-480b"; Label = "NIM - Qwen 3 Coder 480B A35B (free)";                      NimModel = "nim-qwen3-coder-480b-a35b" }
   )
-  openrouter = @(
-    @{ Id = "openrouter-deepseek-v4-flash"; Label = "OpenRouter - DeepSeek V4 Flash (free, tool calling)" }
-    @{ Id = "openrouter-qwen3-coder";       Label = "OpenRouter - Qwen3 Coder (free, tool calling)" }
-    @{ Id = "openrouter-nemotron";          Label = "OpenRouter - Nemotron 3 Super 120B (free, tool calling)" }
-    @{ Id = "openrouter-laguna";            Label = "OpenRouter - Poolside Laguna M.1 (free, tool calling, coding)" }
-  )
+  # OpenRouter убран из пресетов — используйте «Другая модель…» → OpenRouter.
   bai = @(
     @{ Id = "bai-gpt-5-nano";        Label = "B.AI - GPT-5 Nano (OpenAI, agentic)" }
     @{ Id = "bai-gpt-5-mini";        Label = "B.AI - GPT-5 Mini (OpenAI, agentic)" }
@@ -275,26 +268,7 @@ function Invoke-QwenProfile {
       & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider zai -ModelId "glm-4.5-flash"
       return
     }
-    "openrouter-hy3" {
-      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider openrouter -ModelId "deepseek/deepseek-chat-v3.1:free"
-      return
-    }
-    "openrouter-deepseek-v4-flash" {
-      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider openrouter -ModelId "deepseek/deepseek-chat-v3.1:free"
-      return
-    }
-    "openrouter-qwen3-coder" {
-      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider openrouter -ModelId "qwen/qwen3-coder:free"
-      return
-    }
-    "openrouter-nemotron" {
-      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider openrouter -ModelId "nvidia/nemotron-3-super-120b-a12b:free"
-      return
-    }
-    "openrouter-laguna" {
-      & (Join-Path $PSScriptRoot "run-qwen-code-dynamic.ps1") -Provider openrouter -ModelId "poolside/laguna-m.1:free"
-      return
-    }
+    # OpenRouter пресеты убраны — используйте «Другая модель…» → OpenRouter.
     "custom-qwen-zai" {
       $st = Get-LauncherState
       $mid = [string]$st.customModelId
@@ -407,7 +381,6 @@ while ($true) {
     $subTitle = switch ($groupKey) {
       "zai"        { "Z.AI Coding (paid) + GLM-4.7-Flash (free)" }
       "nim"        { "NVIDIA NIM - 9 бесплатных agentic моделей" }
-      "openrouter" { "OpenRouter - бесплатные agentic модели" }
       "bai"        { "B.AI - https://api.b.ai/v1 (OpenAI-compatible)" }
       default      { "" }
     }

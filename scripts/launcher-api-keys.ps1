@@ -131,8 +131,8 @@ function Set-ProviderApiKey {
 
 function Show-ApiKeyChangeMenu {
   param(
-    [ValidateSet("Qwen", "Claude", "OpenCode")]
-    [string]$AppBrand = "Qwen"
+  [ValidateSet("Qwen", "Claude", "OpenCode", "OpenClaude")]
+  [string]$AppBrand = "Qwen"
   )
 
   . (Join-Path $PSScriptRoot "launcher-tui.ps1")
