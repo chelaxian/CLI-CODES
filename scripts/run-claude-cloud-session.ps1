@@ -332,7 +332,7 @@ function Ensure-FreeClaudeCodeProxy {
     Pop-Location
   }
 
-  for ($i = 0; $i -lt 60; $i++) {
+  for ($i = 0; $i -lt 120; $i++) {
     try {
       $conn = Get-NetTCPConnection -LocalAddress 127.0.0.1 -LocalPort $Port -State Listen -ErrorAction Stop
       if ($conn) { return }
@@ -342,7 +342,29 @@ function Ensure-FreeClaudeCodeProxy {
     }
     Start-Sleep -Seconds 1
   }
-  throw "free-claude-code proxy did not become ready on port $Port. Logs: $errLog ; $outLog"
+
+  # Tail последние 30 строк из логов для диагностики перед throw.
+  Write-Host ""
+  Write-Host "free-claude-code proxy не запустился за 120с. Последние строки лога:" -ForegroundColor Yellow
+  if (Test-Path -LiteralPath $errLog) {
+    Write-Host "─── err.log ───" -ForegroundColor DarkGray
+    Get-Content -LiteralPath $errLog -Tail 30 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $_" -ForegroundColor Red }
+  }
+  if (Test-Path -LiteralPath $outLog) {
+    Write-Host "─── out.log ───" -ForegroundColor DarkGray
+    Get-Content -LiteralPath $outLog -Tail 30 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $_" -ForegroundColor Gray }
+  }
+  Write-Host ""
+  Write-Host "Полные логи:" -ForegroundColor Cyan
+  Write-Host "  $errLog" -ForegroundColor Cyan
+  Write-Host "  $outLog" -ForegroundColor Cyan
+  Write-Host ""
+  Write-Host "Возможные причины:" -ForegroundColor Yellow
+  Write-Host "  1) uv sync/Pip install не завершился (медленный интернет)" -ForegroundColor Yellow
+  Write-Host "  2) Python 3.14 не установлен или скачивается" -ForegroundColor Yellow
+  Write-Host "  3) Порт $Port занят другим процессом" -ForegroundColor Yellow
+  Write-Host "  Решение: запустите 'install.ps1 → [7] Обновление' чтобы пересоздать proxy." -ForegroundColor Yellow
+  throw "free-claude-code proxy did not become ready on port $Port after 120s. See logs above."
 }
 
 # PATH до npx/node - до любых sidecar и до claude.cmd.

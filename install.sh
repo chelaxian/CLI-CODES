@@ -111,7 +111,7 @@ echo -e "  ${GREEN}[3]${RESET} Claude Code"
 echo -e "  ${GREEN}[4]${RESET} OpenCode"
 echo -e "  ${GREEN}[5]${RESET} Freebuff"
 echo -e "  ${GREEN}[6]${RESET} OpenClaude"
-echo -e "  ${CYAN}[7]${RESET} Обновление всех компонентов"
+echo -e "  ${YELLOW}[7]${RESET} Обновление всех компонентов (проверяет актуальность)"
 echo -e "  ${RED}[8]${RESET} Полное удаление (uninstall)"
 echo -e "  ${CYAN}[9]${RESET} Добавить недостающие ярлыки (без переустановки)"
 echo -e "  ${GRAY}[X]${RESET} Выход"
@@ -369,11 +369,19 @@ fi
 if $DO_UPDATE; then
     step "ОБНОВЛЕНИЕ ВСЕХ КОМПОНЕНТОВ"
 
-    # Pull latest code
+    # Pull latest code (check if anything changed)
     if [ -d "$INSTALL_DIR/.git" ]; then
-        echo -e "${CYAN}Обновление репозитория…${RESET}"
+        echo -e "${CYAN}Проверка обновлений репозитория…${RESET}"
+        head_before=$(cd "$INSTALL_DIR" && git rev-parse HEAD 2>/dev/null || echo "")
         (cd "$INSTALL_DIR" && git fetch origin main 2>/dev/null && git reset --hard origin/main 2>/dev/null) || warn "Не удалось обновить репозиторий"
-        ok "Репозиторий обновлён"
+        head_after=$(cd "$INSTALL_DIR" && git rev-parse HEAD 2>/dev/null || echo "")
+        if [ -n "$head_before" ] && [ -n "$head_after" ] && [ "$head_before" = "$head_after" ]; then
+            echo -e "${GRAY}  [OK] Репозиторий уже актуален (${head_after:0:7})${RESET}"
+        elif [ -n "$head_after" ]; then
+            short_b="${head_before:0:7}"
+            short_a="${head_after:0:7}"
+            ok "Репозиторий обновлён ($short_b → $short_a)"
+        fi
     else
         err "Репозиторий не найден: $INSTALL_DIR"
         err "Сначала установите через пункт [6]"
@@ -384,44 +392,79 @@ if $DO_UPDATE; then
     SCRIPTS_DIR="$INSTALL_DIR/scripts"
     chmod +x "$SCRIPTS_DIR"/*.sh 2>/dev/null || true
 
-    # Show before versions and update npm packages
+    # Helper: get installed npm version (empty if not installed)
+    get_installed_version() {
+        local npm_name="$1"
+        if npm ls -g "$npm_name" &>/dev/null; then
+            npm ls -g "$npm_name" 2>/dev/null | grep "$npm_name" | head -1 | sed 's/.*@//' | tr -d ' '
+        fi
+    }
+
+    # Helper: get latest npm version from registry (empty if unknown)
+    get_latest_version() {
+        local npm_name="$1"
+        npm view "$npm_name" version 2>/dev/null | head -1 | tr -d ' ' || echo ""
+    }
+
+    # Update npm packages (skip if already at latest)
     echo ""
-    echo -e "${CYAN}Версии ДО обновления:${RESET}"
+    echo -e "${CYAN}Проверка и обновление npm пакетов…${RESET}"
 
     pkg_updated=0
+    pkg_skipped=0
     for pkg_info in "qwen-code:@qwen-code/qwen-code" "claude-code:@anthropic-ai/claude-code" "opencode-ai:opencode-ai" "freebuff:freebuff" "openclaude:@gitlawb/openclaude"; do
         pkg_name="${pkg_info%%:*}"
         npm_name="${pkg_info##*:}"
-        before="не установлен"
-        if npm ls -g "$npm_name" &>/dev/null; then
-            before=$(npm ls -g "$npm_name" 2>/dev/null | grep "$npm_name" | head -1 | sed 's/.*@//' | tr -d ' ')
-        fi
-        echo -e "  ${GRAY}$pkg_name: $before${RESET}"
 
-        echo -e "${CYAN}  Обновление $pkg_name…${RESET}"
+        before=$(get_installed_version "$npm_name")
+        latest=$(get_latest_version "$npm_name")
+
+        if [ -n "$before" ] && [ -n "$latest" ] && [ "$before" = "$latest" ]; then
+            echo -e "${GRAY}  [OK] $pkg_name v$before (уже актуально)${RESET}"
+            pkg_skipped=$((pkg_skipped + 1))
+            continue
+        fi
+
+        if [ -n "$before" ]; then
+            target="${latest:-latest}"
+            echo -e "${CYAN}  → $pkg_name: $before → $target${RESET}"
+        else
+            echo -e "${CYAN}  → Установка $pkg_name (не установлен)${RESET}"
+        fi
+
         if npm install -g "${npm_name}@latest" 2>/dev/null; then
-            after=$(npm ls -g "$npm_name" 2>/dev/null | grep "$npm_name" | head -1 | sed 's/.*@//' | tr -d ' ')
-            ok "$pkg_name: $before → $after"
+            after=$(get_installed_version "$npm_name")
+            if [ -n "$before" ] && [ "$before" != "$after" ]; then
+                ok "$pkg_name: $before → $after"
+            else
+                ok "$pkg_name: $after"
+            fi
             pkg_updated=$((pkg_updated + 1))
         else
             warn "Не удалось обновить $pkg_name"
         fi
     done
 
-    # Update free-claude-code proxy if exists
+    # Update free-claude-code proxy if exists (skip if already at latest)
     FCC_DIR="$HOME/.free-claude-code"
     if [ -d "$FCC_DIR" ]; then
         echo ""
-        echo -e "${CYAN}Обновление free-claude-code proxy…${RESET}"
+        echo -e "${CYAN}Проверка free-claude-code proxy…${RESET}"
+        fcc_before=$(cd "$FCC_DIR" && git rev-parse HEAD 2>/dev/null || echo "")
         (cd "$FCC_DIR" && git pull origin main >/dev/null 2>&1) || true
-        if command -v uv &>/dev/null; then
-            (cd "$FCC_DIR" && uv sync &>/dev/null) || true
+        fcc_after=$(cd "$FCC_DIR" && git rev-parse HEAD 2>/dev/null || echo "")
+        if [ -n "$fcc_before" ] && [ -n "$fcc_after" ] && [ "$fcc_before" != "$fcc_after" ]; then
+            echo -e "${CYAN}  → free-claude-code обновлён, синхронизация зависимостей…${RESET}"
+            if command -v uv &>/dev/null; then
+                (cd "$FCC_DIR" && uv sync &>/dev/null) || true
+            fi
+            ok "free-claude-code обновлён"
+        elif [ -n "$fcc_after" ]; then
+            echo -e "${GRAY}  [OK] free-claude-code уже актуален (${fcc_after:0:7})${RESET}"
         fi
-        ok "free-claude-code: обновлён"
     fi
 
-    # Синхронизация ярлыков: после обновления проверяем что для всех установленных
-    # CLI .desktop-ярлыки и ~/.sh лаунчеры присутствуют (создаём недостающие).
+    # Синхронизация ярлыков
     echo ""
     echo -e "${CYAN}Проверка ярлыков для установленных CLI…${RESET}"
     sync_launcher_shortcuts "$INSTALL_DIR"
@@ -429,7 +472,7 @@ if $DO_UPDATE; then
     echo ""
     echo -e "${CYAN}════════════════════════════════════════════════════════════════════════════════${RESET}"
     echo -e "${GREEN}  ОБНОВЛЕНИЕ ЗАВЕРШЕНО!${RESET}"
-    echo -e "${GREEN}  Обновлено пакетов: $pkg_updated${RESET}"
+    echo -e "${GREEN}  Обновлено: $pkg_updated, пропущено (актуально): $pkg_skipped${RESET}"
     echo -e "${CYAN}════════════════════════════════════════════════════════════════════════════════${RESET}"
     echo ""
     read -p "Нажмите Enter для выхода…"

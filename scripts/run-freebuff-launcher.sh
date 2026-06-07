@@ -22,15 +22,14 @@ resolve_freebuff_exe() {
 
 main() {
     local items=(
-        "DeepSeek V4 Pro - smartest"
-        "DeepSeek V4 Flash - most efficient"
-        "Kimi K2.6 - balanced"
-        "MiniMax M2.7 - fastest"
+        "DeepSeek V4 Pro - smartest (основной agent)"
+        "DeepSeek V4 Flash - most efficient (основной agent)"
+        "GPT-5.4 - deep thinking (нужна подписка ChatGPT)"
         "Запустить Freebuff с встроенным выбором модели"
     )
 
     local choice
-    choice="$(show_tui_numbered_menu "Freebuff" "Freebuff - выбор модели" "DeepSeek V4 Pro/Flash · Kimi K2.6 · MiniMax M2.7" "${items[@]}")"
+    choice="$(show_tui_numbered_menu "Freebuff" "Freebuff - выбор модели" "DeepSeek V4 Pro/Flash (main) · GPT-5.4 (deep thinking)" "${items[@]}")"
     if [ "${choice:-0}" -eq 0 ]; then
         echo -e "${YELLOW}Отменено.${RESET}"
         exit 0
@@ -50,22 +49,58 @@ main() {
         exit 1
     fi
 
+    local model_id=""
     case "$choice" in
-        1) export FREEBUFF_MODEL="deepseek-v4-pro" ;;
-        2) export FREEBUFF_MODEL="deepseek-v4-flash" ;;
-        3) export FREEBUFF_MODEL="kimi-k2.6" ;;
-        4) export FREEBUFF_MODEL="minimax-m2.7" ;;
-        *) unset FREEBUFF_MODEL ;;
+        1) model_id="deepseek-v4-pro" ;;
+        2) model_id="deepseek-v4-flash" ;;
+        3) model_id="gpt-5.4" ;;
+        *) model_id="" ;;
     esac
 
-    clear >&3
-    echo -e "${CYAN}Запуск Freebuff…${RESET}" >&3
-    if [ -n "${FREEBUFF_MODEL:-}" ]; then
-        echo -e "${GRAY}Предпочтительная модель: ${FREEBUFF_MODEL}${RESET}" >&3
-        echo -e "${GRAY}Если текущая версия Freebuff игнорирует env, выберите эту модель во встроенном меню.${RESET}" >&3
+    # Подавляем авто-обновление freebuff/codebuff. ECONNRESET при старте обычно
+    # означает попытку скачать обновление агентов/моделей.
+    export CODEBUFF_AUTO_UPDATE_DISABLED=1
+    export CODEBUFF_SKIP_UPDATE=1
+    export FREEBUFF_SKIP_UPDATE=1
+    export NPM_CONFIG_UPDATE_NOTIFIER=true
+    export NPM_CONFIG_FUND=false
+
+    if [ -n "$model_id" ]; then
+        export FREEBUFF_MODEL="$model_id"
+    else
+        unset FREEBUFF_MODEL
     fi
+
+    # Обёртка с retry для сетевых ошибок (ECONNRESET и подобных).
+    local max_retries=2
+    local attempt=0
+    local exit_code=0
+    while [ $attempt -lt $max_retries ]; do
+        attempt=$((attempt + 1))
+        clear >&3
+        echo -e "${CYAN}Запуск Freebuff (попытка $attempt/$max_retries)…${RESET}" >&3
+        if [ -n "${FREEBUFF_MODEL:-}" ]; then
+            echo -e "${GRAY}Предпочтительная модель: ${FREEBUFF_MODEL}${RESET}" >&3
+            echo -e "${GRAY}Freebuff автоматически выбирает модель под задачу. Если FREEBUFF_MODEL игнорируется — используйте встроенный выбор.${RESET}" >&3
+        fi
+        echo "" >&3
+        "$freebuff_exe"
+        exit_code=$?
+        if [ $exit_code -eq 0 ]; then
+            exit 0
+        fi
+        if [ $attempt -lt $max_retries ]; then
+            echo "" >&3
+            echo -e "${YELLOW}Freebuff завершился с кодом $exit_code. Повторная попытка через 3 секунды…${RESET}" >&3
+            sleep 3
+        fi
+    done
+
     echo "" >&3
-    exec "$freebuff_exe"
+    echo -e "${YELLOW}Freebuff завершился с кодом $exit_code.${RESET}" >&3
+    echo -e "${YELLOW}Если была сетевая ошибка (ECONNRESET/timeout) — проверьте интернет и попробуйте снова.${RESET}" >&3
+    echo -e "${GRAY}Помочь может ручное обновление: npm i -g freebuff@latest${RESET}" >&3
+    exit $exit_code
 }
 
 main "$@"

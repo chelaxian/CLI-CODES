@@ -179,7 +179,7 @@ Write-Status "  [3] Claude Code" "Green"
 Write-Status "  [4] OpenCode" "Green"
 Write-Status "  [5] Freebuff" "Green"
 Write-Status "  [6] OpenClaude" "Green"
-Write-Status "  [7] Обновление всех компонентов" "Green"
+Write-Status "  [7] Обновление всех компонентов (проверяет актуальность)" "Yellow"
 Write-Status "  [8] Полное удаление (uninstall)" "Red"
 Write-Status "  [9] Добавить недостающие ярлыки (без переустановки)" "Cyan"
 Write-Status "  [X] Выход" "Gray"
@@ -392,19 +392,31 @@ if ($installChoice -eq "7") {
     Write-Status "======================================================================" "Cyan"
     Write-Host ""
     if (Test-Path -LiteralPath (Join-Path $InstallDir ".git")) {
-        Write-Status "Обновление репозитория..." "Cyan"
+        Write-Status "Проверка обновлений репозитория..." "Cyan"
         Push-Location $InstallDir
         try {
             $prevPrompt = $env:GIT_TERMINAL_PROMPT
             $prevGcm = $env:GCM_INTERACTIVE
             $env:GIT_TERMINAL_PROMPT = "0"
             $env:GCM_INTERACTIVE = "Never"
+
+            $headBefore = $null
+            try { $headBefore = (& git rev-parse HEAD 2>$null).Trim() } catch {}
+
             $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
             $out = git pull origin main 2>&1
             $code = $LASTEXITCODE
             $ErrorActionPreference = $prevEAP
+
+            $headAfter = $null
+            try { $headAfter = (& git rev-parse HEAD 2>$null).Trim() } catch {}
+
             if ($code -eq 0) {
-                Write-Status "  [OK] Репозиторий обновлён" "Green"
+                if ($headBefore -and $headAfter -and $headBefore -eq $headAfter) {
+                    Write-Status "  [OK] Репозиторий уже актуален ($($headAfter.Substring(0,7)))" "DarkGray"
+                } else {
+                    Write-Status "  [OK] Репозиторий обновлён ($($headBefore.Substring(0,7)) → $($headAfter.Substring(0,7)))" "Green"
+                }
             } else {
                 Write-Status "  [WARN] git pull failed (code $code)" "Yellow"
                 if ($out) { Write-Host $out }
@@ -421,24 +433,33 @@ if ($installChoice -eq "7") {
     }
 
     Write-Host ""
-    Write-Status "Обновление npm пакетов..." "Cyan"
+    Write-Status "Проверка и обновление npm пакетов..." "Cyan"
 
     $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
 
-    # Helper to get version before update
+    # Helper: get installed version (null if not installed)
     function Get-PkgVersion($cmd) {
         $c = Get-Command $cmd -ErrorAction SilentlyContinue
         if ($c) {
             try {
                 $v = & $cmd --version 2>$null
-                return $v.Trim()
+                return ($v -join "").Trim()
             } catch { return "?" }
         }
         return $null
     }
 
+    # Helper: get latest version from npm registry (null if unknown)
+    function Get-LatestNpmVersion([string]$NpmPkg) {
+        try {
+            $r = & npm.cmd view $NpmPkg version 2>$null
+            if ($LASTEXITCODE -eq 0 -and $r) { return ($r -join "").Trim() }
+        } catch {}
+        return $null
+    }
+
     $pkgs = @(
-        @{ Name = "qwen-code";  NpmPkg = "@qwen-code/qwen-code";      Fallback = "@anthropic-ai/qwen-code"; Cmd = "qwen" },
+        @{ Name = "qwen-code";   NpmPkg = "@qwen-code/qwen-code";      Fallback = "@anthropic-ai/qwen-code"; Cmd = "qwen" },
         @{ Name = "claude-code"; NpmPkg = "@anthropic-ai/claude-code"; Fallback = $null;                     Cmd = "claude" },
         @{ Name = "opencode-ai"; NpmPkg = "opencode-ai";               Fallback = $null;                     Cmd = "opencode" },
         @{ Name = "freebuff";    NpmPkg = "freebuff";                  Fallback = $null;                     Cmd = "freebuff" },
@@ -447,31 +468,62 @@ if ($installChoice -eq "7") {
 
     foreach ($pkg in $pkgs) {
         $before = Get-PkgVersion $pkg.Cmd
+        $latest = Get-LatestNpmVersion $pkg.NpmPkg
+
+        # Already installed AND matches latest published version → skip
+        if ($before -and $latest -and $before -eq $latest) {
+            Write-Status ("  [OK] {0} v{1} (уже актуально)" -f $pkg.Name, $before) "DarkGray"
+            continue
+        }
+
+        # Installed but outdated, or npm registry unreachable → upgrade
+        if ($before) {
+            $target = if ($latest) { $latest } else { "latest" }
+            Write-Status ("  → {0}: {1} → {2}" -f $pkg.Name, $before, $target) "Cyan"
+        } else {
+            Write-Status ("  → Установка {0} (не установлен)" -f $pkg.Name) "Cyan"
+        }
+
         & npm.cmd install -g "$($pkg.NpmPkg)@latest" 2>$null
         if ($LASTEXITCODE -ne 0 -and $pkg.Fallback) {
             & npm.cmd install -g "$($pkg.Fallback)@latest" 2>$null
         }
         $after = Get-PkgVersion $pkg.Cmd
         if ($after) {
-            $verInfo = if ($before) { "($before → $after)" } else { "($after)" }
-            Write-Status "  [OK] $($pkg.Name) $verInfo" "Green"
+            $verInfo = if ($before -and $before -ne $after) { "($before → $after)" } else { "($after)" }
+            Write-Status ("  [OK] {0} {1}" -f $pkg.Name, $verInfo) "Green"
         } else {
-            Write-Status "  [SKIP] $($pkg.Name) не установлен" "Yellow"
+            Write-Status ("  [SKIP] {0} не установлен после обновления" -f $pkg.Name) "Yellow"
         }
     }
 
-    # free-claude-code proxy update
+    # free-claude-code proxy update (skip if already up-to-date)
     $fccDir = Join-Path $env:USERPROFILE ".free-claude-code"
     if (Test-Path -LiteralPath (Join-Path $fccDir ".git")) {
-        Write-Status "Обновление free-claude-code proxy..." "Cyan"
+        Write-Status "Проверка free-claude-code proxy..." "Cyan"
         Push-Location $fccDir
         try {
+            $fccHeadBefore = $null
+            try { $fccHeadBefore = (& git rev-parse HEAD 2>$null).Trim() } catch {}
+
             $prevEAP2 = $ErrorActionPreference; $ErrorActionPreference = "Continue"
             & git pull origin main 2>$null
+
+            $fccHeadAfter = $null
+            try { $fccHeadAfter = (& git rev-parse HEAD 2>$null).Trim() } catch {}
+
             $uvExePath = Join-Path $env:USERPROFILE ".local\bin\uv.exe"
-            if (Test-Path -LiteralPath $uvExePath) { & $uvExePath sync 2>$null }
+            if ($fccHeadBefore -and $fccHeadAfter -and $fccHeadBefore -ne $fccHeadAfter) {
+                Write-Status "  → free-claude-code обновлён, синхронизация Python зависимостей..." "Cyan"
+                if (Test-Path -LiteralPath $uvExePath) { & $uvExe sync 2>$null }
+                Write-Status "  [OK] free-claude-code обновлён" "Green"
+            } elseif ($fccHeadAfter) {
+                Write-Status "  [OK] free-claude-code уже актуален ($($fccHeadAfter.Substring(0,7)))" "DarkGray"
+            } else {
+                if (Test-Path -LiteralPath $uvExePath) { & $uvExe sync 2>$null }
+                Write-Status "  [OK] free-claude-code sync выполнен" "Green"
+            }
             $ErrorActionPreference = $prevEAP2
-            Write-Status "  [OK] free-claude-code обновлён" "Green"
         } catch {
             Write-Status "  [WARN] Не удалось обновить free-claude-code" "Yellow"
         } finally {
