@@ -616,6 +616,20 @@ function Build-GroupMenuItems {
             }
             $items += [pscustomobject]@{ Id = $itemId; Label = "$Provider - $mid" }
           }
+          # ForcedIds: always include even if API didn't return them
+          if ($ForcedIds.Count -gt 0) {
+            $existingIds = @($items | ForEach-Object { $_.Id })
+            foreach ($fid in $ForcedIds) {
+              $lowerFid = $fid.ToLowerInvariant()
+              $mappedId = if ($ApiIdToPresetId.ContainsKey($lowerFid)) { $ApiIdToPresetId[$lowerFid] } else { "$IdPrefix$fid" }
+              if ($mappedId -notin $existingIds) {
+                $items += [pscustomobject]@{ Id = $mappedId; Label = "$Provider - $fid" }
+                $existingIds += $mappedId
+                Write-Host "  [DEBUG] $Provider : forced add $fid -> $mappedId" -ForegroundColor DarkGray
+              }
+            }
+          }
+
           if ($items.Count -gt 0) {
             $source = "API"
             $hint = " (live)"
