@@ -142,7 +142,7 @@ function Resolve-ProfileFromState($state) {
 $script:Profiles = @(
   @{ Id = "last";           Label = "Запустить с последними настройками (быстрый старт)" }
   @{ Id = "group:zai";      Label = "Z.AI - модели (GLM-5.1 / GLM-4.7 / GLM-4.7-Flash)" }
-  @{ Id = "group:nim";      Label = "NVIDIA NIM - 9 бесплатных agentic моделей" }
+  @{ Id = "group:nim";      Label = "NVIDIA NIM - бесплатные agentic модели" }
   @{ Id = "group:bai";      Label = "B.AI - DeepSeek/MiniMax/GLM/Kimi/GPT (OpenAI-compatible)" }
   @{ Id = "group:openrouter"; Label = "OpenRouter - бесплатные модели (text-only)" }
   @{ Id = "custom-model";   Label = "Другая модель… → выбор провайдера и модели" }
@@ -409,7 +409,7 @@ $staticOrOC = @(
 )
 $zaiMapOC = @{ "glm-5.1" = "zai-glm51"; "glm-4.7" = "zai-glm47"; "glm-4.7-flash" = "zai-flash47" }
 $zaiResOC = Build-GroupMenuItems -Provider "zai" -StaticItems $staticZaiOC -ApiKeyEnv "ZAI_API_KEY" -FetchScript "Get-ZaiCodingModelIdsFromApi" -IdPrefix "" -ApiIdToPresetId $zaiMapOC
-$nimResOC = Build-GroupMenuItems -Provider "nim" -StaticItems $staticNimOC -ApiKeyEnv "NVIDIA_NIM_API_KEY" -FetchScript "Get-NvidiaNimModelIdsFromApi" -FilterToBundled -IdPrefix "nim-"
+$nimResOC = Build-GroupMenuItems -Provider "nim" -StaticItems $staticNimOC -ApiKeyEnv "NVIDIA_NIM_API_KEY" -FetchScript "Get-NvidiaNimModelIdsFromApi" -FilterToBundled -AgenticOnly -IdPrefix "nim-"
 $baiResOC = Build-GroupMenuItems -Provider "bai" -StaticItems $staticBaiOC -ApiKeyEnv "BAI_API_KEY" -FetchScript "Get-BaiModelIdsFromApi" -IdPrefix "bai-"
 $orResOC  = Build-GroupMenuItems -Provider "openrouter" -StaticItems $staticOrOC -ApiKeyEnv "OPENROUTER_API_KEY" -FetchScript "Get-OpenRouterModelIdsFromApi" -IdPrefix "openrouter-"
 $script:GroupMenus = @{

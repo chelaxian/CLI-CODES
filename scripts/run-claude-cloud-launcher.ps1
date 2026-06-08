@@ -45,7 +45,7 @@ $script:Profiles = @(
   }
   @{
     Id    = "group:nim"
-    Label = "NVIDIA NIM - 9 бесплатных agentic моделей"
+    Label = "NVIDIA NIM - бесплатные agentic модели"
   }
   # B.AI доступен через «Другая модель» (прямой OpenAI-compat, без proxy).
   @{
@@ -355,7 +355,7 @@ while ($true) {
     }
     $subTitle = switch ($groupKey) {
       "zai"        { "Z.AI Coding (paid) + GLM-4.7-Flash (free)" }
-      "nim"        { "NVIDIA NIM - 9 бесплатных agentic моделей" }
+      "nim"        { "NVIDIA NIM - бесплатные agentic модели" }
       "openrouter" { "OpenRouter - бесплатные agentic модели" }
       "bai"        { "B.AI - https://api.b.ai/v1 (OpenAI-compatible)" }
       default      { "" }

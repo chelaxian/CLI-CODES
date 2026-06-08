@@ -1,4 +1,4 @@
-﻿# TUI-меню для лаунчеров Qwen / Claude (рамки, прокрутка, баннер).
+# TUI-меню для лаунчеров Qwen / Claude (рамки, прокрутка, баннер).
 
 function Set-LauncherTuiConsole {
   try {
@@ -560,8 +560,11 @@ function Build-GroupMenuItems {
     [string]$ApiKeyEnv = "",
     [string]$FetchScript = "",
     [switch]$FilterToBundled,
+    [switch]$AgenticOnly,
     [string]$IdPrefix = "",
-    [hashtable]$ApiIdToPresetId = @{}
+    [hashtable]$ApiIdToPresetId = @{},
+    [hashtable]$ExtraFetchArgs = @{},
+    [string[]]$AllowedApiIds = @()
   )
 
   $items = $StaticItems
@@ -577,11 +580,13 @@ function Build-GroupMenuItems {
       try {
         $prevEAP = $ErrorActionPreference
         $ErrorActionPreference = "Continue"
-        if ($FilterToBundled) {
-          $ids = & $FetchScript -ApiKey $key -FilterToBundled
-        } else {
-          $ids = & $FetchScript -ApiKey $key
-        }
+
+        $splatted = @{ ApiKey = $key }
+        if ($FilterToBundled) { $splatted.FilterToBundled = $true }
+        if ($AgenticOnly) { $splatted.AgenticOnly = $true }
+        foreach ($k in $ExtraFetchArgs.Keys) { $splatted[$k] = $ExtraFetchArgs[$k] }
+
+        $ids = & $FetchScript @splatted
         $ErrorActionPreference = $prevEAP
 
         if ($ids -and $ids.Count -gt 0) {
@@ -590,6 +595,10 @@ function Build-GroupMenuItems {
             $mid = $rawId.Trim()
             if (-not $mid) { continue }
             $lowerMid = $mid.ToLowerInvariant()
+
+            # Skip if not in allowed list (when AllowedApiIds provided)
+            if ($AllowedApiIds.Count -gt 0 -and $lowerMid -notin $AllowedApiIds) { continue }
+
             if ($ApiIdToPresetId.ContainsKey($lowerMid)) {
               $presetId = $ApiIdToPresetId[$lowerMid]
             } else {
@@ -597,8 +606,10 @@ function Build-GroupMenuItems {
             }
             $items += [pscustomobject]@{ Id = "$IdPrefix$presetId"; Label = "$Provider - $mid" }
           }
-          $source = "API"
-          $hint = " (live)"
+          if ($items.Count -gt 0) {
+            $source = "API"
+            $hint = " (live)"
+          }
         }
       } catch {}
     }

@@ -46,7 +46,7 @@ $script:Profiles = @(
   }
   @{
     Id          = "group:nim"
-    Label       = "NVIDIA NIM - 9 бесплатных agentic моделей"
+    Label       = "NVIDIA NIM - бесплатные agentic модели"
   }
   @{
     Id          = "group:bai"
@@ -404,7 +404,7 @@ $staticOr = @(
 )
 $zaiMap = @{ "glm-5.1" = "zai-glm51"; "glm-4.7" = "zai-glm"; "glm-4.7-flash" = "zai-flash47" }
 $zaiRes = Build-GroupMenuItems -Provider "zai" -StaticItems $staticZai -ApiKeyEnv "ZAI_API_KEY" -FetchScript "Get-ZaiCodingModelIdsFromApi" -IdPrefix "zai-" -ApiIdToPresetId $zaiMap
-$nimRes = Build-GroupMenuItems -Provider "nim" -StaticItems $staticNim -ApiKeyEnv "NVIDIA_NIM_API_KEY" -FetchScript "Get-NvidiaNimModelIdsFromApi" -FilterToBundled -IdPrefix "nim-"
+$nimRes = Build-GroupMenuItems -Provider "nim" -StaticItems $staticNim -ApiKeyEnv "NVIDIA_NIM_API_KEY" -FetchScript "Get-NvidiaNimModelIdsFromApi" -FilterToBundled -AgenticOnly -IdPrefix "nim-"
 $baiRes = Build-GroupMenuItems -Provider "bai" -StaticItems $staticBai -ApiKeyEnv "BAI_API_KEY" -FetchScript "Get-BaiModelIdsFromApi" -IdPrefix "bai-"
 $orRes  = Build-GroupMenuItems -Provider "openrouter" -StaticItems $staticOr -ApiKeyEnv "OPENROUTER_API_KEY" -FetchScript "Get-OpenRouterModelIdsFromApi" -IdPrefix "openrouter-"
 $script:GroupMenus = @{
@@ -442,7 +442,7 @@ while ($true) {
     }
     $subTitle = switch ($groupKey) {
       "zai"        { "Z.AI Coding (paid) + GLM-4.7-Flash (free)" }
-      "nim"        { "NVIDIA NIM - 9 бесплатных agentic моделей" }
+      "nim"        { "NVIDIA NIM - бесплатные agentic модели" }
       "bai"        { "B.AI - https://api.b.ai/v1 (OpenAI-compatible)" }
       "openrouter" { "OpenRouter - бесплатные модели (text-only)" }
       default      { "" }

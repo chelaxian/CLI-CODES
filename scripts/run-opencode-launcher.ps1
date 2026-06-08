@@ -42,13 +42,21 @@ $script:Profiles = @(
   }
   @{
     Id    = "group:nim"
-    Label = "NVIDIA NIM - 9 бесплатных agentic моделей"
+    Label = "NVIDIA NIM - бесплатные agentic модели"
   }
   # OpenRouter убран из пресетов: free endpoints rate-limited (429 Venice).
   # Используйте «Другая модель…» → OpenRouter для ручного выбора.
   @{
     Id    = "group:bai"
     Label = "B.AI - DeepSeek/MiniMax/GLM/Kimi/GPT (OpenAI-compatible)"
+  }
+  @{
+    Id    = "group:openrouter"
+    Label = "OpenRouter - бесплатные модели (text-only)"
+  }
+  @{
+    Id    = "group:openrouter"
+    Label = "OpenRouter - бесплатные модели (text-only)"
   }
   @{
     Id    = "custom-model"
@@ -680,7 +688,7 @@ $staticOrOC = @(
 )
 $zaiMapOC = @{ "glm-5.1" = "zai-glm51"; "glm-4.7" = "zai-glm"; "glm-4.7-flash" = "zai-flash47" }
 $zaiResOC = Build-GroupMenuItems -Provider "zai" -StaticItems $staticZaiOC -ApiKeyEnv "ZAI_API_KEY" -FetchScript "Get-ZaiCodingModelIdsFromApi" -IdPrefix "zai-" -ApiIdToPresetId $zaiMapOC
-$nimResOC = Build-GroupMenuItems -Provider "nim" -StaticItems $staticNimOC -ApiKeyEnv "NVIDIA_NIM_API_KEY" -FetchScript "Get-NvidiaNimModelIdsFromApi" -FilterToBundled -IdPrefix "nim-"
+$nimResOC = Build-GroupMenuItems -Provider "nim" -StaticItems $staticNimOC -ApiKeyEnv "NVIDIA_NIM_API_KEY" -FetchScript "Get-NvidiaNimModelIdsFromApi" -FilterToBundled -AgenticOnly -IdPrefix "nim-"
 $baiResOC = Build-GroupMenuItems -Provider "bai" -StaticItems $staticBaiOC -ApiKeyEnv "BAI_API_KEY" -FetchScript "Get-BaiModelIdsFromApi" -IdPrefix "bai-"
 $orResOC  = Build-GroupMenuItems -Provider "openrouter" -StaticItems $staticOrOC -ApiKeyEnv "OPENROUTER_API_KEY" -FetchScript "Get-OpenRouterModelIdsFromApi" -IdPrefix "openrouter-"
 $script:GroupMenus = @{
@@ -730,7 +738,7 @@ while ($true) {
     }
     $subTitle = switch ($groupKey) {
       "zai"        { "Z.AI Coding (paid) + GLM-4.7-Flash (free)" }
-      "nim"        { "NVIDIA NIM - 9 бесплатных agentic моделей" }
+      "nim"        { "NVIDIA NIM - бесплатные agentic модели" }
       "openrouter" { "OpenRouter - бесплатные agentic модели" }
       "bai"        { "B.AI - https://api.b.ai/v1 (OpenAI-compatible)" }
       default      { "" }
