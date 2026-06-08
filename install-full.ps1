@@ -181,7 +181,7 @@ Write-Status "  [5] Freebuff" "Green"
 Write-Status "  [6] OpenClaude" "Green"
 Write-Status "  [7] Обновление всех компонентов (проверяет актуальность)" "Yellow"
 Write-Status "  [8] Полное удаление (uninstall)" "Red"
-Write-Status "  [9] Добавить недостающие ярлыки (без переустановки)" "Cyan"
+Write-Status "  [9] Упорядочить ярлыки на рабочем столе (скрыть служебные, оставить 5 запусков)" "Cyan"
 Write-Status "  [X] Выход" "Gray"
 Write-Host ""
 
@@ -294,139 +294,510 @@ function Sync-LauncherShortcuts {
 
     $desktop = [Environment]::GetFolderPath("Desktop")
     if (-not $desktop -or -not (Test-Path -LiteralPath $desktop)) {
-        $desktop = Join-Path $env:USERPROFILE "Desktop"
-        if (-not (Test-Path -LiteralPath $desktop)) { $desktop = $env:USERPROFILE }
+      $desktop = Join-Path $env:USERPROFILE "Desktop"
+      if (-not (Test-Path -LiteralPath $desktop)) { $desktop = $env:USERPROFILE }
     }
 
-    $npmBin = Join-Path $env:APPDATA "npm"
+    $hiddenDir = Join-Path $desktop "Cloud Launchers"
+    if (-not (Test-Path -LiteralPath $hiddenDir)) {
+      New-Item -ItemType Directory -Path $hiddenDir -Force | Out-Null
+    }
+    $attrs = (Get-Item -LiteralPath $hiddenDir -Force).Attributes
+    if (($attrs -band [System.IO.FileAttributes]::Hidden) -eq 0) {
+      (Get-Item -LiteralPath $hiddenDir -Force).Attributes = $attrs -bor [System.IO.FileAttributes]::Hidden
+    }
+
+    # Migrate ALL cloud-related files from desktop root to hidden folder
+    $cloudBaseNames = @("Qwen Code (cloud)", "Claude Code (cloud)", "OpenCode (cloud)", "Freebuff (cloud)", "OpenClaude (cloud)")
+    foreach ($baseName in $cloudBaseNames) {
+      foreach ($ext in @(".cmd", ".lnk")) {
+        $oldPath = Join-Path $desktop "$baseName$ext"
+        $newPath = Join-Path $hiddenDir "$baseName$ext"
+        if ((Test-Path -LiteralPath $oldPath) -and -not (Test-Path -LiteralPath $newPath)) {
+          Move-Item -LiteralPath $oldPath -Destination $newPath -Force -ErrorAction SilentlyContinue
+        }
+      }
+    }
+
+    # Hide ALL internal files in Cloud Launchers (folder itself is already hidden)
+    Get-ChildItem -LiteralPath $hiddenDir -Filter "*.cmd" | ForEach-Object {
+      $_.Attributes = $_.Attributes -bor [System.IO.FileAttributes]::Hidden
+    }
+    Get-ChildItem -LiteralPath $hiddenDir -Filter "*.lnk" | ForEach-Object {
+      $_.Attributes = $_.Attributes -bor [System.IO.FileAttributes]::Hidden
+    }
+
     $scriptsDir = Join-Path $RepoDir "scripts"
     $psExe = (Get-Command powershell.exe -ErrorAction SilentlyContinue).Source
     if (-not $psExe) { $psExe = "powershell.exe" }
 
     function Test-CliInstalled([string]$CmdName) {
-        $c = Get-Command $CmdName -ErrorAction SilentlyContinue
-        if ($c) { return $true }
-        foreach ($p in @(
-            (Join-Path $env:APPDATA "npm\$CmdName.cmd"),
-            (Join-Path $env:APPDATA "npm\$CmdName.ps1"),
-            (Join-Path $env:APPDATA "npm\$CmdName")
-        )) {
-            if (Test-Path -LiteralPath $p) { return $true }
-        }
-        return $false
+      $c = Get-Command $CmdName -ErrorAction SilentlyContinue
+      if ($c) { return $true }
+      foreach ($p in @(
+          (Join-Path $env:APPDATA "npm\$CmdName.cmd"),
+          (Join-Path $env:APPDATA "npm\$CmdName.ps1"),
+          (Join-Path $env:APPDATA "npm\$CmdName")
+      )) {
+        if (Test-Path -LiteralPath $p) { return $true }
+      }
+      return $false
     }
 
-    # Возвращает $true если файл записан или уже актуален; $false если пропущен
-    # из-за ошибки доступа (файл заблокирован запущенным процессом / read-only).
     function Write-CmdFile-Safe {
-        param([string]$Path, [string]$Content)
-        try {
-            # Снимаем ReadOnly если есть (Installer мог ранее его поставить).
-            if (Test-Path -LiteralPath $Path) {
-                $attrs = (Get-Item -LiteralPath $Path -Force).Attributes
-                if (($attrs -band [System.IO.FileAttributes]::ReadOnly) -ne 0) {
-                    (Get-Item -LiteralPath $Path -Force).Attributes = $attrs -bxor [System.IO.FileAttributes]::ReadOnly
-                }
-            }
-            [System.IO.File]::WriteAllText($Path, $Content, (New-Object System.Text.UTF8Encoding($false)))
-            return $true
-        } catch [System.UnauthorizedAccessException] {
-            # Файл заблокирован запущенным процессом. Пробуем atomic-rename fallback:
-            # пишем во временный файл и Move-Item (на Win32 можно перезаписать занятый
-            # файл через rename + delete-original — это работает для read-by-another-process).
-            try {
-                $tmp = "$Path.$PID.$(Get-Random).tmp"
-                [System.IO.File]::WriteAllText($tmp, $Content, (New-Object System.Text.UTF8Encoding($false)))
-                if (Test-Path -LiteralPath $Path) {
-                    # Backup old file and try replace
-                    $bak = "$Path.bak"
-                    if (Test-Path -LiteralPath $bak) { Remove-Item -LiteralPath $bak -Force -ErrorAction SilentlyContinue }
-                    Rename-Item -LiteralPath $Path -NewName (Split-Path -Leaf $bak) -Force -ErrorAction Stop
-                }
-                Move-Item -LiteralPath $tmp -Destination $Path -Force -ErrorAction Stop
-                return $true
-            } catch {
-                # Last resort: создать новый рядом (с суффиксом .new), юзер подменит после освобождения файла.
-                $newPath = "$Path.new"
-                try {
-                    [System.IO.File]::WriteAllText($newPath, $Content, (New-Object System.Text.UTF8Encoding($false)))
-                    Write-Status ("    [WARN] Файл заблокирован. Новый записан как: $newPath") "Yellow"
-                } catch {}
-                return $false
-            }
+      param([string]$Path, [string]$Content)
+      try {
+        if (Test-Path -LiteralPath $Path) {
+          $attrs = (Get-Item -LiteralPath $Path -Force).Attributes
+          if (($attrs -band [System.IO.FileAttributes]::ReadOnly) -ne 0) {
+            (Get-Item -LiteralPath $Path -Force).Attributes = $attrs -bxor [System.IO.FileAttributes]::ReadOnly
+          }
         }
+        [System.IO.File]::WriteAllText($Path, $Content, (New-Object System.Text.UTF8Encoding($false)))
+        return $true
+      } catch [System.UnauthorizedAccessException] {
+        try {
+          $tmp = "$Path.$PID.$(Get-Random).tmp"
+          [System.IO.File]::WriteAllText($tmp, $Content, (New-Object System.Text.UTF8Encoding($false)))
+          if (Test-Path -LiteralPath $Path) {
+            $bak = "$Path.bak"
+            if (Test-Path -LiteralPath $bak) { Remove-Item -LiteralPath $bak -Force -ErrorAction SilentlyContinue }
+            Rename-Item -LiteralPath $Path -NewName (Split-Path -Leaf $bak) -Force -ErrorAction Stop
+          }
+          Move-Item -LiteralPath $tmp -Destination $Path -Force -ErrorAction Stop
+          return $true
+        } catch {
+          $newPath = "$Path.new"
+          try {
+            [System.IO.File]::WriteAllText($newPath, $Content, (New-Object System.Text.UTF8Encoding($false)))
+            Write-Status ("    [WARN] Файл заблокирован. Новый записан как: $newPath") "Yellow"
+          } catch {}
+          return $false
+        }
+      }
     }
 
     function New-LauncherShortcutSync {
-        param([string]$Name, [string]$ScriptFile)
-        $launcher = Join-Path $scriptsDir $ScriptFile
-        if (-not (Test-Path -LiteralPath $launcher)) { return $false }
-        $lnkPath = Join-Path $desktop "$Name.lnk"
-        $cmdPath = Join-Path $desktop "$Name.cmd"
-        $created = $false
-        $cmdContent = "@echo off`r`nchcp 65001 >nul 2>`&1`r`npowershell -NoProfile -ExecutionPolicy Bypass -Command `"& '$launcher'`"`r`nif ($LASTEXITCODE -ne 0) pause"
-        if ($Force -or -not (Test-Path -LiteralPath $cmdPath)) {
-            $ok = Write-CmdFile-Safe -Path $cmdPath -Content $cmdContent
-            if ($ok) { $created = $true }
-        }
-        # .lnk создаём только если нет (структура stable, Force не требуется).
-        if (-not (Test-Path -LiteralPath $lnkPath)) {
-            try {
-                $cmdExe = (Get-Command cmd.exe -ErrorAction SilentlyContinue).Source
-                if (-not $cmdExe) { $cmdExe = "$env:SystemRoot\System32\cmd.exe" }
-                $shell = New-Object -ComObject WScript.Shell -ErrorAction Stop
-                $lnk = $shell.CreateShortcut($lnkPath)
-                $lnk.TargetPath = $cmdExe
-                $lnk.Arguments = "/k chcp 65001 >nul & `"$psExe`" -NoProfile -ExecutionPolicy Bypass -File `"$launcher`""
-                $lnk.WorkingDirectory = $RepoDir
-                $lnk.WindowStyle = 1
-                $lnk.Save()
-                $created = $true
-            } catch {}
-        }
-        return $created
+      param([string]$Name, [string]$ScriptFile)
+      $launcher = Join-Path $scriptsDir $ScriptFile
+      if (-not (Test-Path -LiteralPath $launcher)) { return $false }
+
+      $cmdPath = Join-Path $hiddenDir "$Name.cmd"
+      $lnkPath = Join-Path $hiddenDir "$Name.lnk"
+      $created = $false
+      $cmdContent = "@echo off`r`nchcp 65001 >nul 2>`&1`r`npowershell -NoProfile -ExecutionPolicy Bypass -Command `"& '$launcher'`"`r`nif ($LASTEXITCODE -ne 0) pause"
+      if ($Force -or -not (Test-Path -LiteralPath $cmdPath)) {
+        $ok = Write-CmdFile-Safe -Path $cmdPath -Content $cmdContent
+        if ($ok) { $created = $true }
+      }
+      if (-not (Test-Path -LiteralPath $lnkPath)) {
+        try {
+          $cmdExe = (Get-Command cmd.exe -ErrorAction SilentlyContinue).Source
+          if (-not $cmdExe) { $cmdExe = "$env:SystemRoot\System32\cmd.exe" }
+          $shell = New-Object -ComObject WScript.Shell -ErrorAction Stop
+          $lnk = $shell.CreateShortcut($lnkPath)
+          $lnk.TargetPath = $cmdExe
+          $lnk.Arguments = "/k chcp 65001 >nul & `"$psExe`" -NoProfile -ExecutionPolicy Bypass -File `"$launcher`""
+          $lnk.WorkingDirectory = $RepoDir
+          $lnk.WindowStyle = 1
+          $lnk.Save()
+          $created = $true
+        } catch {}
+      }
+      return $created
+    }
+
+    function New-DesktopLaunchShortcut {
+      param([string]$Name, [string]$TargetCmd)
+      $lnkPath = Join-Path $desktop "$Name.lnk"
+      if (Test-Path -LiteralPath $lnkPath) { return $false }
+      try {
+        $cmdExe = (Get-Command cmd.exe -ErrorAction SilentlyContinue).Source
+        if (-not $cmdExe) { $cmdExe = "$env:SystemRoot\System32\cmd.exe" }
+        $shell = New-Object -ComObject WScript.Shell -ErrorAction Stop
+        $lnk = $shell.CreateShortcut($lnkPath)
+        $lnk.TargetPath = $cmdExe
+        $lnk.Arguments = "/c `"$TargetCmd`""
+        $lnk.WorkingDirectory = $hiddenDir
+        $lnk.WindowStyle = 1
+        $lnk.Save()
+        return $true
+      } catch { return $false }
     }
 
     $map = @(
-        @{ Cli = "qwen";       Name = "Qwen Code (cloud)";   Script = "run-qwen-code-launcher.ps1" }
-        @{ Cli = "claude";     Name = "Claude Code (cloud)"; Script = "run-claude-cloud-launcher.ps1" }
-        @{ Cli = "opencode";   Name = "OpenCode (cloud)";    Script = "run-opencode-launcher.ps1" }
-        @{ Cli = "freebuff";   Name = "Freebuff (cloud)";    Script = "run-freebuff-launcher.ps1" }
-        @{ Cli = "openclaude"; Name = "OpenClaude (cloud)";  Script = "run-openclaude-launcher.ps1" }
+      @{ Cli = "qwen";       Name = "Qwen Code (cloud)";   Script = "run-qwen-code-launcher.ps1";  ShortName = "Qwen Code" }
+      @{ Cli = "claude";     Name = "Claude Code (cloud)"; Script = "run-claude-cloud-launcher.ps1"; ShortName = "Claude Code" }
+      @{ Cli = "opencode";   Name = "OpenCode (cloud)";    Script = "run-opencode-launcher.ps1";     ShortName = "OpenCode" }
+      @{ Cli = "freebuff";   Name = "Freebuff (cloud)";    Script = "run-freebuff-launcher.ps1";     ShortName = "Freebuff" }
+      @{ Cli = "openclaude"; Name = "OpenClaude (cloud)";  Script = "run-openclaude-launcher.ps1";   ShortName = "OpenClaude" }
     )
 
     $added = 0
     $present = 0
     foreach ($entry in $map) {
-        if (-not (Test-CliInstalled -CmdName $entry.Cli)) {
-            Write-Status ("  [SKIP] {0} CLI не установлен — ярлык пропущен" -f $entry.Cli) "DarkGray"
-            continue
-        }
-        $hasLnk = Test-Path -LiteralPath (Join-Path $desktop "$($entry.Name).lnk")
-        $hasCmd = Test-Path -LiteralPath (Join-Path $desktop "$($entry.Name).cmd")
-        if (-not $Force -and ($hasLnk -or $hasCmd)) {
-            $present++
-            continue
-        }
+      if (-not (Test-CliInstalled -CmdName $entry.Cli)) {
+        Write-Status ("  [SKIP] {0} CLI не установлен — ярлык пропущен" -f $entry.Cli) "DarkGray"
+        continue
+      }
+
+      $hasLnk = Test-Path -LiteralPath (Join-Path $hiddenDir "$($entry.Name).lnk")
+      $hasCmd = Test-Path -LiteralPath (Join-Path $hiddenDir "$($entry.Name).cmd")
+      if (-not $Force -and ($hasLnk -or $hasCmd)) {
+        $present++
+      } else {
         $created = New-LauncherShortcutSync -Name $entry.Name -ScriptFile $entry.Script
         if ($created) {
-            Write-Status ("  [+] {0}" -f $entry.Name) "Green"
-            $added++
+          Write-Status ("  [+] {0}" -f $entry.Name) "Green"
+          $added++
         } elseif ($Force) {
-            $present++
+          $present++
         }
-    }
+      }
 
-    # Также вызовем dedicated helper script для консистентности (не падает если что-то не так)
-    $shortcutScript = Join-Path $scriptsDir "create-desktop-shortcuts.ps1"
-    if (Test-Path -LiteralPath $shortcutScript) {
-        try {
-            & $psExe -NoProfile -ExecutionPolicy Bypass -File $shortcutScript -RepoRoot $RepoDir 2>$null | Out-Null
-        } catch {}
+      $desktopLnk = Join-Path $desktop "$($entry.ShortName).lnk"
+      if (-not (Test-Path -LiteralPath $desktopLnk)) {
+        $cmdTarget = Join-Path $hiddenDir "$($entry.Name).cmd"
+        $ok = New-DesktopLaunchShortcut -Name $entry.ShortName -TargetCmd $cmdTarget
+        if ($ok) { $added++ }
+      } else {
+        $present++
+      }
     }
 
     Write-Host ""
-    Write-Status ("Ярлыки: уже на месте = {0}, добавлено новых = {1}" -f $present, $added) "Cyan"
+    Write-Status ("Ярлыки: в скрытой папке = {0}, на рабочем столе = 5" -f ($present + $added)) "Cyan"
+}
+
+    $hiddenDir = Join-Path $desktop "Cloud Launchers"
+    if (-not (Test-Path -LiteralPath $hiddenDir)) {
+      New-Item -ItemType Directory -Path $hiddenDir -Force | Out-Null
+    }
+    $attrs = (Get-Item -LiteralPath $hiddenDir -Force).Attributes
+    if (($attrs -band [System.IO.FileAttributes]::Hidden) -eq 0) {
+      (Get-Item -LiteralPath $hiddenDir -Force).Attributes = $attrs -bor [System.IO.FileAttributes]::Hidden
+    }
+
+    # Migrate old (cloud).cmd and (cloud).lnk files from desktop root to hidden folder
+    $oldCloudNames = @("Qwen Code (cloud)", "Claude Code (cloud)", "OpenCode (cloud)", "Freebuff (cloud)", "OpenClaude (cloud)")
+    foreach ($oldName in $oldCloudNames) {
+      $oldCmd = Join-Path $desktop "$oldName.cmd"
+      $oldLnk = Join-Path $desktop "$oldName.lnk"
+      $newCmd = Join-Path $hiddenDir "$oldName.cmd"
+      $newLnk = Join-Path $hiddenDir "$oldName.lnk"
+      if ((Test-Path -LiteralPath $oldCmd) -and -not (Test-Path -LiteralPath $newCmd)) {
+        Move-Item -LiteralPath $oldCmd -Destination $newCmd -Force -ErrorAction SilentlyContinue
+      }
+      if ((Test-Path -LiteralPath $oldLnk) -and -not (Test-Path -LiteralPath $newLnk)) {
+        Move-Item -LiteralPath $oldLnk -Destination $newLnk -Force -ErrorAction SilentlyContinue
+      }
+    }
+
+    # Hide any remaining old cloud files on desktop root
+    Get-ChildItem -LiteralPath $desktop -Filter "*.cmd" | Where-Object { $_.BaseName -like "* (cloud)" } | ForEach-Object {
+      $_.Attributes = $_.Attributes -bor [System.IO.FileAttributes]::Hidden
+    }
+    Get-ChildItem -LiteralPath $desktop -Filter "*.lnk" | Where-Object { $_.BaseName -like "* (cloud)" } | ForEach-Object {
+      $_.Attributes = $_.Attributes -bor [System.IO.FileAttributes]::Hidden
+    }
+
+    $scriptsDir = Join-Path $RepoDir "scripts"
+    $psExe = (Get-Command powershell.exe -ErrorAction SilentlyContinue).Source
+    if (-not $psExe) { $psExe = "powershell.exe" }
+
+    function Test-CliInstalled([string]$CmdName) {
+      $c = Get-Command $CmdName -ErrorAction SilentlyContinue
+      if ($c) { return $true }
+      foreach ($p in @(
+          (Join-Path $env:APPDATA "npm\$CmdName.cmd"),
+          (Join-Path $env:APPDATA "npm\$CmdName.ps1"),
+          (Join-Path $env:APPDATA "npm\$CmdName")
+      )) {
+        if (Test-Path -LiteralPath $p) { return $true }
+      }
+      return $false
+    }
+
+    function Write-CmdFile-Safe {
+      param([string]$Path, [string]$Content)
+      try {
+        if (Test-Path -LiteralPath $Path) {
+          $attrs = (Get-Item -LiteralPath $Path -Force).Attributes
+          if (($attrs -band [System.IO.FileAttributes]::ReadOnly) -ne 0) {
+            (Get-Item -LiteralPath $Path -Force).Attributes = $attrs -bxor [System.IO.FileAttributes]::ReadOnly
+          }
+        }
+        [System.IO.File]::WriteAllText($Path, $Content, (New-Object System.Text.UTF8Encoding($false)))
+        return $true
+      } catch [System.UnauthorizedAccessException] {
+        try {
+          $tmp = "$Path.$PID.$(Get-Random).tmp"
+          [System.IO.File]::WriteAllText($tmp, $Content, (New-Object System.Text.UTF8Encoding($false)))
+          if (Test-Path -LiteralPath $Path) {
+            $bak = "$Path.bak"
+            if (Test-Path -LiteralPath $bak) { Remove-Item -LiteralPath $bak -Force -ErrorAction SilentlyContinue }
+            Rename-Item -LiteralPath $Path -NewName (Split-Path -Leaf $bak) -Force -ErrorAction Stop
+          }
+          Move-Item -LiteralPath $tmp -Destination $Path -Force -ErrorAction Stop
+          return $true
+        } catch {
+          $newPath = "$Path.new"
+          try {
+            [System.IO.File]::WriteAllText($newPath, $Content, (New-Object System.Text.UTF8Encoding($false)))
+            Write-Status ("    [WARN] Файл заблокирован. Новый записан как: $newPath") "Yellow"
+          } catch {}
+          return $false
+        }
+      }
+    }
+
+    function New-LauncherShortcutSync {
+      param([string]$Name, [string]$ScriptFile)
+      $launcher = Join-Path $scriptsDir $ScriptFile
+      if (-not (Test-Path -LiteralPath $launcher)) { return $false }
+
+      $cmdPath = Join-Path $hiddenDir "$Name.cmd"
+      $lnkPath = Join-Path $hiddenDir "$Name.lnk"
+      $created = $false
+      $cmdContent = "@echo off`r`nchcp 65001 >nul 2>`&1`r`npowershell -NoProfile -ExecutionPolicy Bypass -Command `"& '$launcher'`"`r`nif ($LASTEXITCODE -ne 0) pause"
+      if ($Force -or -not (Test-Path -LiteralPath $cmdPath)) {
+        $ok = Write-CmdFile-Safe -Path $cmdPath -Content $cmdContent
+        if ($ok) { $created = $true }
+      }
+      if (-not (Test-Path -LiteralPath $lnkPath)) {
+        try {
+          $cmdExe = (Get-Command cmd.exe -ErrorAction SilentlyContinue).Source
+          if (-not $cmdExe) { $cmdExe = "$env:SystemRoot\System32\cmd.exe" }
+          $shell = New-Object -ComObject WScript.Shell -ErrorAction Stop
+          $lnk = $shell.CreateShortcut($lnkPath)
+          $lnk.TargetPath = $cmdExe
+          $lnk.Arguments = "/k chcp 65001 >nul & `"$psExe`" -NoProfile -ExecutionPolicy Bypass -File `"$launcher`""
+          $lnk.WorkingDirectory = $RepoDir
+          $lnk.WindowStyle = 1
+          $lnk.Save()
+          $created = $true
+        } catch {}
+      }
+      return $created
+    }
+
+    function New-DesktopLaunchShortcut {
+      param([string]$Name, [string]$TargetCmd)
+      $lnkPath = Join-Path $desktop "$Name.lnk"
+      if (Test-Path -LiteralPath $lnkPath) { return $false }
+      try {
+        $cmdExe = (Get-Command cmd.exe -ErrorAction SilentlyContinue).Source
+        if (-not $cmdExe) { $cmdExe = "$env:SystemRoot\System32\cmd.exe" }
+        $shell = New-Object -ComObject WScript.Shell -ErrorAction Stop
+        $lnk = $shell.CreateShortcut($lnkPath)
+        $lnk.TargetPath = $cmdExe
+        $lnk.Arguments = "/c `"$TargetCmd`""
+        $lnk.WorkingDirectory = $hiddenDir
+        $lnk.WindowStyle = 1
+        $lnk.Save()
+        return $true
+      } catch { return $false }
+    }
+
+    $map = @(
+      @{ Cli = "qwen";       Name = "Qwen Code (cloud)";   Script = "run-qwen-code-launcher.ps1";  ShortName = "Qwen Code" }
+      @{ Cli = "claude";     Name = "Claude Code (cloud)"; Script = "run-claude-cloud-launcher.ps1"; ShortName = "Claude Code" }
+      @{ Cli = "opencode";   Name = "OpenCode (cloud)";    Script = "run-opencode-launcher.ps1";     ShortName = "OpenCode" }
+      @{ Cli = "freebuff";   Name = "Freebuff (cloud)";    Script = "run-freebuff-launcher.ps1";     ShortName = "Freebuff" }
+      @{ Cli = "openclaude"; Name = "OpenClaude (cloud)";  Script = "run-openclaude-launcher.ps1";   ShortName = "OpenClaude" }
+    )
+
+    $added = 0
+    $present = 0
+    foreach ($entry in $map) {
+      if (-not (Test-CliInstalled -CmdName $entry.Cli)) {
+        Write-Status ("  [SKIP] {0} CLI не установлен — ярлык пропущен" -f $entry.Cli) "DarkGray"
+        continue
+      }
+
+      $hasLnk = Test-Path -LiteralPath (Join-Path $hiddenDir "$($entry.Name).lnk")
+      $hasCmd = Test-Path -LiteralPath (Join-Path $hiddenDir "$($entry.Name).cmd")
+      if (-not $Force -and ($hasLnk -or $hasCmd)) {
+        $present++
+      } else {
+        $created = New-LauncherShortcutSync -Name $entry.Name -ScriptFile $entry.Script
+        if ($created) {
+          Write-Status ("  [+] {0}" -f $entry.Name) "Green"
+          $added++
+        } elseif ($Force) {
+          $present++
+        }
+      }
+
+      $desktopLnk = Join-Path $desktop "$($entry.ShortName).lnk"
+      if (-not (Test-Path -LiteralPath $desktopLnk)) {
+        $targetCmd = Join-Path $hiddenDir "$($entry.Name).cmd"
+        $createdDesktop = New-DesktopLaunchShortcut -Name $entry.ShortName -TargetCmd $targetCmd
+        if ($createdDesktop) {
+          Write-Status ("  [+] Ярлык на рабочем столе: {0}" -f $entry.ShortName) "Green"
+          $added++
+        }
+      } else {
+        $present++
+      }
+    }
+
+    Write-Host ""
+    if ($added -gt 0) {
+      Write-Status ("  Добавлено/обновлено: {0} ярлыков" -f $added) "Green"
+    } else {
+      Write-Status "  Все ярлыки уже на месте." "DarkGray"
+    }
+    Write-Status ("  Скрытая папка: {0}" -f $hiddenDir) "DarkGray"
+}
+
+    $hiddenDir = Join-Path $desktop "Cloud Launchers"
+    if (-not (Test-Path -LiteralPath $hiddenDir)) {
+      New-Item -ItemType Directory -Path $hiddenDir -Force | Out-Null
+    }
+    $attrs = (Get-Item -LiteralPath $hiddenDir -Force).Attributes
+    if (($attrs -band [System.IO.FileAttributes]::Hidden) -eq 0) {
+      (Get-Item -LiteralPath $hiddenDir -Force).Attributes = $attrs -bor [System.IO.FileAttributes]::Hidden
+    }
+
+    $scriptsDir = Join-Path $RepoDir "scripts"
+    $psExe = (Get-Command powershell.exe -ErrorAction SilentlyContinue).Source
+    if (-not $psExe) { $psExe = "powershell.exe" }
+
+    function Test-CliInstalled([string]$CmdName) {
+      $c = Get-Command $CmdName -ErrorAction SilentlyContinue
+      if ($c) { return $true }
+      foreach ($p in @(
+          (Join-Path $env:APPDATA "npm\$CmdName.cmd"),
+          (Join-Path $env:APPDATA "npm\$CmdName.ps1"),
+          (Join-Path $env:APPDATA "npm\$CmdName")
+      )) {
+        if (Test-Path -LiteralPath $p) { return $true }
+      }
+      return $false
+    }
+
+    function Write-CmdFile-Safe {
+      param([string]$Path, [string]$Content)
+      try {
+        if (Test-Path -LiteralPath $Path) {
+          $attrs = (Get-Item -LiteralPath $Path -Force).Attributes
+          if (($attrs -band [System.IO.FileAttributes]::ReadOnly) -ne 0) {
+            (Get-Item -LiteralPath $Path -Force).Attributes = $attrs -bxor [System.IO.FileAttributes]::ReadOnly
+          }
+        }
+        [System.IO.File]::WriteAllText($Path, $Content, (New-Object System.Text.UTF8Encoding($false)))
+        return $true
+      } catch [System.UnauthorizedAccessException] {
+        try {
+          $tmp = "$Path.$PID.$(Get-Random).tmp"
+          [System.IO.File]::WriteAllText($tmp, $Content, (New-Object System.Text.UTF8Encoding($false)))
+          if (Test-Path -LiteralPath $Path) {
+            $bak = "$Path.bak"
+            if (Test-Path -LiteralPath $bak) { Remove-Item -LiteralPath $bak -Force -ErrorAction SilentlyContinue }
+            Rename-Item -LiteralPath $Path -NewName (Split-Path -Leaf $bak) -Force -ErrorAction Stop
+          }
+          Move-Item -LiteralPath $tmp -Destination $Path -Force -ErrorAction Stop
+          return $true
+        } catch {
+          $newPath = "$Path.new"
+          try {
+            [System.IO.File]::WriteAllText($newPath, $Content, (New-Object System.Text.UTF8Encoding($false)))
+            Write-Status ("    [WARN] Файл заблокирован. Новый записан как: $newPath") "Yellow"
+          } catch {}
+          return $false
+        }
+      }
+    }
+
+    function New-LauncherShortcutSync {
+      param([string]$Name, [string]$ScriptFile)
+      $launcher = Join-Path $scriptsDir $ScriptFile
+      if (-not (Test-Path -LiteralPath $launcher)) { return $false }
+
+      $cmdPath = Join-Path $hiddenDir "$Name.cmd"
+      $lnkPath = Join-Path $hiddenDir "$Name.lnk"
+      $created = $false
+      $cmdContent = "@echo off`r`nchcp 65001 >nul 2>`&1`r`npowershell -NoProfile -ExecutionPolicy Bypass -Command `"& '$launcher'`"`r`nif ($LASTEXITCODE -ne 0) pause"
+      if ($Force -or -not (Test-Path -LiteralPath $cmdPath)) {
+        $ok = Write-CmdFile-Safe -Path $cmdPath -Content $cmdContent
+        if ($ok) { $created = $true }
+      }
+      if (-not (Test-Path -LiteralPath $lnkPath)) {
+        try {
+          $cmdExe = (Get-Command cmd.exe -ErrorAction SilentlyContinue).Source
+          if (-not $cmdExe) { $cmdExe = "$env:SystemRoot\System32\cmd.exe" }
+          $shell = New-Object -ComObject WScript.Shell -ErrorAction Stop
+          $lnk = $shell.CreateShortcut($lnkPath)
+          $lnk.TargetPath = $cmdExe
+          $lnk.Arguments = "/k chcp 65001 >nul & `"$psExe`" -NoProfile -ExecutionPolicy Bypass -File `"$launcher`""
+          $lnk.WorkingDirectory = $RepoDir
+          $lnk.WindowStyle = 1
+          $lnk.Save()
+          $created = $true
+        } catch {}
+      }
+      return $created
+    }
+
+    function New-DesktopLaunchShortcut {
+      param([string]$Name, [string]$TargetCmd)
+      $lnkPath = Join-Path $desktop "$Name.lnk"
+      if (Test-Path -LiteralPath $lnkPath) { return $false }
+      try {
+        $cmdExe = (Get-Command cmd.exe -ErrorAction SilentlyContinue).Source
+        if (-not $cmdExe) { $cmdExe = "$env:SystemRoot\System32\cmd.exe" }
+        $shell = New-Object -ComObject WScript.Shell -ErrorAction Stop
+        $lnk = $shell.CreateShortcut($lnkPath)
+        $lnk.TargetPath = $cmdExe
+        $lnk.Arguments = "/c `"$TargetCmd`""
+        $lnk.WorkingDirectory = $hiddenDir
+        $lnk.WindowStyle = 1
+        $lnk.Save()
+        return $true
+      } catch { return $false }
+    }
+
+    $map = @(
+      @{ Cli = "qwen";       Name = "Qwen Code (cloud)";   Script = "run-qwen-code-launcher.ps1";  ShortName = "Qwen Code" }
+      @{ Cli = "claude";     Name = "Claude Code (cloud)"; Script = "run-claude-cloud-launcher.ps1"; ShortName = "Claude Code" }
+      @{ Cli = "opencode";   Name = "OpenCode (cloud)";    Script = "run-opencode-launcher.ps1";     ShortName = "OpenCode" }
+      @{ Cli = "freebuff";   Name = "Freebuff (cloud)";    Script = "run-freebuff-launcher.ps1";     ShortName = "Freebuff" }
+      @{ Cli = "openclaude"; Name = "OpenClaude (cloud)";  Script = "run-openclaude-launcher.ps1";   ShortName = "OpenClaude" }
+    )
+
+    $added = 0
+    $present = 0
+    foreach ($entry in $map) {
+      if (-not (Test-CliInstalled -CmdName $entry.Cli)) {
+        Write-Status ("  [SKIP] {0} CLI не установлен — ярлык пропущен" -f $entry.Cli) "DarkGray"
+        continue
+      }
+
+      $hasLnk = Test-Path -LiteralPath (Join-Path $hiddenDir "$($entry.Name).lnk")
+      $hasCmd = Test-Path -LiteralPath (Join-Path $hiddenDir "$($entry.Name).cmd")
+      if (-not $Force -and ($hasLnk -or $hasCmd)) {
+        $present++
+      } else {
+        $created = New-LauncherShortcutSync -Name $entry.Name -ScriptFile $entry.Script
+        if ($created) {
+          Write-Status ("  [+] {0}" -f $entry.Name) "Green"
+          $added++
+        } elseif ($Force) {
+          $present++
+        }
+      }
+
+      $desktopLnk = Join-Path $desktop "$($entry.ShortName).lnk"
+      if (-not (Test-Path -LiteralPath $desktopLnk)) {
+        $cmdTarget = Join-Path $hiddenDir "$($entry.Name).cmd"
+        $ok = New-DesktopLaunchShortcut -Name $entry.ShortName -TargetCmd $cmdTarget
+        if ($ok) { $added++ }
+      }
+    }
+
+    Write-Host ""
+    Write-Status ("Ярлыки: в скрытой папке = {0}, на рабочем столе = 5" -f ($present + $added)) "Cyan"
 }
 
 # --- Update all components ---
@@ -623,28 +994,49 @@ if ($installChoice -eq "7") {
     return
 }
 
-# --- Sync shortcuts only (no npm update) ---
+# --- Reorder desktop shortcuts: hide cloud files, keep only 5 launchers visible ---
 if ($installChoice -eq "9") {
     Write-Host ""
     Write-Status "======================================================================" "Cyan"
-    Write-Status "СИНХРОНИЗАЦИЯ ЯРЛЫКОВ" "Magenta"
+    Write-Status "УПОРЯДОЧЕНИЕ ЯРЛЫКОВ НА РАБОЧЕМ СТОЛЕ" "Magenta"
     Write-Status "======================================================================" "Cyan"
     Write-Host ""
 
-    if (-not (Test-Path -LiteralPath $InstallDir)) {
-        Write-Status "Репозиторий не найден: $InstallDir" "Red"
-        Write-Status "Сначала установите инструменты через пункт [6]." "Yellow"
-        Read-Host "Нажмите Enter для выхода"
-        return
+    $desktop = [Environment]::GetFolderPath("Desktop")
+    if (-not $desktop -or -not (Test-Path -LiteralPath $desktop)) {
+      $desktop = Join-Path $env:USERPROFILE "Desktop"
+      if (-not (Test-Path -LiteralPath $desktop)) { $desktop = $env:USERPROFILE }
     }
 
-    Write-Status "Проверка ярлыков для установленных CLI..." "Cyan"
-    Sync-LauncherShortcuts -RepoDir $InstallDir
+    $cloudFolder = Join-Path $desktop "Cloud Launchers"
+    if (-not (Test-Path -LiteralPath $cloudFolder)) {
+      Write-Status "Папка Cloud Launchers не найдена. Сначала запустите установку." "Yellow"
+      Read-Host "Нажмите Enter для выхода"
+      return
+    }
+
+    # Hide Cloud Launchers folder
+    $folderItem = Get-Item -LiteralPath $cloudFolder -Force
+    $folderItem.Attributes = $folderItem.Attributes -bor [System.IO.FileAttributes]::Hidden
+
+    # Hide all .cmd files in Cloud Launchers
+    Get-ChildItem -LiteralPath $cloudFolder -Filter "*.cmd" | ForEach-Object {
+      $_.Attributes = $_.Attributes -bor [System.IO.FileAttributes]::Hidden
+    }
+
+    # Hide any remaining cloud files on desktop root (legacy cleanup)
+    Get-ChildItem -LiteralPath $desktop -Filter "*.cmd" | Where-Object { $_.BaseName -like "* (cloud)" -or $_.BaseName -like "*cloud*" } | ForEach-Object {
+      $_.Attributes = $_.Attributes -bor [System.IO.FileAttributes]::Hidden
+    }
+    Get-ChildItem -LiteralPath $desktop -Filter "*.lnk" | Where-Object { $_.BaseName -like "* (cloud)" -or $_.BaseName -like "*cloud*" } | ForEach-Object {
+      $_.Attributes = $_.Attributes -bor [System.IO.FileAttributes]::Hidden
+    }
 
     Write-Host ""
-    Write-Status "======================================================================" "Green"
-    Write-Status "ЯРЛЫКИ ОБНОВЛЕНЫ" "Green"
-    Write-Status "======================================================================" "Green"
+    Write-Status "Готово." "Green"
+    Write-Status "  - Папка Cloud Launchers скрыта" "DarkGray"
+    Write-Status "  - .cmd файлы в папке скрыты" "DarkGray"
+    Write-Status "  - На рабочем столе остались только 5 ярлыков: Qwen Code, Claude Code, OpenCode, Freebuff, OpenClaude" "DarkGray"
     Write-Host ""
     Read-Host "Нажмите Enter для выхода"
     return
@@ -1008,52 +1400,10 @@ Write-Status "СОЗДАНИЕ ЯРЛЫКОВ НА РАБОЧЕМ СТОЛЕ" "M
 Write-Status "======================================================================" "Cyan"
 Write-Host ""
 
-$desktop = [Environment]::GetFolderPath("Desktop")
-if (-not $desktop -or -not (Test-Path -LiteralPath $desktop)) {
-    $desktop = Join-Path $env:USERPROFILE "Desktop"
-    if (-not (Test-Path -LiteralPath $desktop)) {
-        $desktop = $env:USERPROFILE
-    }
-}
-
 $psExe = (Get-Command powershell.exe -ErrorAction SilentlyContinue).Source
 if (-not $psExe) { $psExe = "powershell.exe" }
 $scriptsDir = Join-Path $InstallDir "scripts"
 
-function New-LauncherShortcut {
-    param([string]$Name, [string]$ScriptFile)
-    $launcher = Join-Path $scriptsDir $ScriptFile
-    if (-not (Test-Path -LiteralPath $launcher)) { return }
-
-    $cmdPath = Join-Path $desktop "$Name.cmd"
-    $cmdContent = "@echo off`r`nchcp 65001 >nul 2>`&1`r`npowershell -NoProfile -ExecutionPolicy Bypass -Command `"& '$launcher'`"`r`nif ($LASTEXITCODE -ne 0) pause"
-    [System.IO.File]::WriteAllText($cmdPath, $cmdContent, (New-Object System.Text.UTF8Encoding($false)))
-    Write-Status "  [OK] $Name.cmd" "Green"
-
-    $lnkPath = Join-Path $desktop "$Name.lnk"
-    try {
-        $cmdExe = (Get-Command cmd.exe -ErrorAction SilentlyContinue).Source
-        if (-not $cmdExe) { $cmdExe = "$env:SystemRoot\System32\cmd.exe" }
-        $shell = New-Object -ComObject WScript.Shell -ErrorAction Stop
-        $lnk = $shell.CreateShortcut($lnkPath)
-        $lnk.TargetPath = $cmdExe
-        $lnk.Arguments = "/k chcp 65001 >nul & `"$psExe`" -NoProfile -ExecutionPolicy Bypass -File `"$launcher`""
-        $lnk.WorkingDirectory = $InstallDir
-        $lnk.WindowStyle = 1
-        $lnk.Save()
-        Write-Status "  [OK] $Name.lnk" "Green"
-    } catch {
-        # .lnk failed, but .cmd is available
-    }
-}
-
-if ($installQwen)     { New-LauncherShortcut -Name "Qwen Code (cloud)"     -ScriptFile "run-qwen-code-launcher.ps1" }
-if ($installClaude)   { New-LauncherShortcut -Name "Claude Code (cloud)"   -ScriptFile "run-claude-cloud-launcher.ps1" }
-if ($installOpenCode) { New-LauncherShortcut -Name "OpenCode (cloud)"      -ScriptFile "run-opencode-launcher.ps1" }
-if ($installFreebuff) { New-LauncherShortcut -Name "Freebuff (cloud)"      -ScriptFile "run-freebuff-launcher.ps1" }
-if ($installOpenClaude) { New-LauncherShortcut -Name "OpenClaude (cloud)"  -ScriptFile "run-openclaude-launcher.ps1" }
-
-# Also (re)create shortcuts via the dedicated helper script (keeps them in sync)
 try {
     $shortcutScript = Join-Path $scriptsDir "create-desktop-shortcuts.ps1"
     if (Test-Path -LiteralPath $shortcutScript) {

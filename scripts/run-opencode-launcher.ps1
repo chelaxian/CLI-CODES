@@ -704,7 +704,11 @@ $staticOrOC = @(
 $zaiMapOC = @{ "glm-5.1" = "zai-glm51"; "glm-4.7" = "zai-glm"; "glm-4.7-flash" = "zai-flash47" }
 $zaiResOC = Build-GroupMenuItems -Provider "zai" -StaticItems $staticZaiOC -ApiKeyEnv "ZAI_API_KEY" -FetchScript "Get-ZaiCodingModelIdsFromApi" -IdPrefix "zai-" -ApiIdToPresetId $zaiMapOC -ForcedIds @("glm-4.7-flash")
 $nimMap = @{ "mistralai/mistral-medium-3.5-128b" = "nim-mistral-medium"; "z-ai/glm-5.1" = "nim-glm51"; "stepfun-ai/step-3.5-flash" = "nim-step-3.5-flash"; "mistralai/mistral-large-3-675b-instruct-2512" = "nim-mistral-large-3"; "deepseek-ai/deepseek-v4-flash" = "nim-deepseek-v4-flash"; "deepseek-ai/deepseek-v4-pro" = "nim-deepseek-v4-pro"; "qwen/qwen3.5-397b-a17b" = "nim-qwen3.5-397b"; "qwen/qwen3-next-80b-a3b-instruct" = "nim-qwen3-next-80b"; "qwen/qwen3-coder-480b-a35b-instruct" = "nim-qwen3-coder-480b"; "google/gemma-4-31b-it" = "nim-gemma-4-31b"; "nvidia/llama-3.1-nemotron-70b-instruct" = "nim-nemotron-70b" }
-$nimResOC = Build-GroupMenuItems -Provider "nim" -StaticItems $staticNimOC -ApiKeyEnv "NVIDIA_NIM_API_KEY" -FetchScript "Get-NvidiaNimModelIdsFromApi" -AgenticOnly -IdPrefix "nim-" -ApiIdToPresetId $nimMap -
+$nimResOC = Build-GroupMenuItems -Provider "nim" -StaticItems $staticNimOC -ApiKeyEnv "NVIDIA_NIM_API_KEY" -FetchScript "Get-NvidiaNimModelIdsFromApi" -AgenticOnly -IdPrefix "nim-" -ApiIdToPresetId $nimMap -ForcedIds @("glm-4.7-flash")
+$baiMapOC = @{}
+$baiResOC = Build-GroupMenuItems -Provider "bai" -StaticItems $staticBaiOC -ApiKeyEnv "BAI_API_KEY" -FetchScript "Get-BaiNonPremiumModelIds" -IdPrefix "bai-" -ApiIdToPresetId $baiMapOC
+$orMapOC = @{}
+$orResOC = Build-GroupMenuItems -Provider "openrouter" -StaticItems $staticOrOC -ApiKeyEnv "OPENROUTER_API_KEY" -FetchScript "Get-OpenRouterFreeModelIdsFromApi" -IdPrefix "openrouter-" -ApiIdToPresetId $orMapOC
 $groupHintsOC = @()
 if ($zaiResOC.Source -eq "static")  { $groupHintsOC += "Z.AI: статический список" }
 if ($nimResOC.Source -eq "static")  { $groupHintsOC += "NIM: статический список" }

@@ -1,4 +1,6 @@
-# Создаёт ярлыки на рабочем столе: Claude/Qwen Code (cloud), OpenCode, Freebuff, OpenClaude.
+# Создаёт ярлыки на рабочем столе: скрытая папка "Cloud Launchers" с техническими файлами,
+# и ровно 5 видимых ярлыков на рабочем столе (Qwen Code, Claude Code, OpenCode, Freebuff, OpenClaude).
+# При повторном запуске перемещает старые файлы проекта из корня рабочего стола в скрытую папку.
 # Запуск: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\create-desktop-shortcuts.ps1 -RepoRoot "D:\qwen-local-setup"
 
 [CmdletBinding()]
@@ -30,70 +32,81 @@ foreach ($p in @($launcherClaude, $launcherQwen, $launcherOpenCode, $launcherFre
   if (-not (Test-Path -LiteralPath $p)) { throw "Не найден файл: $p" }
 }
 
-function New-Shortcut {
-  param(
-    [string]$LinkPath,
-    [string]$TargetPath,
-    [string]$Arguments,
-    [string]$WorkingDirectory,
-    [string]$Description
-  )
-  $s = $ws.CreateShortcut($LinkPath)
-  $s.TargetPath = $TargetPath
-  $s.Arguments = $Arguments
-  $s.WorkingDirectory = $WorkingDirectory
-  $s.WindowStyle = 1
-  if ($Description) { $s.Description = $Description }
-  $s.Save()
+$cloudFolder = Join-Path $DesktopPath "Cloud Launchers"
+if (-not (Test-Path -LiteralPath $cloudFolder)) {
+  New-Item -ItemType Directory -Path $cloudFolder -Force | Out-Null
+}
+$folderItem = Get-Item -LiteralPath $cloudFolder
+$folderItem.Attributes = $folderItem.Attributes -bor [System.IO.FileAttributes]::Hidden
 
-  $item = Get-Item -LiteralPath $LinkPath
-  $item.Attributes = $item.Attributes -band (-bnot [System.IO.FileAttributes]::Hidden)
+# Migrate ALL old cloud-related files from desktop root to hidden folder
+$cloudBaseNames = @("Qwen Code (cloud)", "Claude Code (cloud)", "OpenCode (cloud)", "Freebuff (cloud)", "OpenClaude (cloud)")
+foreach ($baseName in $cloudBaseNames) {
+  foreach ($ext in @(".cmd", ".lnk")) {
+    $oldPath = Join-Path $DesktopPath "$baseName$ext"
+    $newPath = Join-Path $cloudFolder "$baseName$ext"
+    if ((Test-Path -LiteralPath $oldPath) -and -not (Test-Path -LiteralPath $newPath)) {
+      Move-Item -LiteralPath $oldPath -Destination $newPath -Force -ErrorAction SilentlyContinue
+    }
+  }
 }
 
-New-Shortcut `
-  -LinkPath (Join-Path $DesktopPath "Claude Code (cloud).lnk") `
-  -TargetPath $cmdExe `
-  -Arguments ('/k chcp 65001 >nul & ' + $psExe + ' -NoProfile -ExecutionPolicy Bypass -File "' + $launcherClaude + '"') `
-  -WorkingDirectory $RepoRoot `
-  -Description "Claude Code: Z.AI или NIM через free-claude-code - меню."
-
-New-Shortcut `
-  -LinkPath (Join-Path $DesktopPath "Qwen Code (cloud).lnk") `
-  -TargetPath $cmdExe `
-  -Arguments ('/k chcp 65001 >nul & ' + $psExe + ' -NoProfile -ExecutionPolicy Bypass -File "' + $launcherQwen + '"') `
-  -WorkingDirectory $RepoRoot `
-  -Description "Qwen Code: Z.AI Coding / NVIDIA NIM - меню."
-
-New-Shortcut `
-  -LinkPath (Join-Path $DesktopPath "OpenCode (cloud).lnk") `
-  -TargetPath $cmdExe `
-  -Arguments ('/k chcp 65001 >nul & ' + $psExe + ' -NoProfile -ExecutionPolicy Bypass -File "' + $launcherOpenCode + '"') `
-  -WorkingDirectory $RepoRoot `
-  -Description "OpenCode: Z.AI / NIM / OpenRouter - меню выбора модели."
-
-New-Shortcut `
-  -LinkPath (Join-Path $DesktopPath "Freebuff (cloud).lnk") `
-  -TargetPath $cmdExe `
-  -Arguments ('/k chcp 65001 >nul & ' + $psExe + ' -NoProfile -ExecutionPolicy Bypass -File "' + $launcherFreebuff + '"') `
-  -WorkingDirectory $RepoRoot `
-  -Description "Freebuff: free coding agent - меню выбора модели."
-
-New-Shortcut `
-  -LinkPath (Join-Path $DesktopPath "OpenClaude (cloud).lnk") `
-  -TargetPath $cmdExe `
-  -Arguments ('/k chcp 65001 >nul & ' + $psExe + ' -NoProfile -ExecutionPolicy Bypass -File "' + $launcherOpenClaude + '"') `
-  -WorkingDirectory $RepoRoot `
-  -Description "OpenClaude: OpenAI-compatible coding-agent workflow."
-
-foreach ($p in @($launcherClaude, $launcherQwen, $launcherOpenCode, $launcherFreebuff, $launcherOpenClaude)) {
-  $item = Get-Item -LiteralPath $p
-  $item.Attributes = $item.Attributes -bor [System.IO.FileAttributes]::Hidden
+# Hide ALL internal files in Cloud Launchers (folder itself is already hidden)
+Get-ChildItem -LiteralPath $cloudFolder -Filter "*.cmd" | ForEach-Object {
+  $_.Attributes = $_.Attributes -bor [System.IO.FileAttributes]::Hidden
 }
-
-Get-ChildItem -LiteralPath $DesktopPath -Filter "*.cmd" | ForEach-Object {
+Get-ChildItem -LiteralPath $cloudFolder -Filter "*.lnk" | ForEach-Object {
   $_.Attributes = $_.Attributes -bor [System.IO.FileAttributes]::Hidden
 }
 
-$shortcutNames = @("Claude Code (cloud)", "Qwen Code (cloud)", "OpenCode (cloud)", "Freebuff (cloud)", "OpenClaude (cloud)")
-Write-Host ("Shortcuts created on desktop: " + ($shortcutNames -join ", ")) -ForegroundColor Green
-Write-Host "RepoRoot=$RepoRoot  Desktop=$DesktopPath" -ForegroundColor DarkGray
+function New-LauncherShortcut {
+  param(
+    [string]$Name,
+    [string]$ScriptFile
+  )
+  $launcher = Join-Path $RepoRoot "scripts" $ScriptFile
+  if (-not (Test-Path -LiteralPath $launcher)) { return }
+
+  $cmdPath = Join-Path $cloudFolder "$Name.cmd"
+  $cmdContent = "@echo off`r`nchcp 65001 >nul 2>`&1`r`npowershell -NoProfile -ExecutionPolicy Bypass -Command `"& '$launcher'`"`r`nif ($LASTEXITCODE -ne 0) pause"
+  [System.IO.File]::WriteAllText($cmdPath, $cmdContent, (New-Object System.Text.UTF8Encoding($false)))
+
+  $lnkPath = Join-Path $cloudFolder "$Name.lnk"
+  $s = $ws.CreateShortcut($lnkPath)
+  $s.TargetPath = $cmdExe
+  $s.Arguments = "/k chcp 65001 >nul & `"$psExe`" -NoProfile -ExecutionPolicy Bypass -File `"$launcher`""
+  $s.WorkingDirectory = $RepoRoot
+  $s.WindowStyle = 1
+  $s.Save()
+  $item = Get-Item -LiteralPath $lnkPath
+  $item.Attributes = $item.Attributes -band (-bnot [System.IO.FileAttributes]::Hidden)
+}
+
+New-LauncherShortcut -Name "Qwen Code (cloud)" -ScriptFile "run-qwen-code-launcher.ps1"
+New-LauncherShortcut -Name "Claude Code (cloud)" -ScriptFile "run-claude-cloud-launcher.ps1"
+New-LauncherShortcut -Name "OpenCode (cloud)" -ScriptFile "run-opencode-launcher.ps1"
+New-LauncherShortcut -Name "Freebuff (cloud)" -ScriptFile "run-freebuff-launcher.ps1"
+New-LauncherShortcut -Name "OpenClaude (cloud)" -ScriptFile "run-openclaude-launcher.ps1"
+
+# Create exactly 5 visible .lnk shortcuts on desktop
+$visibleLinks = @(
+  @{ Name = "Qwen Code";   Target = (Join-Path $cloudFolder "Qwen Code (cloud).cmd") },
+  @{ Name = "Claude Code"; Target = (Join-Path $cloudFolder "Claude Code (cloud).cmd") },
+  @{ Name = "OpenCode";    Target = (Join-Path $cloudFolder "OpenCode (cloud).cmd") },
+  @{ Name = "Freebuff";    Target = (Join-Path $cloudFolder "Freebuff (cloud).cmd") },
+  @{ Name = "OpenClaude";  Target = (Join-Path $cloudFolder "OpenClaude (cloud).cmd") }
+)
+
+foreach ($link in $visibleLinks) {
+  $linkPath = Join-Path $DesktopPath "$($link.Name).lnk"
+  $s = $ws.CreateShortcut($linkPath)
+  $s.TargetPath = $link.Target
+  $s.WorkingDirectory = $RepoRoot
+  $s.WindowStyle = 1
+  $s.Save()
+  $item = Get-Item -LiteralPath $linkPath
+  $item.Attributes = $item.Attributes -band (-bnot [System.IO.FileAttributes]::Hidden)
+}
+
+Write-Host ("Shortcuts created: " + ("Qwen Code, Claude Code, OpenCode, Freebuff, OpenClaude" -join ", ")) -ForegroundColor Green
+Write-Host ("Cloud folder: " + $cloudFolder) -ForegroundColor DarkGray

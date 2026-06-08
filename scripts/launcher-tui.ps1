@@ -507,13 +507,17 @@ function Resolve-CommandOrInstall {
     Write-Host ""
     Write-Host "  npm install завершился с кодом $LASTEXITCODE." -ForegroundColor Red
     Write-Host "  Возможные причины:" -ForegroundColor Yellow
-    Write-Host "    - Гео-блокировка (РФ/РБ/Иран) — включите VPN" -ForegroundColor Yellow
+    Write-Host "    - Гео-блокировка (РФ/РБ/Иран) — включите VPN и повторите" -ForegroundColor Yellow
     Write-Host "    - Нет прав — запустите от администратора" -ForegroundColor Yellow
     Write-Host "    - Проблемы с сетью — проверьте интернет" -ForegroundColor Yellow
     Write-Host "  Нажмите любую клавишу..." -ForegroundColor DarkGray
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
     return ""
   }
+
+  Write-Host ""
+  Write-Host "  [OK] $DisplayName установлен." -ForegroundColor Green
+  Write-Host ""
 
   foreach ($name in @($CommandName, $AltCommandName)) {
     if ([string]::IsNullOrWhiteSpace($name)) { continue }
