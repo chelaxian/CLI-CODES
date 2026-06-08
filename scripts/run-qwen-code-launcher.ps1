@@ -428,6 +428,10 @@ if ($zaiRes.Source -eq "static")  { $groupHints += "Z.AI: статический
 if ($nimRes.Source -eq "static")  { $groupHints += "NIM: статический список" }
 if ($baiRes.Source -eq "static")  { $groupHints += "B.AI: статический список" }
 if ($orRes.Source -eq "static")   { $groupHints += "OpenRouter: статический список" }
+if ($zaiRes.Source -eq "API")  { $script:GroupMenus.zai = $zaiRes.Items }
+if ($nimRes.Source -eq "API")  { $script:GroupMenus.nim = $nimRes.Items }
+if ($baiRes.Source -eq "API")  { $script:GroupMenus.bai = $baiRes.Items }
+if ($orRes.Source -eq "API")   { $script:GroupMenus.openrouter = $orRes.Items }
 if ($groupHints.Count -gt 0) {
   $updateHint = "$updateHint | ($($groupHints -join ', '))"
 }

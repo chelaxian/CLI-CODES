@@ -714,6 +714,10 @@ if ($zaiResOC.Source -eq "static")  { $groupHintsOC += "Z.AI: статическ
 if ($nimResOC.Source -eq "static")  { $groupHintsOC += "NIM: статический список" }
 if ($baiResOC.Source -eq "static")  { $groupHintsOC += "B.AI: статический список" }
 if ($orResOC.Source -eq "static")   { $groupHintsOC += "OpenRouter: статический список" }
+if ($zaiResOC.Source -eq "API")  { $script:GroupMenus.zai = $zaiResOC.Items }
+if ($nimResOC.Source -eq "API")  { $script:GroupMenus.nim = $nimResOC.Items }
+if ($baiResOC.Source -eq "API")  { $script:GroupMenus.bai = $baiResOC.Items }
+if ($orResOC.Source -eq "API")   { $script:GroupMenus.openrouter = $orResOC.Items }
 if ($groupHintsOC.Count -gt 0) {
   $updateHint = "$updateHint | ($($groupHintsOC -join ', '))"
 }

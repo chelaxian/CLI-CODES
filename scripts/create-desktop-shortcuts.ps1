@@ -51,6 +51,14 @@ foreach ($baseName in $cloudBaseNames) {
   }
 }
 
+# Also move any other project-related .cmd/.ps1 files from desktop
+Get-ChildItem -LiteralPath $DesktopPath -Filter "*.cmd" | Where-Object { $_.Name -notlike "Qwen Code*" -and $_.Name -notlike "Claude Code*" -and $_.Name -notlike "OpenCode*" -and $_.Name -notlike "Freebuff*" -and $_.Name -notlike "OpenClaude*" } | ForEach-Object {
+  $dest = Join-Path $cloudFolder $_.Name
+  if (-not (Test-Path -LiteralPath $dest)) {
+    Move-Item -LiteralPath $_.FullName -Destination $dest -Force -ErrorAction SilentlyContinue
+  }
+}
+
 # Hide ALL internal files in Cloud Launchers (folder itself is already hidden)
 Get-ChildItem -LiteralPath $cloudFolder -Filter "*.cmd" | ForEach-Object {
   $_.Attributes = $_.Attributes -bor [System.IO.FileAttributes]::Hidden
