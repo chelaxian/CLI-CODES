@@ -582,6 +582,7 @@ function Build-GroupMenuItems {
     if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") { $key = ${env:$ApiKeyEnv} }
 
     if (-not [string]::IsNullOrWhiteSpace($key)) {
+      Write-Host "  [DEBUG] $Provider : trying dynamic fetch, key prefix=$($key.Substring(0, [Math]::Min(8, $key.Length)))..." -ForegroundColor DarkGray
       try {
         $prevEAP = $ErrorActionPreference
         $ErrorActionPreference = "Continue"
@@ -591,8 +592,11 @@ function Build-GroupMenuItems {
         if ($AgenticOnly) { $splatted.AgenticOnly = $true }
         foreach ($k in $ExtraFetchArgs.Keys) { $splatted[$k] = $ExtraFetchArgs[$k] }
 
+        Write-Host "  [DEBUG] $Provider : calling $FetchScript" -ForegroundColor DarkGray
         $ids = & $FetchScript @splatted
         $ErrorActionPreference = $prevEAP
+
+        Write-Host "  [DEBUG] $Provider : fetch returned $($ids.Count) items" -ForegroundColor DarkGray
 
         if ($ids -and $ids.Count -gt 0) {
           $items = @()
@@ -601,7 +605,6 @@ function Build-GroupMenuItems {
             if (-not $mid) { continue }
             $lowerMid = $mid.ToLowerInvariant()
 
-            # Skip if not in allowed list (when AllowedApiIds provided)
             if ($AllowedApiIds.Count -gt 0 -and $lowerMid -notin $AllowedApiIds) { continue }
 
             if ($ApiIdToPresetId.ContainsKey($lowerMid)) {
@@ -616,24 +619,18 @@ function Build-GroupMenuItems {
           if ($items.Count -gt 0) {
             $source = "API"
             $hint = " (live)"
+            Write-Host "  [DEBUG] $Provider : using dynamic list ($($items.Count) items)" -ForegroundColor DarkGreen
           }
         }
 
-        # Add forced IDs that were not returned by API
-        if ($ForcedIds.Count -gt 0) {
-          $existingIds = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
-          foreach ($it in $items) { [void]$existingIds.Add($it.Id) }
-          foreach ($fid in $ForcedIds) {
-            $fidLower = $fid.ToLowerInvariant()
-            $mappedId = $ApiIdToPresetId[$fidLower]
-            $checkId = if ($mappedId) { $mappedId.ToLowerInvariant() } else { $fidLower }
-            if (-not $existingIds.Contains($checkId)) {
-              $forcedId = if ($mappedId) { $mappedId } else { "$IdPrefix$fid" }
-              $items += [pscustomobject]@{ Id = $forcedId; Label = "$Provider - $fid" }
-            }
-          }
+        if ($source -eq "static") {
+          Write-Host "  [DEBUG] $Provider : fetch returned 0 items, falling back to static" -ForegroundColor DarkYellow
         }
-      } catch {}
+      } catch {
+        Write-Host "  [DEBUG] $Provider : fetch EXCEPTION: $_" -ForegroundColor Red
+      }
+    } else {
+      Write-Host "  [DEBUG] $Provider : no API key found (env=$ApiKeyEnv), using static" -ForegroundColor DarkYellow
     }
   }
 
