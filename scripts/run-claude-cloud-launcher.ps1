@@ -291,17 +291,34 @@ function Invoke-ClaudeCloudProfile {
     }
     default {
       if ($ProfileId -like "claude-bai-*") {
-        # B.AI в Claude Code v2.x не поддерживается: native binary не умеет
-        # OpenAI-compat, а free-claude-code не имеет b_ai provider и не разрешает
-        # переопределять base_url для nvidia_nim/open_router. Используйте OpenClaude.
         Write-Host ""
         Write-Host "B.AI в Claude Code не поддерживается." -ForegroundColor Yellow
-        Write-Host "Причина: Claude Code v2.x native binary не умеет OpenAI-compat провайдеры напрямую," -ForegroundColor DarkGray
-        Write-Host "        а free-claude-code не имеет provider 'b_ai' и не позволяет переопределить base URL." -ForegroundColor DarkGray
-        Write-Host ""
-        Write-Host "Запустите лаунчер OpenClaude и выберите B.AI там — там работает." -ForegroundColor Cyan
+        Write-Host "Используйте OpenClaude launcher." -ForegroundColor Cyan
         Write-Host "Нажмите любую клавишу для возврата в меню…" -ForegroundColor DarkGray
         [void][Console]::ReadKey($true)
+        return
+      }
+      # Dynamic Z.AI dispatch
+      if ($ProfileId -like "claude-zai-*") {
+        $mid = $ProfileId.Substring("claude-zai-".Length)
+        & $SessionScript -Provider zai -ZaiAnthropicModelId $mid -ClaudeTools default `
+          -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
+        return
+      }
+      # Dynamic NIM dispatch
+      if ($ProfileId -like "claude-nim-*") {
+        $catalog = $ProfileId.Substring("claude-nim-".Length)
+        $full = "nvidia_nim/$catalog"
+        $claudeTools = if (Test-NvidiaNimOpenAiNativeToolCalling $catalog) { "default" } else { "minimal" }
+        & $SessionScript -Provider nim -NimModel $full -ClaudeTools $claudeTools `
+          -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
+        return
+      }
+      # Dynamic OpenRouter dispatch
+      if ($ProfileId -like "claude-openrouter-*") {
+        $mid = $ProfileId.Substring("claude-openrouter-".Length)
+        & $SessionScript -Provider openrouter -ZaiAnthropicModelId $mid -ClaudeTools default `
+          -ClaudeMemMaxWaitSec 25 -SkipCommonPreamble
         return
       }
       throw "Неизвестный профиль: $ProfileId"
@@ -334,6 +351,46 @@ if ($lastId) {
 }
 
 $updateHint = Test-LauncherUpdates -AgentNpmPackage "@anthropic-ai/claude-code" -AgentDisplayName "Claude Code"
+
+Write-Host "`nЗагрузка списков моделей..." -ForegroundColor DarkGray
+$staticZaiCC = @(
+  @{ Id = "claude-zai-glm51";   Label = "Z.AI - GLM-5.1 (paid, tool calling)" }
+  @{ Id = "claude-zai";         Label = "Z.AI - GLM-4.7 (paid, tool calling)" }
+  @{ Id = "claude-zai-flash47"; Label = "Z.AI - GLM-4.7-Flash (free, tool calling)" }
+)
+$staticNimCC = @(
+  @{ Id = "claude-nim-mistral-medium";   Label = "NIM - Mistral Medium 3.5 128B (free, tool calling)" }
+  @{ Id = "claude-nim-glm51";            Label = "NIM - Z.AI GLM-5.1 (free, tool calling)" }
+  @{ Id = "claude-nim-step-3.5-flash";   Label = "NIM - Step 3.5 Flash (free, tool calling)" }
+  @{ Id = "claude-nim-mistral-large-3";  Label = "NIM - Mistral Large 3 675B (free, tool calling)" }
+  @{ Id = "claude-nim-deepseek-v4-flash"; Label = "NIM - DeepSeek V4 Flash 284B MoE (free)" }
+  @{ Id = "claude-nim-gemma-4-31b";      Label = "NIM - Google Gemma-4 31B (free)" }
+  @{ Id = "claude-nim-qwen3.5-397b";     Label = "NIM - Qwen 3.5 397B A17B (free)" }
+  @{ Id = "claude-nim-qwen3-next-80b";   Label = "NIM - Qwen 3 Next 80B A3B (free)" }
+  @{ Id = "claude-nim-qwen3-coder-480b"; Label = "NIM - Qwen 3 Coder 480B A35B (free)" }
+)
+$staticOrCC = @(
+  @{ Id = "claude-openrouter-deepseek-v4-flash"; Label = "OpenRouter - DeepSeek V4 Flash (free, text-only)" }
+  @{ Id = "claude-openrouter-qwen3-coder";       Label = "OpenRouter - Qwen3 Coder (free, text-only)" }
+  @{ Id = "claude-openrouter-nemotron";          Label = "OpenRouter - Nemotron 3 Super 120B (free, text-only)" }
+  @{ Id = "claude-openrouter-laguna";            Label = "OpenRouter - Poolside Laguna M.1 (free, coding, text-only)" }
+)
+$zaiMapCC = @{ "glm-5.1" = "claude-zai-glm51"; "glm-4.7" = "claude-zai"; "glm-4.7-flash" = "claude-zai-flash47" }
+$zaiResCC = Build-GroupMenuItems -Provider "zai" -StaticItems $staticZaiCC -ApiKeyEnv "ZAI_API_KEY" -FetchScript "Get-ZaiCodingModelIdsFromApi" -IdPrefix "claude-zai-" -ApiIdToPresetId $zaiMapCC -ForcedIds @("glm-4.7-flash")
+$nimMapCC = @{ "mistralai/mistral-medium-3.5-128b" = "claude-nim-mistral-medium"; "z-ai/glm-5.1" = "claude-nim-glm51"; "stepfun-ai/step-3.5-flash" = "claude-nim-step-3.5-flash"; "mistralai/mistral-large-3-675b-instruct-2512" = "claude-nim-mistral-large-3"; "deepseek-ai/deepseek-v4-flash" = "claude-nim-deepseek-v4-flash"; "deepseek-ai/deepseek-v4-pro" = "claude-nim-deepseek-v4-pro"; "qwen/qwen3.5-397b-a17b" = "claude-nim-qwen3.5-397b"; "qwen/qwen3-next-80b-a3b-instruct" = "claude-nim-qwen3-next-80b"; "qwen/qwen3-coder-480b-a35b-instruct" = "claude-nim-qwen3-coder-480b"; "google/gemma-4-31b-it" = "claude-nim-gemma-4-31b" }
+$nimResCC = Build-GroupMenuItems -Provider "nim" -StaticItems $staticNimCC -ApiKeyEnv "NVIDIA_NIM_API_KEY" -FetchScript "Get-NvidiaNimModelIdsFromApi" -AgenticOnly -IdPrefix "claude-nim-" -ApiIdToPresetId $nimMapCC
+$orMapCC = @{ "deepseek/deepseek-v4-flash:free" = "claude-openrouter-deepseek-v4-flash"; "qwen/qwen3-coder:free" = "claude-openrouter-qwen3-coder"; "nvidia/nemotron-3-super-120b-a12b:free" = "claude-openrouter-nemotron"; "poolside/laguna-m1:free" = "claude-openrouter-laguna" }
+$orResCC = Build-GroupMenuItems -Provider "openrouter" -StaticItems $staticOrCC -ApiKeyEnv "OPENROUTER_API_KEY" -FetchScript "Get-OpenRouterFreeModelIdsFromApi" -IdPrefix "claude-openrouter-" -ApiIdToPresetId $orMapCC
+$groupHintsCC = @()
+if ($zaiResCC.Source -eq "static")  { $groupHintsCC += "Z.AI: статический список" }
+if ($nimResCC.Source -eq "static")  { $groupHintsCC += "NIM: статический список" }
+if ($orResCC.Source -eq "static")   { $groupHintsCC += "OpenRouter: статический список" }
+if ($zaiResCC.Source -eq "API")  { $script:GroupMenus.zai = $zaiResCC.Items }
+if ($nimResCC.Source -eq "API")  { $script:GroupMenus.nim = $nimResCC.Items }
+if ($orResCC.Source -eq "API")   { $script:GroupMenus.openrouter = $orResCC.Items }
+if ($groupHintsCC.Count -gt 0) {
+  $updateHint = "$updateHint | ($($groupHintsCC -join ', '))"
+}
 
 while ($true) {
   $choice = Show-TuiFramedMenu -AppBrand "Claude" -Title "Claude Code (облако) - провайдер" -Subtitle "Z.AI · NIM · OpenRouter (через free-claude-code)" -Items $items -InitialIndex $startIdx -MaxVisible 20 -UpdateHint $updateHint
