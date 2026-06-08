@@ -349,6 +349,79 @@ if ($lastId) {
 
 $updateHint = Test-LauncherUpdates -AgentNpmPackage "qwen-code" -AgentDisplayName "Qwen Code"
 
+# Build provider group menus dynamically from API (with static fallback).
+# "Загрузка моделей..." briefly shown while API calls run.
+Write-Host "`nЗагрузка списков моделей..." -ForegroundColor DarkGray
+$staticZai = @(
+  @{ Id = "zai-glm51";   Label = "Z.AI - GLM-5.1 (paid, tool calling)" }
+  @{ Id = "zai-glm";     Label = "Z.AI - GLM-4.7 (paid, tool calling)" }
+  @{ Id = "zai-flash47"; Label = "Z.AI - GLM-4.7-Flash (free, tool calling)" }
+)
+$staticNim = @(
+  @{ Id = "nim-mistral-medium";   Label = "NIM - Mistral Medium 3.5 128B (free, tool calling)";     NimModel = "nim-mistral-medium-3.5-128b" }
+  @{ Id = "nim-glm51";            Label = "NIM - Z.AI GLM-5.1 (free, tool calling)";                 NimModel = "nim-glm-5.1" }
+  @{ Id = "nim-step-3.5-flash";   Label = "NIM - Step 3.5 Flash (free, tool calling)";               NimModel = "nim-step-3.5-flash" }
+  @{ Id = "nim-mistral-large-3";  Label = "NIM - Mistral Large 3 675B (free, tool calling)";         NimModel = "nim-mistral-large-3-675b" }
+  @{ Id = "nim-deepseek-v4-flash"; Label = "NIM - DeepSeek V4 Flash 284B MoE (free)";                NimModel = "nim-deepseek-v4-flash" }
+  @{ Id = "nim-gemma-4-31b";      Label = "NIM - Google Gemma-4 31B (free)";                          NimModel = "nim-gemma-4-31b" }
+  @{ Id = "nim-qwen3.5-397b";     Label = "NIM - Qwen 3.5 397B A17B (free)";                          NimModel = "nim-qwen3.5-397b-a17b" }
+  @{ Id = "nim-qwen3-next-80b";   Label = "NIM - Qwen 3 Next 80B A3B (free)";                         NimModel = "nim-qwen3-next-80b-a3b" }
+  @{ Id = "nim-qwen3-coder-480b"; Label = "NIM - Qwen 3 Coder 480B A35B (free)";                      NimModel = "nim-qwen3-coder-480b-a35b" }
+)
+$staticBai = @(
+  @{ Id = "bai-gpt-5-nano";        Label = "B.AI - GPT-5 Nano (OpenAI, agentic)" }
+  @{ Id = "bai-gpt-5-mini";        Label = "B.AI - GPT-5 Mini (OpenAI, agentic)" }
+  @{ Id = "bai-gpt-5.2";           Label = "B.AI - GPT-5.2 (OpenAI, agentic)" }
+  @{ Id = "bai-gpt-5.4-nano";      Label = "B.AI - GPT-5.4 Nano (OpenAI, agentic)" }
+  @{ Id = "bai-gpt-5.4-mini";      Label = "B.AI - GPT-5.4 Mini (OpenAI, agentic)" }
+  @{ Id = "bai-gpt-5.4";           Label = "B.AI - GPT-5.4 (OpenAI, agentic)" }
+  @{ Id = "bai-gpt-5.4-pro";       Label = "B.AI - GPT-5.4 Pro (OpenAI, agentic)" }
+  @{ Id = "bai-gpt-5.5";           Label = "B.AI - GPT-5.5 (OpenAI, agentic)" }
+  @{ Id = "bai-gpt-5.5-instant";   Label = "B.AI - GPT-5.5 Instant (OpenAI, agentic)" }
+  @{ Id = "bai-claude-haiku-4.5";  Label = "B.AI - Claude Haiku 4.5 (Anthropic, agentic)" }
+  @{ Id = "bai-claude-sonnet-4.5"; Label = "B.AI - Claude Sonnet 4.5 (Anthropic, agentic)" }
+  @{ Id = "bai-claude-sonnet-4.6"; Label = "B.AI - Claude Sonnet 4.6 (Anthropic, agentic)" }
+  @{ Id = "bai-claude-opus-4.5";   Label = "B.AI - Claude Opus 4.5 (Anthropic, agentic)" }
+  @{ Id = "bai-claude-opus-4.6";   Label = "B.AI - Claude Opus 4.6 (Anthropic, agentic)" }
+  @{ Id = "bai-claude-opus-4.7";   Label = "B.AI - Claude Opus 4.7 (Anthropic, agentic)" }
+  @{ Id = "bai-claude-opus-4.8";   Label = "B.AI - Claude Opus 4.8 (Anthropic, agentic)" }
+  @{ Id = "bai-deepseek-v4-pro";   Label = "B.AI - DeepSeek V4 Pro (agentic)" }
+  @{ Id = "bai-deepseek-v4-flash"; Label = "B.AI - DeepSeek V4 Flash (agentic)" }
+  @{ Id = "bai-gemini-3.1-pro";    Label = "B.AI - Gemini 3.1 Pro (Google, agentic)" }
+  @{ Id = "bai-gemini-3.5-flash";  Label = "B.AI - Gemini 3.5 Flash (Google, agentic)" }
+  @{ Id = "bai-glm-5";             Label = "B.AI - GLM-5 (Z.AI)" }
+  @{ Id = "bai-glm-5.1";           Label = "B.AI - GLM-5.1 (Z.AI)" }
+  @{ Id = "bai-kimi-k2.5";         Label = "B.AI - Kimi K2.5 (Moonshot)" }
+  @{ Id = "bai-kimi-k2.6";         Label = "B.AI - Kimi K2.6 (Moonshot)" }
+  @{ Id = "bai-minimax-m3";        Label = "B.AI - MiniMax M3 (agentic)" }
+  @{ Id = "bai-minimax-m2.7";      Label = "B.AI - MiniMax M2.7 (fast)" }
+)
+$staticOr = @(
+  @{ Id = "openrouter-deepseek-v4-flash"; Label = "OpenRouter - DeepSeek V4 Flash (free, text-only)" }
+  @{ Id = "openrouter-qwen3-coder";       Label = "OpenRouter - Qwen3 Coder (free, text-only)" }
+  @{ Id = "openrouter-nemotron";          Label = "OpenRouter - Nemotron 3 Super 120B (free, text-only)" }
+  @{ Id = "openrouter-laguna";            Label = "OpenRouter - Poolside Laguna M.1 (free, text-only, coding)" }
+)
+$zaiMap = @{ "glm-5.1" = "zai-glm51"; "glm-4.7" = "zai-glm"; "glm-4.7-flash" = "zai-flash47" }
+$zaiRes = Build-GroupMenuItems -Provider "zai" -StaticItems $staticZai -ApiKeyEnv "ZAI_API_KEY" -FetchScript "Get-ZaiCodingModelIdsFromApi" -IdPrefix "zai-" -ApiIdToPresetId $zaiMap
+$nimRes = Build-GroupMenuItems -Provider "nim" -StaticItems $staticNim -ApiKeyEnv "NVIDIA_NIM_API_KEY" -FetchScript "Get-NvidiaNimModelIdsFromApi" -FilterToBundled -IdPrefix "nim-"
+$baiRes = Build-GroupMenuItems -Provider "bai" -StaticItems $staticBai -ApiKeyEnv "BAI_API_KEY" -FetchScript "Get-BaiModelIdsFromApi" -IdPrefix "bai-"
+$orRes  = Build-GroupMenuItems -Provider "openrouter" -StaticItems $staticOr -ApiKeyEnv "OPENROUTER_API_KEY" -FetchScript "Get-OpenRouterModelIdsFromApi" -IdPrefix "openrouter-"
+$script:GroupMenus = @{
+  zai        = $zaiRes.Items
+  nim        = $nimRes.Items
+  bai        = $baiRes.Items
+  openrouter = $orRes.Items
+}
+$groupHints = @()
+if ($zaiRes.Source -eq "static")  { $groupHints += "Z.AI: статический список" }
+if ($nimRes.Source -eq "static")  { $groupHints += "NIM: статический список" }
+if ($baiRes.Source -eq "static")  { $groupHints += "B.AI: статический список" }
+if ($orRes.Source -eq "static")   { $groupHints += "OpenRouter: статический список" }
+if ($groupHints.Count -gt 0) {
+  $updateHint = "$updateHint | ($($groupHints -join ', '))"
+}
+
 while ($true) {
   $choice = Show-TuiFramedMenu -AppBrand "Qwen" -Title "Qwen Code - выбор провайдера" -Subtitle "Z.AI · NIM · OpenRouter · B.AI" -Items $items -InitialIndex $startIdx -MaxVisible 20 -UpdateHint $updateHint
   if (-not $choice) {

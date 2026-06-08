@@ -528,3 +528,90 @@ function Resolve-CommandOrInstall {
   Write-Host "  Перезапустите ярлык." -ForegroundColor Yellow
   return ""
 }
+
+# ─── Build-GroupMenuItems ────────────────────────────────────────────────────
+# Dynamically builds a provider group menu by fetching models from the provider's
+# API (using the user's API key from environment). Falls back to a bundled static
+# list if the key is missing or the API call fails.
+#
+# .PARAMETER Provider
+#   "zai" | "nim" | "bai" | "openrouter"
+# .PARAMETER StaticItems
+#   Hashtable of fallback items: @{ Id = "..."; Label = "..." }
+# .PARAMETER ApiKeyEnv
+#   Name of the env var holding the API key (e.g. "ZAI_API_KEY").
+# .PARAMETER FetchScript
+#   Name of the function in launcher-provider-models.ps1 that returns model IDs.
+#   Supported: "Get-ZaiCodingModelIdsFromApi", "Get-NvidiaNimModelIdsFromApi",
+#              "Get-BaiModelIdsFromApi", "Get-OpenRouterModelIdsFromApi".
+# .PARAMETER FilterToBundled
+#   If $true, filter API results against bundled free/preview catalog.
+# .PARAMETER IdPrefix
+#   Prefix for item IDs (e.g. "claude-" for Claude launcher, "" for others).
+# .PARAMETER ApiIdToPresetId
+#   Hashtable mapping API model id -> preset id for providers where they differ
+#   (e.g. @{ "glm-5.1" = "zai-glm51"; "glm-4.7" = "zai-glm" }).
+#
+# Returns array of @{Id; Label} items.
+function Build-GroupMenuItems {
+  param(
+    [Parameter(Mandatory)][string]$Provider,
+    [Parameter(Mandatory)][object[]]$StaticItems,
+    [string]$ApiKeyEnv = "",
+    [string]$FetchScript = "",
+    [switch]$FilterToBundled,
+    [string]$IdPrefix = "",
+    [hashtable]$ApiIdToPresetId = @{}
+  )
+
+  $items = $StaticItems
+  $source = "static"
+  $hint = ""
+
+  # Try dynamic fetch
+  if (-not [string]::IsNullOrWhiteSpace($ApiKeyEnv) -and -not [string]::IsNullOrWhiteSpace($FetchScript)) {
+    $key = [Environment]::GetEnvironmentVariable($ApiKeyEnv, "User")
+    if ([string]::IsNullOrWhiteSpace($key) -or $key -eq "__SET_ME__") { $key = ${env:$ApiKeyEnv} }
+
+    if (-not [string]::IsNullOrWhiteSpace($key)) {
+      try {
+        $prevEAP = $ErrorActionPreference
+        $ErrorActionPreference = "Continue"
+        if ($FilterToBundled) {
+          $ids = & $FetchScript -ApiKey $key -FilterToBundled
+        } else {
+          $ids = & $FetchScript -ApiKey $key
+        }
+        $ErrorActionPreference = $prevEAP
+
+        if ($ids -and $ids.Count -gt 0) {
+          $items = @()
+          foreach ($rawId in $ids) {
+            $mid = $rawId.Trim()
+            if (-not $mid) { continue }
+            $lowerMid = $mid.ToLowerInvariant()
+            if ($ApiIdToPresetId.ContainsKey($lowerMid)) {
+              $presetId = $ApiIdToPresetId[$lowerMid]
+            } else {
+              $presetId = "$IdPrefix$mid"
+            }
+            $items += [pscustomobject]@{ Id = "$IdPrefix$presetId"; Label = "$Provider - $mid" }
+          }
+          $source = "API"
+          $hint = " (live)"
+        }
+      } catch {}
+    }
+  }
+
+  if ($source -eq "static") {
+    $label = if ($items.Count -gt 0) { "$($items.Count) моделей" } else { "модели" }
+    $hint = " [ключ не добавлен, статический список]"
+  }
+
+  return [pscustomobject]@{
+    Items   = $items
+    Source  = $source
+    Hint    = $hint
+  }
+}
