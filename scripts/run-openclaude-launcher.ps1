@@ -98,14 +98,56 @@ function Clear-OpenClaudeProviderProfiles {
   [System.IO.File]::WriteAllText($path, $json, (New-Object System.Text.UTF8Encoding($false)))
 }
 
-# Главное меню (OpenRouter убран — используйте «Другая модель» для ручного выбора).
+# ─── Launcher state (quick start) ──────────────────────────────────────────
+$StatePath = Join-Path $PSScriptRoot "openclaude-launcher-state.json"
+
+function Get-LauncherState {
+  if (-not (Test-Path -LiteralPath $StatePath)) { return $null }
+  try {
+    $raw = Get-Content -LiteralPath $StatePath -Raw -Encoding UTF8
+    return ($raw | ConvertFrom-Json)
+  } catch { return $null }
+}
+
+function Save-LauncherState {
+  param(
+    [Parameter(Mandatory = $true)][string]$ProfileId,
+    [hashtable]$Extra = @{}
+  )
+  $obj = [ordered]@{
+    profileId = $ProfileId
+    updatedAt = (Get-Date).ToString("o")
+  }
+  foreach ($k in $Extra.Keys) { $obj[$k] = $Extra[$k] }
+  ($obj | ConvertTo-Json -Compress) | Set-Content -LiteralPath $StatePath -Encoding UTF8
+}
+
+function Resolve-ProfileFromState($state) {
+  if (-not $state -or [string]::IsNullOrWhiteSpace($state.profileId)) { return $null }
+  $id = [string]$state.profileId
+  $zaiIds = @("zai-glm51", "zai-glm47", "zai-flash47")
+  $nimIds = @("nim-mistral-medium", "nim-glm51", "nim-step-3.5-flash", "nim-mistral-large-3",
+    "nim-deepseek-v4-flash", "nim-gemma-4-31b", "nim-qwen3.5-397b", "nim-qwen3-next-80b", "nim-qwen3-coder-480b")
+  $orIds = @("openrouter-laguna", "openrouter-qwen3-coder", "openrouter-deepseek-v4-flash", "openrouter-nemotron")
+  if ($id -in $zaiIds -or $id -in $nimIds -or $id -in $orIds) { return $id }
+  if ($id -like "bai-*") {
+    $mid = $id.Substring("bai-".Length)
+    if ($mid -and $script:PresetSpec.ContainsKey($id)) { return $id }
+  }
+  if ($id -eq "vanilla") { return $id }
+  return $null
+}
+
+# ─── Главное меню (унифицированный формат) ──────────────────────────────────
 $script:Profiles = @(
-  @{ Id = "group:zai";        Label = "Z.AI - Anthropic (GLM-5.1 / GLM-4.7 / Flash)" }
-  @{ Id = "group:nim";        Label = "NVIDIA NIM - agentic модели" }
-  @{ Id = "group:bai";        Label = "B.AI - agentic модели" }
-  @{ Id = "custom-model";     Label = "Другая модель (каталог Z.AI / NIM / B.AI / OpenRouter)" }
-  @{ Id = "vanilla";          Label = "Запустить OpenClaude без presetа" }
-  @{ Id = "change-api-key";   Label = "Сменить ключ API провайдера" }
+  @{ Id = "last";           Label = "Запустить с последними настройками (быстрый старт)" }
+  @{ Id = "group:zai";      Label = "Z.AI - модели (GLM-5.1 / GLM-4.7 / GLM-4.7-Flash)" }
+  @{ Id = "group:nim";      Label = "NVIDIA NIM - 9 бесплатных agentic моделей" }
+  @{ Id = "group:bai";      Label = "B.AI - DeepSeek/MiniMax/GLM/Kimi/GPT (OpenAI-compatible)" }
+  @{ Id = "group:openrouter"; Label = "OpenRouter - бесплатные модели (text-only)" }
+  @{ Id = "custom-model";   Label = "Другая модель… → выбор провайдера и модели" }
+  @{ Id = "native-login";   Label = "Нативный запуск (vanilla / Opengateway)" }
+  @{ Id = "change-api-key"; Label = "Сменить ключ API провайдера" }
 )
 
 # Подменю для каждой группы провайдера
@@ -127,18 +169,38 @@ $script:GroupMenus = @{
     @{ Id = "nim-qwen3-coder-480b"; Label = "NIM - Qwen 3 Coder 480B A35B (free)" }
   )
   bai = @(
+    @{ Id = "bai-gpt-5-nano";        Label = "B.AI - GPT-5 Nano (OpenAI, agentic)" }
+    @{ Id = "bai-gpt-5-mini";        Label = "B.AI - GPT-5 Mini (OpenAI, agentic)" }
+    @{ Id = "bai-gpt-5.2";           Label = "B.AI - GPT-5.2 (OpenAI, agentic)" }
+    @{ Id = "bai-gpt-5.4-nano";      Label = "B.AI - GPT-5.4 Nano (OpenAI, agentic)" }
+    @{ Id = "bai-gpt-5.4-mini";      Label = "B.AI - GPT-5.4 Mini (OpenAI, agentic)" }
+    @{ Id = "bai-gpt-5.4";           Label = "B.AI - GPT-5.4 (OpenAI, agentic)" }
+    @{ Id = "bai-gpt-5.4-pro";       Label = "B.AI - GPT-5.4 Pro (OpenAI, agentic)" }
     @{ Id = "bai-gpt-5.5";           Label = "B.AI - GPT-5.5 (OpenAI, agentic)" }
+    @{ Id = "bai-gpt-5.5-instant";   Label = "B.AI - GPT-5.5 Instant (OpenAI, agentic)" }
+    @{ Id = "bai-claude-haiku-4.5";  Label = "B.AI - Claude Haiku 4.5 (Anthropic, agentic)" }
+    @{ Id = "bai-claude-sonnet-4.5"; Label = "B.AI - Claude Sonnet 4.5 (Anthropic, agentic)" }
     @{ Id = "bai-claude-sonnet-4.6"; Label = "B.AI - Claude Sonnet 4.6 (Anthropic, agentic)" }
+    @{ Id = "bai-claude-opus-4.5";   Label = "B.AI - Claude Opus 4.5 (Anthropic, agentic)" }
+    @{ Id = "bai-claude-opus-4.6";   Label = "B.AI - Claude Opus 4.6 (Anthropic, agentic)" }
     @{ Id = "bai-claude-opus-4.7";   Label = "B.AI - Claude Opus 4.7 (Anthropic, agentic)" }
+    @{ Id = "bai-claude-opus-4.8";   Label = "B.AI - Claude Opus 4.8 (Anthropic, agentic)" }
     @{ Id = "bai-deepseek-v4-pro";   Label = "B.AI - DeepSeek V4 Pro (agentic)" }
+    @{ Id = "bai-deepseek-v4-flash"; Label = "B.AI - DeepSeek V4 Flash (agentic)" }
     @{ Id = "bai-gemini-3.1-pro";    Label = "B.AI - Gemini 3.1 Pro (Google, agentic)" }
+    @{ Id = "bai-gemini-3.5-flash";  Label = "B.AI - Gemini 3.5 Flash (Google, agentic)" }
+    @{ Id = "bai-glm-5";             Label = "B.AI - GLM-5 (Z.AI)" }
     @{ Id = "bai-glm-5.1";           Label = "B.AI - GLM-5.1 (Z.AI)" }
     @{ Id = "bai-kimi-k2.5";         Label = "B.AI - Kimi K2.5 (Moonshot)" }
+    @{ Id = "bai-kimi-k2.6";         Label = "B.AI - Kimi K2.6 (Moonshot)" }
     @{ Id = "bai-minimax-m3";        Label = "B.AI - MiniMax M3 (agentic)" }
+    @{ Id = "bai-minimax-m2.7";      Label = "B.AI - MiniMax M2.7 (fast)" }
   )
   openrouter = @(
-    @{ Id = "openrouter-laguna";     Label = "OpenRouter - Poolside Laguna M.1 (free, coding, text-only)" }
-    @{ Id = "openrouter-qwen3-coder"; Label = "OpenRouter - Qwen3 Coder (free, text-only)" }
+    @{ Id = "openrouter-deepseek-v4-flash"; Label = "OpenRouter - DeepSeek V4 Flash (free, text-only)" }
+    @{ Id = "openrouter-qwen3-coder";       Label = "OpenRouter - Qwen3 Coder (free, text-only)" }
+    @{ Id = "openrouter-nemotron";          Label = "OpenRouter - Nemotron 3 Super 120B (free, text-only)" }
+    @{ Id = "openrouter-laguna";            Label = "OpenRouter - Poolside Laguna M.1 (free, text-only, coding)" }
   )
 }
 
@@ -162,16 +224,36 @@ $script:PresetSpec = @{
   "nim-qwen3.5-397b"     = @{ Base = "https://integrate.api.nvidia.com/v1"; Model = "qwen/qwen3.5-397b-a17b";                     KeyEnv = "NVIDIA_NIM_API_KEY" }
   "nim-qwen3-next-80b"   = @{ Base = "https://integrate.api.nvidia.com/v1"; Model = "qwen/qwen3-next-80b-a3b-instruct";           KeyEnv = "NVIDIA_NIM_API_KEY" }
   "nim-qwen3-coder-480b" = @{ Base = "https://integrate.api.nvidia.com/v1"; Model = "qwen/qwen3-coder-480b-a35b-instruct";         KeyEnv = "NVIDIA_NIM_API_KEY" }
-  "bai-gpt-5.5" = @{ Base = "https://api.b.ai/v1"; Model = "gpt-5.5";                                              KeyEnv = "BAI_API_KEY" }
-  "bai-claude-sonnet-4.6" = @{ Base = "https://api.b.ai/v1"; Model = "claude-sonnet-4.6";                          KeyEnv = "BAI_API_KEY" }
-  "bai-claude-opus-4.7" = @{ Base = "https://api.b.ai/v1"; Model = "claude-opus-4.7";                              KeyEnv = "BAI_API_KEY" }
-  "bai-deepseek-v4-pro" = @{ Base = "https://api.b.ai/v1"; Model = "deepseek-v4-pro";                              KeyEnv = "BAI_API_KEY" }
-  "bai-gemini-3.1-pro" = @{ Base = "https://api.b.ai/v1"; Model = "gemini-3.1-pro";                                KeyEnv = "BAI_API_KEY" }
-  "bai-glm-5.1" = @{ Base = "https://api.b.ai/v1"; Model = "glm-5.1";                                              KeyEnv = "BAI_API_KEY" }
-  "bai-kimi-k2.5" = @{ Base = "https://api.b.ai/v1"; Model = "kimi-k2.5";                                          KeyEnv = "BAI_API_KEY" }
-  "bai-minimax-m3" = @{ Base = "https://api.b.ai/v1"; Model = "minimax-m3";                                        KeyEnv = "BAI_API_KEY" }
-  "openrouter-laguna" = @{ Base = "https://openrouter.ai/api/v1"; Model = "poolside/laguna-m.1:free";              KeyEnv = "OPENROUTER_API_KEY" }
-  "openrouter-qwen3-coder" = @{ Base = "https://openrouter.ai/api/v1"; Model = "qwen/qwen3-coder:free";            KeyEnv = "OPENROUTER_API_KEY" }
+  "bai-gpt-5-nano"        = @{ Base = "https://api.b.ai/v1"; Model = "gpt-5-nano";        KeyEnv = "BAI_API_KEY" }
+  "bai-gpt-5-mini"        = @{ Base = "https://api.b.ai/v1"; Model = "gpt-5-mini";        KeyEnv = "BAI_API_KEY" }
+  "bai-gpt-5.2"           = @{ Base = "https://api.b.ai/v1"; Model = "gpt-5.2";           KeyEnv = "BAI_API_KEY" }
+  "bai-gpt-5.4-nano"      = @{ Base = "https://api.b.ai/v1"; Model = "gpt-5.4-nano";      KeyEnv = "BAI_API_KEY" }
+  "bai-gpt-5.4-mini"      = @{ Base = "https://api.b.ai/v1"; Model = "gpt-5.4-mini";      KeyEnv = "BAI_API_KEY" }
+  "bai-gpt-5.4"           = @{ Base = "https://api.b.ai/v1"; Model = "gpt-5.4";           KeyEnv = "BAI_API_KEY" }
+  "bai-gpt-5.4-pro"       = @{ Base = "https://api.b.ai/v1"; Model = "gpt-5.4-pro";       KeyEnv = "BAI_API_KEY" }
+  "bai-gpt-5.5"           = @{ Base = "https://api.b.ai/v1"; Model = "gpt-5.5";           KeyEnv = "BAI_API_KEY" }
+  "bai-gpt-5.5-instant"   = @{ Base = "https://api.b.ai/v1"; Model = "gpt-5.5-instant";   KeyEnv = "BAI_API_KEY" }
+  "bai-claude-haiku-4.5"  = @{ Base = "https://api.b.ai/v1"; Model = "claude-haiku-4.5";  KeyEnv = "BAI_API_KEY" }
+  "bai-claude-sonnet-4.5" = @{ Base = "https://api.b.ai/v1"; Model = "claude-sonnet-4.5"; KeyEnv = "BAI_API_KEY" }
+  "bai-claude-sonnet-4.6" = @{ Base = "https://api.b.ai/v1"; Model = "claude-sonnet-4.6"; KeyEnv = "BAI_API_KEY" }
+  "bai-claude-opus-4.5"   = @{ Base = "https://api.b.ai/v1"; Model = "claude-opus-4.5";   KeyEnv = "BAI_API_KEY" }
+  "bai-claude-opus-4.6"   = @{ Base = "https://api.b.ai/v1"; Model = "claude-opus-4.6";   KeyEnv = "BAI_API_KEY" }
+  "bai-claude-opus-4.7"   = @{ Base = "https://api.b.ai/v1"; Model = "claude-opus-4.7";   KeyEnv = "BAI_API_KEY" }
+  "bai-claude-opus-4.8"   = @{ Base = "https://api.b.ai/v1"; Model = "claude-opus-4.8";   KeyEnv = "BAI_API_KEY" }
+  "bai-deepseek-v4-pro"   = @{ Base = "https://api.b.ai/v1"; Model = "deepseek-v4-pro";   KeyEnv = "BAI_API_KEY" }
+  "bai-deepseek-v4-flash" = @{ Base = "https://api.b.ai/v1"; Model = "deepseek-v4-flash"; KeyEnv = "BAI_API_KEY" }
+  "bai-gemini-3.1-pro"    = @{ Base = "https://api.b.ai/v1"; Model = "gemini-3.1-pro";    KeyEnv = "BAI_API_KEY" }
+  "bai-gemini-3.5-flash"  = @{ Base = "https://api.b.ai/v1"; Model = "gemini-3.5-flash";  KeyEnv = "BAI_API_KEY" }
+  "bai-glm-5"             = @{ Base = "https://api.b.ai/v1"; Model = "glm-5";             KeyEnv = "BAI_API_KEY" }
+  "bai-glm-5.1"           = @{ Base = "https://api.b.ai/v1"; Model = "glm-5.1";           KeyEnv = "BAI_API_KEY" }
+  "bai-kimi-k2.5"         = @{ Base = "https://api.b.ai/v1"; Model = "kimi-k2.5";         KeyEnv = "BAI_API_KEY" }
+  "bai-kimi-k2.6"         = @{ Base = "https://api.b.ai/v1"; Model = "kimi-k2.6";         KeyEnv = "BAI_API_KEY" }
+  "bai-minimax-m3"        = @{ Base = "https://api.b.ai/v1"; Model = "minimax-m3";        KeyEnv = "BAI_API_KEY" }
+  "bai-minimax-m2.7"      = @{ Base = "https://api.b.ai/v1"; Model = "minimax-m2.7";      KeyEnv = "BAI_API_KEY" }
+  "openrouter-deepseek-v4-flash" = @{ Base = "https://openrouter.ai/api/v1"; Model = "deepseek/deepseek-chat-v3.1:free"; KeyEnv = "OPENROUTER_API_KEY" }
+  "openrouter-qwen3-coder"       = @{ Base = "https://openrouter.ai/api/v1"; Model = "qwen/qwen3-coder:free";           KeyEnv = "OPENROUTER_API_KEY" }
+  "openrouter-nemotron"          = @{ Base = "https://openrouter.ai/api/v1"; Model = "nvidia/nemotron-3-super-120b-a12b:free"; KeyEnv = "OPENROUTER_API_KEY" }
+  "openrouter-laguna"            = @{ Base = "https://openrouter.ai/api/v1"; Model = "poolside/laguna-m.1:free";         KeyEnv = "OPENROUTER_API_KEY" }
 }
 
 function Invoke-OpenClaudeZaiPreset {
@@ -274,8 +356,20 @@ function Invoke-OpenClaudeOpenAIPreset {
 # Главное меню loop
 $updateHint = Test-LauncherUpdates -AgentNpmPackage "@gitlawb/openclaude" -AgentDisplayName "OpenClaude"
 
+$state = Get-LauncherState
+$lastId = Resolve-ProfileFromState $state
+$items = $script:Profiles
+$startIdx = 0
+if ($lastId) {
+  for ($i = 0; $i -lt $items.Count; $i++) {
+    if ($items[$i].Id -eq "last") { $startIdx = $i; break }
+  }
+} else {
+  $startIdx = 1
+}
+
 while ($true) {
-  $choice = Show-TuiFramedMenu -AppBrand "OpenClaude" -Title "OpenClaude - выбор профиля" -Subtitle "Z.AI · NIM · B.AI · OpenRouter — provider profiles" -Items $script:Profiles -MaxVisible 14 -UpdateHint $updateHint
+  $choice = Show-TuiFramedMenu -AppBrand "OpenClaude" -Title "OpenClaude - выбор профиля" -Subtitle "Z.AI · NIM · B.AI · OpenRouter — provider profiles" -Items $items -InitialIndex $startIdx -MaxVisible 20 -UpdateHint $updateHint
   if (-not $choice) {
     Write-Host "Отменено." -ForegroundColor Yellow
     exit 0
@@ -304,8 +398,10 @@ while ($true) {
     $subId = [string]$subChoice.Id
 
     if ($groupKey -eq "zai") {
+      Save-LauncherState -ProfileId $subId
       try { Invoke-OpenClaudeZaiPreset -PresetId $subId } catch { Write-Host "" }
     } else {
+      Save-LauncherState -ProfileId $subId
       try { Invoke-OpenClaudeOpenAIPreset -PresetId $subId } catch { Write-Host "" }
     }
     continue
@@ -392,17 +488,31 @@ while ($true) {
     continue
   }
 
-  if ($profileId -eq "vanilla") {
-    Remove-Item Env:OPENAI_BASE_URL, Env:OPENAI_MODEL, Env:CLAUDE_CODE_USE_OPENAI, Env:OPENAI_API_KEY, Env:ANTHROPIC_BASE_URL, Env:ANTHROPIC_API_KEY, Env:ANTHROPIC_AUTH_TOKEN, Env:ANTHROPIC_DEFAULT_OPUS_MODEL, Env:ANTHROPIC_DEFAULT_SONNET_MODEL, Env:ANTHROPIC_DEFAULT_HAIKU_MODEL -ErrorAction SilentlyContinue
-    # OpenClaude default = Gitlawb Opengateway → requires OPENGATEWAY_API_KEY.
-    Restore-ProcessEnvFromUser -Key "OPENGATEWAY_API_KEY"
-    Restore-ProcessEnvFromUser -Key "OPENAI_API_KEY"
-    Clear-OpenClaudeProviderProfiles
+  if ($profileId -eq "native-login") {
     $exe = Resolve-OpenClaudeExe
-    if (-not $exe) { throw "OpenClaude CLI не найден. Установите: npm install -g @gitlawb/openclaude" }
-    Clear-Host
-    Write-Host "Запуск OpenClaude (vanilla)..." -ForegroundColor Cyan
-    & (Join-Path $PSScriptRoot "run-openclaude-session.ps1") -ExePath $exe -ArgumentsJson '["--bare"]'
+    if (-not $exe) {
+      Write-Host "OpenClaude CLI не найден." -ForegroundColor Red
+      Write-Host "Нажмите любую клавишу для возврата в меню…" -ForegroundColor Green
+      $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+      continue
+    }
+    $loginItems = @(
+      @{ Id = "vanilla"; Label = "Запуск OpenClaude (vanilla / Gitlawb Opengateway)" }
+    )
+    $loginChoice = Show-TuiFramedMenu -AppBrand "OpenClaude" -Title "Нативный запуск OpenClaude" -Subtitle "Выберите действие" -Items $loginItems -MaxVisible 10
+    if (-not $loginChoice) { continue }
+    switch ([string]$loginChoice.Id) {
+      "vanilla" {
+        Remove-Item Env:OPENAI_BASE_URL, Env:OPENAI_MODEL, Env:CLAUDE_CODE_USE_OPENAI, Env:OPENAI_API_KEY, Env:ANTHROPIC_BASE_URL, Env:ANTHROPIC_API_KEY, Env:ANTHROPIC_AUTH_TOKEN, Env:ANTHROPIC_DEFAULT_OPUS_MODEL, Env:ANTHROPIC_DEFAULT_SONNET_MODEL, Env:ANTHROPIC_DEFAULT_HAIKU_MODEL -ErrorAction SilentlyContinue
+        Restore-ProcessEnvFromUser -Key "OPENGATEWAY_API_KEY"
+        Restore-ProcessEnvFromUser -Key "OPENAI_API_KEY"
+        Clear-OpenClaudeProviderProfiles
+        Save-LauncherState -ProfileId "vanilla"
+        Clear-Host
+        Write-Host "Запуск OpenClaude (vanilla)..." -ForegroundColor Cyan
+        & (Join-Path $PSScriptRoot "run-openclaude-session.ps1") -ExePath $exe -ArgumentsJson '["--bare"]'
+      }
+    }
     continue
   }
 
@@ -410,4 +520,35 @@ while ($true) {
     Show-ApiKeyChangeMenu -AppBrand "OpenClaude"
     continue
   }
+
+  if ($profileId -eq "last") {
+    $st = Get-LauncherState
+    $profileId = Resolve-ProfileFromState $st
+    if (-not $profileId) {
+      Write-Host "Сохранённый профиль не найден. Выберите провайдер один раз." -ForegroundColor Red
+      Write-Host "Нажмите любую клавишу..." -ForegroundColor DarkGray
+      $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+      continue
+    }
+  } else {
+    Save-LauncherState -ProfileId $profileId
+  }
+
+  # Dispatch profile execution
+  if ($profileId -in @("zai-glm51", "zai-glm47", "zai-flash47")) {
+    try { Invoke-OpenClaudeZaiPreset -PresetId $profileId } catch { Write-Host "" }
+  } elseif ($script:PresetSpec.ContainsKey($profileId)) {
+    try { Invoke-OpenClaudeOpenAIPreset -PresetId $profileId } catch { Write-Host "" }
+  } elseif ($profileId -eq "vanilla") {
+    $exe = Resolve-OpenClaudeExe
+    if ($exe) {
+      Remove-Item Env:OPENAI_BASE_URL, Env:OPENAI_MODEL, Env:CLAUDE_CODE_USE_OPENAI, Env:OPENAI_API_KEY, Env:ANTHROPIC_BASE_URL, Env:ANTHROPIC_API_KEY, Env:ANTHROPIC_AUTH_TOKEN -ErrorAction SilentlyContinue
+      Restore-ProcessEnvFromUser -Key "OPENGATEWAY_API_KEY"
+      Clear-OpenClaudeProviderProfiles
+      Clear-Host
+      Write-Host "Запуск OpenClaude (vanilla)..." -ForegroundColor Cyan
+      & (Join-Path $PSScriptRoot "run-openclaude-session.ps1") -ExePath $exe -ArgumentsJson '["--bare"]'
+    }
+  }
+  continue
 }

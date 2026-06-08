@@ -48,8 +48,14 @@ $script:Profiles = @(
     Id          = "group:nim"
     Label       = "NVIDIA NIM - 9 бесплатных agentic моделей"
   }
-  # OpenRouter убран из пресетов (429 rate-limit / 404).
-  # Используйте «Другая модель…» → OpenRouter для ручного выбора.
+  @{
+    Id          = "group:bai"
+    Label       = "B.AI - DeepSeek/MiniMax/GLM/Kimi/GPT (OpenAI-compatible)"
+  }
+  @{
+    Id          = "group:openrouter"
+    Label       = "OpenRouter - бесплатные модели (text-only)"
+  }
   @{
     Id          = "custom-model"
     Label       = "Другая модель… → выбор провайдера и модели"
@@ -142,6 +148,12 @@ $script:GroupMenus = @{
     @{ Id = "bai-minimax-m3";        Label = "B.AI - MiniMax M3 (agentic)" }
     @{ Id = "bai-minimax-m2.7";      Label = "B.AI - MiniMax M2.7 (fast)" }
   )
+  openrouter = @(
+    @{ Id = "openrouter-deepseek-v4-flash"; Label = "OpenRouter - DeepSeek V4 Flash (free, text-only)" }
+    @{ Id = "openrouter-qwen3-coder";       Label = "OpenRouter - Qwen3 Coder (free, text-only)" }
+    @{ Id = "openrouter-nemotron";          Label = "OpenRouter - Nemotron 3 Super 120B (free, text-only)" }
+    @{ Id = "openrouter-laguna";            Label = "OpenRouter - Poolside Laguna M.1 (free, text-only, coding)" }
+  )
 }
 
 function Get-LauncherState {
@@ -176,7 +188,7 @@ function Resolve-ProfileFromState($state) {
       "nim-mistral-medium", "nim-glm51", "nim-step-3.5-flash", "nim-mistral-large-3",
       "nim-deepseek-v4-flash", "nim-gemma-4-31b", "nim-qwen3.5-397b", "nim-qwen3-next-80b", "nim-qwen3-coder-480b",
       "zai-glm", "zai-glm51", "zai-flash47", "zai-flash45",
-      "openrouter-hy3", "openrouter-nemotron", "openrouter-laguna", "openrouter-deepseek-v4-flash", "openrouter-qwen3-coder",
+      "openrouter-nemotron", "openrouter-laguna", "openrouter-deepseek-v4-flash", "openrouter-qwen3-coder",
       "custom-qwen-zai", "custom-qwen-zai-general", "custom-qwen-nim", "custom-qwen-groq", "custom-qwen-openrouter", "custom-qwen-bai"
     )) { return $id }
   # B.AI: динамически проверяем по agentic-списку
@@ -359,6 +371,7 @@ while ($true) {
       "zai"        { "Z.AI Coding (paid) + GLM-4.7-Flash (free)" }
       "nim"        { "NVIDIA NIM - 9 бесплатных agentic моделей" }
       "bai"        { "B.AI - https://api.b.ai/v1 (OpenAI-compatible)" }
+      "openrouter" { "OpenRouter - бесплатные модели (text-only)" }
       default      { "" }
     }
     $subChoice = Show-TuiFramedMenu -AppBrand "Qwen" -Title ("Qwen Code - {0}" -f $groupKey.ToUpper()) -Subtitle $subTitle -Items $groupItems -MaxVisible 16 -EscapeAction Back

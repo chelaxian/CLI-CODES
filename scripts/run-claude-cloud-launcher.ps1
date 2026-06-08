@@ -47,10 +47,11 @@ $script:Profiles = @(
     Id    = "group:nim"
     Label = "NVIDIA NIM - 9 бесплатных agentic моделей"
   }
-  # OpenRouter убран из пресетов (бесплатные endpoints rate-limited / 404).
-  # Используйте «Другая модель…» → OpenRouter для ручного выбора.
-  # B.AI не поддерживается в Claude Code v2.x (native binary не умеет OpenAI-compat,
-  # free-claude-code не имеет b_ai в SUPPORTED_PROVIDER_IDS). Используйте OpenClaude launcher.
+  # B.AI доступен через «Другая модель» (прямой OpenAI-compat, без proxy).
+  @{
+    Id    = "group:openrouter"
+    Label = "OpenRouter - бесплатные модели (text-only)"
+  }
   @{
     Id    = "custom-model"
     Label = "Другая модель… → выбор провайдера и модели"
@@ -116,8 +117,10 @@ $script:GroupMenus = @{
     @{ Id = "claude-nim-qwen3-coder-480b"; Label = "NIM - Qwen 3 Coder 480B A35B (free)" }
   )
   openrouter = @(
-    # OpenRouter убран из пресетов: бесплатные endpoints rate-limited / 404.
-    # Используйте «Другая модель…» → OpenRouter для ручного выбора.
+    @{ Id = "claude-openrouter-deepseek-v4-flash"; Label = "OpenRouter - DeepSeek V4 Flash (free, text-only)" }
+    @{ Id = "claude-openrouter-qwen3-coder";       Label = "OpenRouter - Qwen3 Coder (free, text-only)" }
+    @{ Id = "claude-openrouter-nemotron";          Label = "OpenRouter - Nemotron 3 Super 120B (free, text-only)" }
+    @{ Id = "claude-openrouter-laguna";            Label = "OpenRouter - Poolside Laguna M.1 (free, coding, text-only)" }
   )
 }
 
