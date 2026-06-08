@@ -41,7 +41,7 @@ $script:Profiles = @(
   }
   @{
     Id    = "group:zai"
-    Label = "Z.AI - модели (GLM-5.1 / GLM-4.7 / GLM-4.7-Flash)"
+    Label = "Z.AI - GLM-5.1 / GLM-4.7 / GLM-4.7-Flash"
   }
   @{
     Id    = "group:nim"
@@ -50,7 +50,7 @@ $script:Profiles = @(
   # B.AI доступен через «Другая модель» (прямой OpenAI-compat, без proxy).
   @{
     Id    = "group:openrouter"
-    Label = "OpenRouter - бесплатные модели (text-only)"
+    Label = "OpenRouter - бесплатные agentic модели"
   }
   @{
     Id    = "custom-model"

@@ -42,7 +42,7 @@ $script:Profiles = @(
   }
   @{
     Id          = "group:zai"
-    Label       = "Z.AI - модели (GLM-5.1 / GLM-4.7 / GLM-4.7-Flash)"
+    Label       = "Z.AI - GLM-5.1 / GLM-4.7 / GLM-4.7-Flash"
   }
   @{
     Id          = "group:nim"
@@ -54,7 +54,7 @@ $script:Profiles = @(
   }
   @{
     Id          = "group:openrouter"
-    Label       = "OpenRouter - бесплатные модели (text-only)"
+    Label       = "OpenRouter - бесплатные agentic модели"
   }
   @{
     Id          = "custom-model"
@@ -403,10 +403,10 @@ $staticOr = @(
   @{ Id = "openrouter-laguna";            Label = "OpenRouter - Poolside Laguna M.1 (free, text-only, coding)" }
 )
 $zaiMap = @{ "glm-5.1" = "zai-glm51"; "glm-4.7" = "zai-glm"; "glm-4.7-flash" = "zai-flash47" }
-$zaiRes = Build-GroupMenuItems -Provider "zai" -StaticItems $staticZai -ApiKeyEnv "ZAI_API_KEY" -FetchScript "Get-ZaiCodingModelIdsFromApi" -IdPrefix "zai-" -ApiIdToPresetId $zaiMap
-$nimRes = Build-GroupMenuItems -Provider "nim" -StaticItems $staticNim -ApiKeyEnv "NVIDIA_NIM_API_KEY" -FetchScript "Get-NvidiaNimModelIdsFromApi" -FilterToBundled -AgenticOnly -IdPrefix "nim-"
+$zaiRes = Build-GroupMenuItems -Provider "zai" -StaticItems $staticZai -ApiKeyEnv "ZAI_API_KEY" -FetchScript "Get-ZaiCodingModelIdsFromApi" -IdPrefix "zai-" -ApiIdToPresetId $zaiMap -ForcedIds @("glm-4.7-flash")
+$nimRes = Build-GroupMenuItems -Provider "nim" -StaticItems $staticNim -ApiKeyEnv "NVIDIA_NIM_API_KEY" -FetchScript "Get-NvidiaNimModelIdsFromApi" -AgenticOnly -IdPrefix "nim-"
 $baiRes = Build-GroupMenuItems -Provider "bai" -StaticItems $staticBai -ApiKeyEnv "BAI_API_KEY" -FetchScript "Get-BaiModelIdsFromApi" -IdPrefix "bai-"
-$orRes  = Build-GroupMenuItems -Provider "openrouter" -StaticItems $staticOr -ApiKeyEnv "OPENROUTER_API_KEY" -FetchScript "Get-OpenRouterModelIdsFromApi" -IdPrefix "openrouter-"
+$orRes  = Build-GroupMenuItems -Provider "openrouter" -StaticItems $staticOr -ApiKeyEnv "OPENROUTER_API_KEY" -FetchScript "Get-OpenRouterFreeModelIdsFromApi" -IdPrefix "openrouter-"
 $script:GroupMenus = @{
   zai        = $zaiRes.Items
   nim        = $nimRes.Items
@@ -444,7 +444,7 @@ while ($true) {
       "zai"        { "Z.AI Coding (paid) + GLM-4.7-Flash (free)" }
       "nim"        { "NVIDIA NIM - бесплатные agentic модели" }
       "bai"        { "B.AI - https://api.b.ai/v1 (OpenAI-compatible)" }
-      "openrouter" { "OpenRouter - бесплатные модели (text-only)" }
+      "openrouter" { "OpenRouter - бесплатные agentic модели" }
       default      { "" }
     }
     $subChoice = Show-TuiFramedMenu -AppBrand "Qwen" -Title ("Qwen Code - {0}" -f $groupKey.ToUpper()) -Subtitle $subTitle -Items $groupItems -MaxVisible 16 -EscapeAction Back

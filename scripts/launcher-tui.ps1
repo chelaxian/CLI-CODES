@@ -564,7 +564,8 @@ function Build-GroupMenuItems {
     [string]$IdPrefix = "",
     [hashtable]$ApiIdToPresetId = @{},
     [hashtable]$ExtraFetchArgs = @{},
-    [string[]]$AllowedApiIds = @()
+    [string[]]$AllowedApiIds = @(),
+    [string[]]$ForcedIds = @()
   )
 
   $items = $StaticItems
@@ -609,6 +610,18 @@ function Build-GroupMenuItems {
           if ($items.Count -gt 0) {
             $source = "API"
             $hint = " (live)"
+          }
+        }
+
+        # Add forced IDs that were not returned by API
+        if ($ForcedIds.Count -gt 0) {
+          $existingIds = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+          foreach ($it in $items) { [void]$existingIds.Add($it.Id) }
+          foreach ($fid in $ForcedIds) {
+            $fidLower = $fid.ToLowerInvariant()
+            if (-not $existingIds.Contains($fidLower)) {
+              $items += [pscustomobject]@{ Id = "$IdPrefix$fid"; Label = "$Provider - $fid (forced)" }
+            }
           }
         }
       } catch {}
