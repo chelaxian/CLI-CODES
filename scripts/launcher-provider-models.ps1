@@ -339,12 +339,32 @@ function Get-BaiBundledAgenticModelIds {
   return ($raw | ForEach-Object { $_.Trim() } | Where-Object { $_ } | Sort-Object -Unique)
 }
 
+# Non-premium B.AI модели: не требуют пополнения баланса (top-up).
+# Отобрано из полного каталога https://docs.b.ai/llmservice/pricing-and-usage/
+# Как ориентир: gpt-5-nano (самый дешёвый GPT-5 tier), DeepSeek V4 Flash, Gemini 3.5 Flash.
+# Обновляйте при изменении тарифов B.AI.
+function Get-BaiNonPremiumModelIds {
+  $raw = @(
+    "gpt-5-nano"
+    "gpt-5-mini"
+    "gpt-5.2"
+    "gpt-5.4-nano"
+    "gpt-5.4-mini"
+    "deepseek-v4-flash"
+    "gemini-3.5-flash"
+    "glm-5"
+    "kimi-k2.5"
+    "minimax-m2.7"
+  )
+  return ($raw | ForEach-Object { $_.Trim() } | Where-Object { $_ } | Sort-Object -Unique)
+}
+
 # ─── NVIDIA NIM Agentic ─────────────────────────────────────────────────────
-# Список моделей помеченных "Agentic" в каталоге NVIDIA NIM:
-#   https://build.nvidia.com/models?filters=nimType%3Anim_type_preview&label=Agentic
-# Это модели с поддержкой tool calling и/или reasoning, подходящие для coding-agent задач.
-# Список обновляется вручную по каталогу; фильтр Get-NvidiaNimModelIdsFromApi -AgenticOnly
-# оставит только модели присутствующие и в API и в этом списке.
+# Примечание: build.nvidia.com не exposes API для фильтрации по "Agentic" label
+# (GraphQL возвращает HTML, REST /api/v1/models — 404).
+# NIM API (https://integrate.api.nvidia.com/v1/models) возвращает только id/object/created/owned_by
+# без метаданных capabilities. Поэтому список — статический, обновляется вручную.
+# См. каталог: https://build.nvidia.com/models?filters=nimType%3Anim_type_preview&label=Agentic
 function Get-NvidiaNimBundledAgenticModelIds {
   $raw = @(
     "mistralai/mistral-medium-3.5-128b"
@@ -352,12 +372,16 @@ function Get-NvidiaNimBundledAgenticModelIds {
     "stepfun-ai/step-3.5-flash"
     "mistralai/mistral-large-3-675b-instruct-2512"
     "deepseek-ai/deepseek-v4-flash"
+    "deepseek-ai/deepseek-v4-pro"
     "qwen/qwen3.5-397b-a17b"
     "qwen/qwen3-next-80b-a3b-instruct"
     "qwen/qwen3-coder-480b-a35b-instruct"
     "moonshotai/kimi-k2-thinking"
     "moonshotai/kimi-k2-instruct-0905"
     "mistralai/devstral-2-123b-instruct-2512"
+    "qwen/qwen3-235b-a22b-instruct"
+    "google/gemma-4-31b-it"
+    "nvidia/llama-3.1-nemotron-70b-instruct"
   )
   return ($raw | ForEach-Object { $_.Trim() } | Where-Object { $_ } | Sort-Object -Unique)
 }
