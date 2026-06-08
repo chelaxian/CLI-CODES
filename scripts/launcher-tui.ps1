@@ -637,25 +637,6 @@ function Build-GroupMenuItems {
       Write-Host "  [DEBUG] $Provider : no API key found (env=$ApiKeyEnv), using static" -ForegroundColor DarkYellow
     }
   }
-            $items += [pscustomobject]@{ Id = $itemId; Label = "$Provider - $mid" }
-          }
-          if ($items.Count -gt 0) {
-            $source = "API"
-            $hint = " (live)"
-            Write-Host "  [DEBUG] $Provider : using dynamic list ($($items.Count) items)" -ForegroundColor DarkGreen
-          }
-        }
-
-        if ($source -eq "static") {
-          Write-Host "  [DEBUG] $Provider : fetch returned 0 items, falling back to static" -ForegroundColor DarkYellow
-        }
-      } catch {
-        Write-Host "  [DEBUG] $Provider : fetch EXCEPTION: $_" -ForegroundColor Red
-      }
-    } else {
-      Write-Host "  [DEBUG] $Provider : no API key found (env=$ApiKeyEnv), using static" -ForegroundColor DarkYellow
-    }
-  }
 
   if ($source -eq "static") {
     $label = if ($items.Count -gt 0) { "$($items.Count) моделей" } else { "модели" }
