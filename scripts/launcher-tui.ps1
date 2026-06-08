@@ -602,10 +602,12 @@ function Build-GroupMenuItems {
 
             if ($ApiIdToPresetId.ContainsKey($lowerMid)) {
               $presetId = $ApiIdToPresetId[$lowerMid]
+              $itemId = $presetId
             } else {
               $presetId = "$IdPrefix$mid"
+              $itemId = "$IdPrefix$mid"
             }
-            $items += [pscustomobject]@{ Id = "$IdPrefix$presetId"; Label = "$Provider - $mid" }
+            $items += [pscustomobject]@{ Id = $itemId; Label = "$Provider - $mid" }
           }
           if ($items.Count -gt 0) {
             $source = "API"
@@ -619,8 +621,11 @@ function Build-GroupMenuItems {
           foreach ($it in $items) { [void]$existingIds.Add($it.Id) }
           foreach ($fid in $ForcedIds) {
             $fidLower = $fid.ToLowerInvariant()
-            if (-not $existingIds.Contains($fidLower)) {
-              $items += [pscustomobject]@{ Id = "$IdPrefix$fid"; Label = "$Provider - $fid (forced)" }
+            $mappedId = $ApiIdToPresetId[$fidLower]
+            $checkId = if ($mappedId) { $mappedId.ToLowerInvariant() } else { $fidLower }
+            if (-not $existingIds.Contains($checkId)) {
+              $forcedId = if ($mappedId) { $mappedId } else { "$IdPrefix$fid" }
+              $items += [pscustomobject]@{ Id = $forcedId; Label = "$Provider - $fid" }
             }
           }
         }

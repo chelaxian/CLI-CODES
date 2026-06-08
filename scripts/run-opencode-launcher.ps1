@@ -1,8 +1,3 @@
-$ErrorActionPreference = "Stop"
-# Native commands (opencode.exe) при Ctrl+C возвращают non-zero exit code, что в PS 7.4+
-# превращается в исключение и пробрасывается до верха, ломая TUI launcher'а.
-# Явно отключаем эту трансформацию — exit code читаем через $LASTEXITCODE сам.
-$PSNativeCommandUseErrorActionPreference = $false
 
 . (Join-Path $PSScriptRoot "ensure-streaming-friendly-terminal.ps1")
 . (Join-Path $PSScriptRoot "launcher-tui.ps1")
@@ -591,15 +586,44 @@ function Invoke-OpenCodeProfile {
       if ($ProfileId -like "bai-*") {
         $mid = $ProfileId.Substring("bai-".Length)
         $spec = $script:BaiModelSpec[$mid]
-        if (-not $spec) { throw "Неизвестная B.AI модель: $mid" }
         $apiKey = [Environment]::GetEnvironmentVariable("BAI_API_KEY", "User")
-        if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") { $apiKey = $env:BAI_API_KEY }
-        if ([string]::IsNullOrWhiteSpace($apiKey) -or $apiKey -eq "__SET_ME__") {
+        if ($apiKey -or $apiKey -eq "__SET_ME__") { $apiKey = $env:BAI_API_KEY }
+        if (-not $apiKey -or $apiKey -eq "__SET_ME__") {
           $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "B.AI" -HelpUrl "https://chat.b.ai/key"
         }
-        $configPath = Write-OpenCodeConfig -Provider "bai" -Model $mid -BaseURL "https://api.b.ai/v1" -ApiKey $apiKey -MaxTokens $spec.Max -ContextLength $spec.Ctx
+        if ($spec) {
+          $configPath = Write-OpenCodeConfig -Provider "bai" -Model $mid -BaseURL "https://api.b.ai/v1" -ApiKey $apiKey -MaxTokens $spec.Max -ContextLength $spec.Ctx
+        } else {
+          $configPath = Write-OpenCodeConfig -Provider "bai" -Model $mid -BaseURL "https://api.b.ai/v1" -ApiKey $apiKey
+        }
         $env:OPENCODE_CONFIG = $configPath
         Write-Host "Запуск OpenCode (B.AI ${mid})…" -ForegroundColor Cyan
+        & (Join-Path $PSScriptRoot "run-opencode-session.ps1") -ConfigPath $configPath
+        return
+      }
+      if ($ProfileId -like "openrouter-*") {
+        $mid = $ProfileId.Substring("openrouter-".Length)
+        $apiKey = [Environment]::GetEnvironmentVariable("OPENROUTER_API_KEY", "User")
+        if ($apiKey) { $apiKey = $env:OPENROUTER_API_KEY }
+        if (-not $apiKey) {
+          $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "OpenRouter" -HelpUrl "https://openrouter.ai/settings/keys"
+        }
+        $configPath = Write-OpenCodeConfig -Provider "openrouter" -Model $mid -BaseURL "https://openrouter.ai/api/v1" -ApiKey $apiKey
+        $env:OPENCODE_CONFIG = $configPath
+        Write-Host "Запуск OpenCode (OpenRouter ${mid})…" -ForegroundColor Cyan
+        & (Join-Path $PSScriptRoot "run-opencode-session.ps1") -ConfigPath $configPath
+        return
+      }
+      if ($ProfileId -like "nim-*") {
+        $mid = $ProfileId.Substring("nim-".Length)
+        $apiKey = [Environment]::GetEnvironmentVariable("NVIDIA_NIM_API_KEY", "User")
+        if ($apiKey) { $apiKey = $env:NVIDIA_NIM_API_KEY }
+        if (-not $apiKey) {
+          $apiKey = Resolve-ApiKeyOrPrompt -CurrentKey $apiKey -ProviderName "NVIDIA NIM" -HelpUrl "https://build.nvidia.com/api-key"
+        }
+        $configPath = Write-OpenCodeConfig -Provider "nvidia-nim" -Model $mid -BaseURL "https://integrate.api.nvidia.com/v1" -ApiKey $apiKey
+        $env:OPENCODE_CONFIG = $configPath
+        Write-Host "Запуск OpenCode (NVIDIA NIM ${mid})…" -ForegroundColor Cyan
         & (Join-Path $PSScriptRoot "run-opencode-session.ps1") -ConfigPath $configPath
         return
       }
@@ -679,15 +703,8 @@ $staticOrOC = @(
 )
 $zaiMapOC = @{ "glm-5.1" = "zai-glm51"; "glm-4.7" = "zai-glm"; "glm-4.7-flash" = "zai-flash47" }
 $zaiResOC = Build-GroupMenuItems -Provider "zai" -StaticItems $staticZaiOC -ApiKeyEnv "ZAI_API_KEY" -FetchScript "Get-ZaiCodingModelIdsFromApi" -IdPrefix "zai-" -ApiIdToPresetId $zaiMapOC -ForcedIds @("glm-4.7-flash")
-$nimResOC = Build-GroupMenuItems -Provider "nim" -StaticItems $staticNimOC -ApiKeyEnv "NVIDIA_NIM_API_KEY" -FetchScript "Get-NvidiaNimModelIdsFromApi" -AgenticOnly -IdPrefix "nim-"
-$baiResOC = Build-GroupMenuItems -Provider "bai" -StaticItems $staticBaiOC -ApiKeyEnv "BAI_API_KEY" -FetchScript "Get-BaiModelIdsFromApi" -IdPrefix "bai-"
-$orResOC  = Build-GroupMenuItems -Provider "openrouter" -StaticItems $staticOrOC -ApiKeyEnv "OPENROUTER_API_KEY" -FetchScript "Get-OpenRouterFreeModelIdsFromApi" -IdPrefix "openrouter-"
-$script:GroupMenus = @{
-  zai        = $zaiResOC.Items
-  nim        = $nimResOC.Items
-  bai        = $baiResOC.Items
-  openrouter = $orResOC.Items
-}
+$nimMap = @{ "mistralai/mistral-medium-3.5-128b" = "nim-mistral-medium"; "z-ai/glm-5.1" = "nim-glm51"; "stepfun-ai/step-3.5-flash" = "nim-step-3.5-flash"; "mistralai/mistral-large-3-675b-instruct-2512" = "nim-mistral-large-3"; "deepseek-ai/deepseek-v4-flash" = "nim-deepseek-v4-flash"; "deepseek-ai/deepseek-v4-pro" = "nim-deepseek-v4-pro"; "qwen/qwen3.5-397b-a17b" = "nim-qwen3.5-397b"; "qwen/qwen3-next-80b-a3b-instruct" = "nim-qwen3-next-80b"; "qwen/qwen3-coder-480b-a35b-instruct" = "nim-qwen3-coder-480b"; "google/gemma-4-31b-it" = "nim-gemma-4-31b"; "nvidia/llama-3.1-nemotron-70b-instruct" = "nim-nemotron-70b" }
+$nimResOC = Build-GroupMenuItems -Provider "nim" -StaticItems $staticNimOC -ApiKeyEnv "NVIDIA_NIM_API_KEY" -FetchScript "Get-NvidiaNimModelIdsFromApi" -AgenticOnly -IdPrefix "nim-" -ApiIdToPresetId $nimMap -
 $groupHintsOC = @()
 if ($zaiResOC.Source -eq "static")  { $groupHintsOC += "Z.AI: статический список" }
 if ($nimResOC.Source -eq "static")  { $groupHintsOC += "NIM: статический список" }
