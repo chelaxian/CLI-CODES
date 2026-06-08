@@ -191,31 +191,7 @@ function Resolve-ProfileFromState($state) {
 }
 
 function Resolve-OpenCodeExe {
-  # Проверяем npm bin в PATH
-  $npmBin = Join-Path $env:APPDATA "npm"
-  if ($npmBin -and (Test-Path -LiteralPath $npmBin)) {
-    $parts = @($env:PATH -split ';' | Where-Object { $_ -and $_.Trim().Length -gt 0 })
-    if (-not ($parts | Where-Object { $_.TrimEnd('\') -ieq $npmBin.TrimEnd('\') })) {
-      $env:PATH = $npmBin + ";" + $env:PATH
-    }
-  }
-
-  # 1) .cmd - предпочтительный вариант (не завершает вызывающий скрипт через exit)
-  $cmd = Get-Command opencode.cmd -ErrorAction SilentlyContinue
-  if ($cmd) { return $cmd.Source }
-
-  # 2) Просто opencode
-  $cmd = Get-Command opencode -ErrorAction SilentlyContinue
-  if ($cmd) { return $cmd.Source }
-
-  # 3) Жёсткие пути
-  foreach ($p in @(
-      (Join-Path $npmBin "opencode.cmd"),
-      (Join-Path $npmBin "opencode.ps1")
-    )) {
-    if (Test-Path -LiteralPath $p) { return $p }
-  }
-  return ""
+  return (Resolve-CommandOrInstall -CommandName "opencode.cmd" -AltCommandName "opencode" -NpmPackage "opencode-ai" -DisplayName "OpenCode")
 }
 
 function Invoke-CliCommand {

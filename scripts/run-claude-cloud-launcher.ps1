@@ -18,29 +18,8 @@ $PSNativeCommandUseErrorActionPreference = $false
 $StatePath = Join-Path $PSScriptRoot "claude-cloud-launcher-state.json"
 $SessionScript = Join-Path $PSScriptRoot "run-claude-cloud-session.ps1"
 
-function Ensure-NpmBinInPath {
-  $npmBin = Join-Path $env:APPDATA "npm"
-  if ($npmBin -and (Test-Path -LiteralPath $npmBin)) {
-    $parts = @($env:PATH -split ';' | Where-Object { $_ -and $_.Trim().Length -gt 0 })
-    if (-not ($parts | Where-Object { $_.TrimEnd('\') -ieq $npmBin.TrimEnd('\') })) {
-      $env:PATH = $npmBin + ";" + $env:PATH
-    }
-  }
-}
-
 function Resolve-ClaudeExe {
-  Ensure-NpmBinInPath
-  $cmd = Get-Command claude.cmd -ErrorAction SilentlyContinue
-  if ($cmd) { return $cmd.Source }
-  $cmd = Get-Command claude -ErrorAction SilentlyContinue
-  if ($cmd) { return $cmd.Source }
-  foreach ($p in @(
-      (Join-Path $env:APPDATA "npm\claude.cmd"),
-      (Join-Path $env:APPDATA "npm\claude.ps1")
-    )) {
-    if (Test-Path -LiteralPath $p) { return $p }
-  }
-  return ""
+  return (Resolve-CommandOrInstall -CommandName "claude.cmd" -AltCommandName "claude" -NpmPackage "@anthropic-ai/claude-code" -DisplayName "Claude Code")
 }
 
 function Invoke-CliCommand {

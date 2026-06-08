@@ -9,14 +9,7 @@ $PSNativeCommandUseErrorActionPreference = $false
 . (Join-Path $PSScriptRoot "launcher-custom-model-wizard.ps1")
 
 function Resolve-OpenClaudeExe {
-  $cmd = Get-Command openclaude.cmd -ErrorAction SilentlyContinue
-  if ($cmd) { return $cmd.Source }
-  $cmd = Get-Command openclaude -ErrorAction SilentlyContinue
-  if ($cmd) { return $cmd.Source }
-  foreach ($p in @((Join-Path $env:APPDATA "npm\openclaude.cmd"), (Join-Path $env:APPDATA "npm\openclaude.ps1"))) {
-    if (Test-Path -LiteralPath $p) { return $p }
-  }
-  return ""
+  return (Resolve-CommandOrInstall -CommandName "openclaude.cmd" -AltCommandName "openclaude" -NpmPackage "@gitlawb/openclaude" -DisplayName "OpenClaude")
 }
 
 function Set-OpenClaudeProviderProfile {

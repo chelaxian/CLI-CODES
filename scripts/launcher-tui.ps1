@@ -430,3 +430,101 @@ function Test-LauncherUpdates {
 
   return ($hints -join " | ")
 }
+
+# ─── Resolve-CommandOrInstall ─────────────────────────────────────────────────
+# Finds the agent executable. If not found, offers to install it.
+# Returns the exe path or "" (empty = user declined / install failed).
+function Resolve-CommandOrInstall {
+  param(
+    [Parameter(Mandatory = $true)][string]$CommandName,
+    [Parameter(Mandatory = $true)][string]$NpmPackage,
+    [Parameter(Mandatory = $true)][string]$DisplayName,
+    [string]$AltCommandName = ""
+  )
+
+  $npmBin = Join-Path $env:APPDATA "npm"
+  if ($npmBin -and (Test-Path -LiteralPath $npmBin)) {
+    $parts = @($env:PATH -split ';' | Where-Object { $_ -and $_.Trim().Length -gt 0 })
+    if (-not ($parts | Where-Object { $_.TrimEnd('\') -ieq $npmBin.TrimEnd('\') })) {
+      $env:PATH = $npmBin + ";" + $env:PATH
+    }
+  }
+
+  foreach ($name in @($CommandName, $AltCommandName)) {
+    if ([string]::IsNullOrWhiteSpace($name)) { continue }
+    $cmd = Get-Command $name -ErrorAction SilentlyContinue
+    if ($cmd) { return $cmd.Source }
+  }
+
+  foreach ($ext in @(".cmd", ".ps1")) {
+    $p = Join-Path $npmBin "$CommandName$ext"
+    if (Test-Path -LiteralPath $p) { return $p }
+  }
+  if ($AltCommandName) {
+    foreach ($ext in @(".cmd", ".ps1")) {
+      $p = Join-Path $npmBin "$AltCommandName$ext"
+      if (Test-Path -LiteralPath $p) { return $p }
+    }
+  }
+
+  Write-Host ""
+  Write-Host "  $DisplayName не найден." -ForegroundColor Yellow
+  Write-Host "  Установить сейчас? (Y/n): " -ForegroundColor Cyan -NoNewline
+  $answer = (Read-Host).Trim()
+  if ($answer -in @("n", "N", "no", "No", "нет", "Нет")) { return "" }
+
+  Write-Host "  Установка $NpmPackage..." -ForegroundColor Cyan
+  $npmCmd = Get-Command npm.cmd -ErrorAction SilentlyContinue
+  if (-not $npmCmd) {
+    $npmCmd = Join-Path $npmBin "npm.cmd"
+    if (-not (Test-Path -LiteralPath $npmCmd)) { $npmCmd = $null }
+  }
+  if (-not $npmCmd) {
+    Write-Host "  npm не найден. Установите Node.js: https://nodejs.org/" -ForegroundColor Red
+    Write-Host "  Нажмите любую клавишу..." -ForegroundColor DarkGray
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    return ""
+  }
+
+  $prevEAP = $ErrorActionPreference
+  try {
+    $ErrorActionPreference = "Continue"
+    & $npmCmd install -g "$NpmPackage@latest" 2>&1 | ForEach-Object { Write-Host "  $_" -ForegroundColor DarkGray }
+  } catch {
+    Write-Host ""
+    Write-Host "  Ошибка установки." -ForegroundColor Red
+    Write-Host "  Если вы находитесь в РФ/РБ/Иране — npm может быть заблокирован." -ForegroundColor Yellow
+    Write-Host "  Решение: включите VPN и повторите." -ForegroundColor Yellow
+    Write-Host "  Нажмите любую клавишу..." -ForegroundColor DarkGray
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    $ErrorActionPreference = $prevEAP
+    return ""
+  } finally {
+    $ErrorActionPreference = $prevEAP
+  }
+
+  if ($LASTEXITCODE -ne 0) {
+    Write-Host ""
+    Write-Host "  npm install завершился с кодом $LASTEXITCODE." -ForegroundColor Red
+    Write-Host "  Возможные причины:" -ForegroundColor Yellow
+    Write-Host "    - Гео-блокировка (РФ/РБ/Иран) — включите VPN" -ForegroundColor Yellow
+    Write-Host "    - Нет прав — запустите от администратора" -ForegroundColor Yellow
+    Write-Host "    - Проблемы с сетью — проверьте интернет" -ForegroundColor Yellow
+    Write-Host "  Нажмите любую клавишу..." -ForegroundColor DarkGray
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    return ""
+  }
+
+  foreach ($name in @($CommandName, $AltCommandName)) {
+    if ([string]::IsNullOrWhiteSpace($name)) { continue }
+    $cmd = Get-Command $name -ErrorAction SilentlyContinue
+    if ($cmd) {
+      Write-Host "  $DisplayName установлен: $($cmd.Source)" -ForegroundColor Green
+      return $cmd.Source
+    }
+  }
+
+  Write-Host "  Установка завершена, но $DisplayName не найден в PATH." -ForegroundColor Yellow
+  Write-Host "  Перезапустите ярлык." -ForegroundColor Yellow
+  return ""
+}

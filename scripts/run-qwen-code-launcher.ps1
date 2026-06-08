@@ -13,29 +13,8 @@ $ErrorActionPreference = "Stop"
 
 $StatePath = Join-Path $PSScriptRoot "qwen-code-launcher-state.json"
 
-function Ensure-NpmBinInPath {
-  $npmBin = Join-Path $env:APPDATA "npm"
-  if ($npmBin -and (Test-Path -LiteralPath $npmBin)) {
-    $parts = @($env:PATH -split ';' | Where-Object { $_ -and $_.Trim().Length -gt 0 })
-    if (-not ($parts | Where-Object { $_.TrimEnd('\') -ieq $npmBin.TrimEnd('\') })) {
-      $env:PATH = $npmBin + ";" + $env:PATH
-    }
-  }
-}
-
 function Resolve-QwenExe {
-  Ensure-NpmBinInPath
-  $cmd = Get-Command qwen.cmd -ErrorAction SilentlyContinue
-  if ($cmd) { return $cmd.Source }
-  $cmd = Get-Command qwen -ErrorAction SilentlyContinue
-  if ($cmd) { return $cmd.Source }
-  foreach ($p in @(
-      (Join-Path $env:APPDATA "npm\qwen.cmd"),
-      (Join-Path $env:APPDATA "npm\qwen.ps1")
-    )) {
-    if (Test-Path -LiteralPath $p) { return $p }
-  }
-  return ""
+  return (Resolve-CommandOrInstall -CommandName "qwen.cmd" -AltCommandName "qwen" -NpmPackage "qwen-code" -DisplayName "Qwen Code")
 }
 
 function Invoke-CliCommand {
