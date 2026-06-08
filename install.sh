@@ -105,16 +105,16 @@ if [ -d "$INSTALL_DIR/.git" ]; then
 fi
 
 echo -e "  ${CYAN}[0]${RESET} Установка системных зависимостей (git, node, npm, curl)"
-echo -e "  ${YELLOW}[1]${RESET} Все инструменты  ← рекомендуется"
-echo -e "  ${GREEN}[2]${RESET} Qwen Code"
-echo -e "  ${GREEN}[3]${RESET} Claude Code"
-echo -e "  ${GREEN}[4]${RESET} OpenCode"
-echo -e "  ${GREEN}[5]${RESET} Freebuff"
-echo -e "  ${GREEN}[6]${RESET} OpenClaude"
-echo -e "  ${YELLOW}[7]${RESET} Обновление всех компонентов (проверяет актуальность)"
-echo -e "  ${RED}[8]${RESET} Полное удаление (uninstall)"
-echo -e "  ${CYAN}[9]${RESET} Добавить недостающие ярлыки (без переустановки)"
-echo -e "  ${GRAY}[X]${RESET} Выход"
+echo -e "  ${YELLOW}[1]${RESET} Установка сразу ВСЕХ агентов  ← рекомендуется"
+echo -e "  ${GREEN}[2]${RESET} Только Qwen Code"
+echo -e "  ${GREEN}[3]${RESET} Только Claude Code"
+echo -e "  ${GREEN}[4]${RESET} Только OpenCode"
+echo -e "  ${GREEN}[5]${RESET} Только Freebuff"
+echo -e "  ${GREEN}[6]${RESET} Только OpenClaude"
+echo -e "  ${YELLOW}[7]${RESET} Обновление ВСЕХ компонентов (проверяет актуальность)"
+echo -e "  ${RED}[8]${RESET} Полное удаление проекта с ПК (uninstall)"
+echo -e "  ${CYAN}[9]${RESET} Обновить ярлыки на рабочем столе (актуализация, скрытие скриптов)"
+echo -e "  ${GRAY}[X]${RESET} Выход из мастера установки"
 echo ""
 
 read -p "Ваш выбор [1]: " install_choice
