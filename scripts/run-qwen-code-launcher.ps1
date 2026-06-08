@@ -356,8 +356,10 @@ if ($lastId) {
   $startIdx = 1
 }
 
+$updateHint = Test-LauncherUpdates -AgentNpmPackage "qwen-code" -AgentDisplayName "Qwen Code"
+
 while ($true) {
-  $choice = Show-TuiFramedMenu -AppBrand "Qwen" -Title "Qwen Code - выбор провайдера" -Subtitle "Z.AI · NIM · OpenRouter · B.AI" -Items $items -InitialIndex $startIdx -MaxVisible 20
+  $choice = Show-TuiFramedMenu -AppBrand "Qwen" -Title "Qwen Code - выбор провайдера" -Subtitle "Z.AI · NIM · OpenRouter · B.AI" -Items $items -InitialIndex $startIdx -MaxVisible 20 -UpdateHint $updateHint
   if (-not $choice) {
     Write-Host "Отменено." -ForegroundColor Yellow
     exit 0

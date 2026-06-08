@@ -351,8 +351,10 @@ if ($lastId) {
   $startIdx = 1
 }
 
+$updateHint = Test-LauncherUpdates -AgentNpmPackage "@anthropic-ai/claude-code" -AgentDisplayName "Claude Code"
+
 while ($true) {
-  $choice = Show-TuiFramedMenu -AppBrand "Claude" -Title "Claude Code (облако) - провайдер" -Subtitle "Z.AI · NIM · OpenRouter (через free-claude-code)" -Items $items -InitialIndex $startIdx -MaxVisible 20
+  $choice = Show-TuiFramedMenu -AppBrand "Claude" -Title "Claude Code (облако) - провайдер" -Subtitle "Z.AI · NIM · OpenRouter (через free-claude-code)" -Items $items -InitialIndex $startIdx -MaxVisible 20 -UpdateHint $updateHint
   if (-not $choice) {
     Write-Host "Отменено." -ForegroundColor Yellow
     exit 0

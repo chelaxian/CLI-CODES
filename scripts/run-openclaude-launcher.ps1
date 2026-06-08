@@ -220,7 +220,7 @@ function Invoke-OpenClaudeZaiPreset {
   Clear-Host
   Write-Host "Запуск OpenClaude (Z.AI)..." -ForegroundColor Cyan
   Write-Host "Model: $($zSpec.Model) | Endpoint: https://api.z.ai/api/anthropic" -ForegroundColor DarkGray
-  Invoke-ChildCliCatchCtrlC -ExePath $exe -Arguments @("--bare")
+  & (Join-Path $PSScriptRoot "run-openclaude-session.ps1") -ExePath $exe -ArgumentsJson '["--bare"]'
 }
 
 function Invoke-OpenClaudeOpenAIPreset {
@@ -275,12 +275,14 @@ function Invoke-OpenClaudeOpenAIPreset {
   Write-Host "Запуск OpenClaude..." -ForegroundColor Cyan
   Write-Host "Provider: $($spec.Base) | Model: $($spec.Model)" -ForegroundColor DarkGray
   Write-Host "Provider profile записан в ~/.openclaude/settings.json" -ForegroundColor DarkGray
-  Invoke-ChildCliCatchCtrlC -ExePath $exe -Arguments @("--bare")
+  & (Join-Path $PSScriptRoot "run-openclaude-session.ps1") -ExePath $exe -ArgumentsJson '["--bare"]'
 }
 
 # Главное меню loop
+$updateHint = Test-LauncherUpdates -AgentNpmPackage "@gitlawb/openclaude" -AgentDisplayName "OpenClaude"
+
 while ($true) {
-  $choice = Show-TuiFramedMenu -AppBrand "OpenClaude" -Title "OpenClaude - выбор профиля" -Subtitle "Z.AI · NIM · B.AI · OpenRouter — provider profiles" -Items $script:Profiles -MaxVisible 14
+  $choice = Show-TuiFramedMenu -AppBrand "OpenClaude" -Title "OpenClaude - выбор профиля" -Subtitle "Z.AI · NIM · B.AI · OpenRouter — provider profiles" -Items $script:Profiles -MaxVisible 14 -UpdateHint $updateHint
   if (-not $choice) {
     Write-Host "Отменено." -ForegroundColor Yellow
     exit 0
@@ -354,7 +356,7 @@ while ($true) {
       Clear-Host
       Write-Host "Запуск OpenClaude (Z.AI custom)..." -ForegroundColor Cyan
       Write-Host "Model: $mid | Endpoint: https://api.z.ai/api/anthropic" -ForegroundColor DarkGray
-      try { Invoke-ChildCliCatchCtrlC -ExePath $exe -Arguments @("--bare") } catch { Write-Host "" }
+      & (Join-Path $PSScriptRoot "run-openclaude-session.ps1") -ExePath $exe -ArgumentsJson '["--bare"]'
     } else {
       $spec = switch ($w.Provider) {
         "nim"        { @{ Base = "https://integrate.api.nvidia.com/v1"; KeyEnv = "NVIDIA_NIM_API_KEY" } }
@@ -392,7 +394,7 @@ while ($true) {
       Write-Host "Запуск OpenClaude..." -ForegroundColor Cyan
       Write-Host "Provider: $($spec.Base) | Model: $mid" -ForegroundColor DarkGray
       Write-Host "Provider profile записан в ~/.openclaude.json" -ForegroundColor DarkGray
-      try { Invoke-ChildCliCatchCtrlC -ExePath $exe -Arguments @("--bare") } catch { Write-Host "" }
+      & (Join-Path $PSScriptRoot "run-openclaude-session.ps1") -ExePath $exe -ArgumentsJson '["--bare"]'
     }
     continue
   }
@@ -407,7 +409,7 @@ while ($true) {
     if (-not $exe) { throw "OpenClaude CLI не найден. Установите: npm install -g @gitlawb/openclaude" }
     Clear-Host
     Write-Host "Запуск OpenClaude (vanilla)..." -ForegroundColor Cyan
-    try { Invoke-ChildCliCatchCtrlC -ExePath $exe -Arguments @("--bare") } catch { Write-Host "" }
+    & (Join-Path $PSScriptRoot "run-openclaude-session.ps1") -ExePath $exe -ArgumentsJson '["--bare"]'
     continue
   }
 

@@ -167,9 +167,9 @@ function Show-TuiFramedMenu {
     [Parameter(Mandatory = $true)][object[]]$Items,
     [int]$InitialIndex = 0,
     [int]$MaxVisible = 12,
-    # Exit = Esc полностью отменяет (как главное меню). Back = Esc вернуться к предыдущему шагу (мастер «другая модель»).
     [ValidateSet("Exit", "Back")]
-    [string]$EscapeAction = "Exit"
+    [string]$EscapeAction = "Exit",
+    [string]$UpdateHint = ""
   )
 
   Set-LauncherTuiConsole
@@ -211,6 +211,11 @@ function Show-TuiFramedMenu {
       default { Write-TuiBannerClaude -InnerWidth $inner }
     }
     Write-TuiRow -Text ("".PadRight($inner)) -InnerWidth $inner
+    if (-not [string]::IsNullOrWhiteSpace($UpdateHint)) {
+      Write-TuiRow -Text "" -InnerWidth $inner
+      Write-TuiRow -Text ("  $UpdateHint") -InnerWidth $inner -Fg Yellow
+      Write-TuiRow -Text "" -InnerWidth $inner
+    }
     Write-Host ($b.LJ + (Repeat-TuiChar $b.H $inner) + $b.RJ) -ForegroundColor DarkCyan
     Write-TuiRow -Text (" " + $Title.Trim()) -InnerWidth $inner -Fg White
     if (-not [string]::IsNullOrWhiteSpace($Subtitle)) {
@@ -348,15 +353,6 @@ function Restore-ProcessEnvFromUser {
 # Thin wrapper around '& $exe' that swallows PipelineStoppedException so
 # Ctrl+C (which aborts the running child CLI) returns control to the caller
 # instead of aborting the whole launcher script.
-#
-# Differences from the previous (broken) Invoke-ChildCliSafe attempt:
-#   - Does NOT temporarily change $ErrorActionPreference.
-#   - Does NOT change $PSNativeCommandUseErrorActionPreference (callers set it).
-#   - Does NOT return $LASTEXITCODE — just runs the CLI and swallows Ctrl+C.
-#   - Works because the caller has already set
-#     $PSNativeCommandUseErrorActionPreference = $false at script top, so
-#     non-zero exit codes never become terminating errors. The only thing we
-#     need to catch here is PipelineStoppedException (Ctrl+C pipeline abort).
 function Invoke-ChildCliCatchCtrlC {
   param(
     [Parameter(Mandatory = $true)][string]$ExePath,
@@ -371,8 +367,66 @@ function Invoke-ChildCliCatchCtrlC {
     } else {
       & $ExePath
     }
-  } catch {
-    # Swallow Ctrl+C / pipeline-stopped — return to caller so the launcher
-    # can re-show its main menu.
+  } catch {}
+}
+
+# ─── Test-LauncherUpdates ─────────────────────────────────────────────────────
+# Checks for updates to: (1) the cloud-code-setup repo scripts, (2) the agent binary.
+# Returns a string (update hint) or "" if no updates / check failed.
+# Non-blocking: any failure is silently ignored.
+function Test-LauncherUpdates {
+  param(
+    [string]$AgentNpmPackage = "",
+    [string]$AgentDisplayName = ""
+  )
+
+  $hints = @()
+  $prevEAP = $ErrorActionPreference
+  $prevProgress = $ProgressPreference
+  try {
+    $ErrorActionPreference = "Continue"
+    $ProgressPreference = "SilentlyContinue"
+
+    # Check repo updates
+    $repo = "chelaxian/cloud-code-setup"
+    $branch = "main"
+    try {
+      $apiUrl = "https://api.github.com/repos/$repo/commits/$branch"
+      $resp = Invoke-RestMethod -Uri $apiUrl -TimeoutSec 5 -ErrorAction Stop
+      $remoteSha = $resp.sha
+      if ($remoteSha -and $PSScriptRoot) {
+        $gitDir = Join-Path (Split-Path $PSScriptRoot) ".git"
+        if (Test-Path -LiteralPath $gitDir) {
+          $localSha = & git -C (Split-Path $PSScriptRoot) rev-parse HEAD 2>$null
+          if ($localSha -and $remoteSha -ne $localSha.Trim()) {
+            $hints += "РЕПО: есть обновление скриптов — git pull"
+          }
+        }
+      }
+    } catch {}
+
+    # Check agent npm package updates
+    if (-not [string]::IsNullOrWhiteSpace($AgentNpmPackage)) {
+      try {
+        $npmBin = Join-Path $env:APPDATA "npm"
+        $npmView = Get-Command npm.cmd -ErrorAction SilentlyContinue
+        if (-not $npmView) { $npmView = Join-Path $npmBin "npm.cmd" }
+        if ($npmView -and (Test-Path -LiteralPath $npmView)) {
+          $latest = & $npmView view $AgentNpmPackage version 2>$null
+          if ($latest) {
+            $installed = & $npmView list -g $AgentNpmPackage --depth=0 2>$null
+            if ($installed -and $installed -notmatch [regex]::Escape($latest.Trim())) {
+              $name = if ($AgentDisplayName) { $AgentDisplayName } else { $AgentNpmPackage }
+              $hints += "${name}: обновление $latest — npm i -g $AgentNpmPackage@latest"
+            }
+          }
+        }
+      } catch {}
+    }
+  } catch {} finally {
+    $ErrorActionPreference = $prevEAP
+    $ProgressPreference = $prevProgress
   }
+
+  return ($hints -join " | ")
 }
