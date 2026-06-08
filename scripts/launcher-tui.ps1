@@ -627,6 +627,29 @@ function Build-GroupMenuItems {
           Write-Host "  [DEBUG] $Provider : fetch returned 0 items, falling back to static" -ForegroundColor DarkYellow
         }
       } catch {
+        $errMsg = $_.Exception.Message
+        Write-Host "  [DEBUG] $Provider : fetch EXCEPTION: $errMsg" -ForegroundColor Red
+        if ($errMsg -match "timeout|timed out|connection|network|name resolution|DNS|geo") {
+          Write-Host "  [WARN] $Provider : сетевая ошибка (таймаут/геоблок). Включите VPN." -ForegroundColor Yellow
+        }
+      }
+    } else {
+      Write-Host "  [DEBUG] $Provider : no API key found (env=$ApiKeyEnv), using static" -ForegroundColor DarkYellow
+    }
+  }
+            $items += [pscustomobject]@{ Id = $itemId; Label = "$Provider - $mid" }
+          }
+          if ($items.Count -gt 0) {
+            $source = "API"
+            $hint = " (live)"
+            Write-Host "  [DEBUG] $Provider : using dynamic list ($($items.Count) items)" -ForegroundColor DarkGreen
+          }
+        }
+
+        if ($source -eq "static") {
+          Write-Host "  [DEBUG] $Provider : fetch returned 0 items, falling back to static" -ForegroundColor DarkYellow
+        }
+      } catch {
         Write-Host "  [DEBUG] $Provider : fetch EXCEPTION: $_" -ForegroundColor Red
       }
     } else {

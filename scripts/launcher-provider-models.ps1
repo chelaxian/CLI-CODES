@@ -24,7 +24,7 @@ function Invoke-LauncherJsonGet {
   param(
     [Parameter(Mandatory = $true)][string]$Uri,
     [hashtable]$Headers = @{},
-    [int]$TimeoutSec = 25
+    [int]$TimeoutSec = 8
   )
   $iwr = Get-Command Invoke-WebRequest -ErrorAction Stop
   $useBasic = $iwr.Parameters.ContainsKey("UseBasicParsing")
