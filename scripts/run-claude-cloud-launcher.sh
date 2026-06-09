@@ -163,13 +163,16 @@ resolve_profile_from_state() {
             return 0
             ;;
         claude-bai-*)
-            # Wildcard: any claude-bai-* profile is valid iff its model_id is in BAI_MODEL_SPEC.
             local mid="${profile_id#claude-bai-}"
             if [[ -n "${BAI_MODEL_SPEC[$mid]:-}" ]]; then
                 echo "$profile_id"
                 return 0
             fi
             return 1
+            ;;
+        claude-zai-*|claude-nim-*|claude-openrouter-*)
+            echo "$profile_id"
+            return 0
             ;;
         *)
             return 1
@@ -552,6 +555,64 @@ with open('$settings_file','w') as f: json.dump(d,f,indent=2)
     exec "$claude_exe"
 }
 
+invoke_claude_dynamic_fallback() {
+    local profile_id="$1"
+    local raw_model="" fcc_prefix="" provider="" port="8082"
+
+    case "$profile_id" in
+        claude-zai-*)
+            raw_model="${profile_id#claude-zai-}"
+            local key="${ZAI_API_KEY:-}"
+            if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then key=$(get_current_api_key "ZAI"); fi
+            export ANTHROPIC_API_KEY="$key"
+            unset ANTHROPIC_AUTH_TOKEN
+            export ANTHROPIC_BASE_URL="https://api.z.ai/api/anthropic"
+            export ANTHROPIC_DEFAULT_OPUS_MODEL="$raw_model"
+            export ANTHROPIC_DEFAULT_SONNET_MODEL="$raw_model"
+            export ANTHROPIC_DEFAULT_HAIKU_MODEL="$raw_model"
+            local claude_exe
+            if command -v claude &>/dev/null; then claude_exe="$(command -v claude)"; fi
+            if [ -n "$claude_exe" ]; then enter_claude_shared_dir; exec "$claude_exe"; fi
+            return 1
+            ;;
+        claude-nim-*)
+            raw_model="${profile_id#claude-nim-}"
+            fcc_prefix="nvidia_nim"
+            provider="nvidia_nim"
+            port="8082"
+            ;;
+        claude-openrouter-*)
+            raw_model="${profile_id#claude-openrouter-}"
+            fcc_prefix="open_router"
+            provider="open_router"
+            port="8084"
+            ;;
+        *)
+            echo -e "${RED}Неизвестный профиль: $profile_id${RESET}"
+            return 1
+            ;;
+    esac
+
+    local fcc_model="${fcc_prefix}/${raw_model}"
+    local proxy_port
+    proxy_port=$(ensure_fcc_proxy "$provider" "$fcc_model" "$port") || {
+        printf "${RED}Не удалось запустить free-claude-code proxy.${RESET}\n" >&3
+        return 1
+    }
+    export ANTHROPIC_AUTH_TOKEN="freecc"
+    unset ANTHROPIC_API_KEY
+    export ANTHROPIC_BASE_URL="http://127.0.0.1:${proxy_port}"
+    export ANTHROPIC_DEFAULT_OPUS_MODEL="$fcc_model"
+    export ANTHROPIC_DEFAULT_SONNET_MODEL="$fcc_model"
+    export ANTHROPIC_DEFAULT_HAIKU_MODEL="$fcc_model"
+    export API_TIMEOUT_MS="3000000"
+
+    local claude_exe
+    if command -v claude &>/dev/null; then claude_exe="$(command -v claude)"; fi
+    if [ -n "$claude_exe" ]; then enter_claude_shared_dir; exec "$claude_exe"; fi
+    return 1
+}
+
 # ── API key helpers ──────────────────────────────────────────────────────────
 get_claude_zai_api_key() {
     local key="${ZAI_API_KEY:-}"
@@ -764,27 +825,32 @@ fi
 echo -e "${GRAY}Загрузка списков моделей...${RESET}" >&3
 
 DYNAMIC_ZAI=()
-mapfile -t DYNAMIC_ZAI < <(build_group_menu_items "zai" "ZAI_API_KEY" \
-    "https://api.z.ai/api/coding/paas/v4/models" "Bearer " "claude-zai-" \
+mapfile -t DYNAMIC_ZAI < <(fetch_menu_items "ZAI_API_KEY" \
+    "https://api.z.ai/api/coding/paas/v4/models" "claude-zai-" \
+    "glm-5.1:claude-zai-glm51|glm-4.7:claude-zai|glm-4.7-flash:claude-zai-flash47" \
+    "claude-zai-flash47" "" \
     "claude-zai-glm51|Z.AI - GLM-5.1 (paid, tool calling)" \
     "claude-zai|Z.AI - GLM-4.7 (paid, tool calling)" \
     "claude-zai-flash47|Z.AI - GLM-4.7-Flash (free, tool calling)" 2>/dev/null) || true
 if [ ${#DYNAMIC_ZAI[@]} -gt 0 ]; then ZAI_MODELS=("${DYNAMIC_ZAI[@]}"); fi
 
 DYNAMIC_NIM=()
-mapfile -t DYNAMIC_NIM < <(build_group_menu_items "nim" "NVIDIA_NIM_API_KEY" \
-    "https://integrate.api.nvidia.com/v1/models" "Bearer " "claude-nim-" \
+mapfile -t DYNAMIC_NIM < <(fetch_menu_items "NVIDIA_NIM_API_KEY" \
+    "https://integrate.api.nvidia.com/v1/models" "claude-nim-" \
+    "mistralai/mistral-medium-3.5-128b:claude-nim-mistral-medium|z-ai/glm-5.1:claude-nim-glm51|stepfun-ai/step-3.5-flash:claude-nim-step-3.5-flash|mistralai/mistral-large-3-675b-instruct-2512:claude-nim-mistral-large-3|deepseek-ai/deepseek-v4-flash:claude-nim-deepseek-v4-flash|google/gemma-4-31b-it:claude-nim-gemma-4-31b|qwen/qwen3.5-397b-a17b:claude-nim-qwen3.5-397b|qwen/qwen3-next-80b-a3b-instruct:claude-nim-qwen3-next-80b|qwen/qwen3-coder-480b-a35b-instruct:claude-nim-qwen3-coder-480b" \
+    "" "$(printf '%s|' "${NIM_AGENTIC_IDS[@]}" | sed 's/|$//')" \
     "${NIM_MODELS[@]}" 2>/dev/null) || true
 if [ ${#DYNAMIC_NIM[@]} -gt 0 ]; then NIM_MODELS=("${DYNAMIC_NIM[@]}"); fi
 
 DYNAMIC_BAI=()
-mapfile -t DYNAMIC_BAI < <(build_group_menu_items "bai" "BAI_API_KEY" \
-    "https://api.b.ai/v1/models" "Bearer " "claude-bai-" \
+mapfile -t DYNAMIC_BAI < <(fetch_menu_items "BAI_API_KEY" \
+    "https://api.b.ai/v1/models" "claude-bai-" "" "" "" \
     "${BAI_MODELS[@]}" 2>/dev/null) || true
 if [ ${#DYNAMIC_BAI[@]} -gt 0 ]; then BAI_MODELS=("${DYNAMIC_BAI[@]}"); fi
 
 DYNAMIC_OR=()
-mapfile -t DYNAMIC_OR < <(build_openrouter_free_items "OPENROUTER_API_KEY" "claude-openrouter-" \
+mapfile -t DYNAMIC_OR < <(fetch_or_free_menu_items "OPENROUTER_API_KEY" "claude-openrouter-" \
+    "deepseek/deepseek-chat-v3.1:free:claude-openrouter-deepseek-v4-flash|qwen/qwen3-coder:free:claude-openrouter-qwen3-coder|nvidia/nemotron-3-super-120b-a12b:free:claude-openrouter-nemotron|poolside/laguna-m.1:free:claude-openrouter-laguna" \
     "${OPENROUTER_MODELS[@]}" 2>/dev/null) || true
 if [ ${#DYNAMIC_OR[@]} -gt 0 ]; then OPENROUTER_MODELS=("${DYNAMIC_OR[@]}"); fi
 
@@ -989,7 +1055,9 @@ while true; do
             ;;
     esac
     
-    invoke_claude_cloud_profile "$profile_id"
+    if ! invoke_claude_cloud_profile "$profile_id" 2>/dev/null; then
+        invoke_claude_dynamic_fallback "$profile_id"
+    fi
     continue
 done
 }

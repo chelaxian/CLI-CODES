@@ -485,52 +485,103 @@ show_tui_framed_menu() {
 }
 
 # ── Dynamic model fetching for bash launchers ──────────────────────────────────
-# Fetches models from provider API and returns them as "id|Label" lines on stdout.
-# Falls back to static items if API fails.
+# Returns "preset_id|Label" lines on stdout, "API" or "static" on stderr line 1.
 #
 # Usage:
-#   build_group_menu_items <provider> <api_key_env> <api_url> <auth_header_prefix> <id_prefix> <static_items...>
-#   Returns: array of "id|Label" lines on stdout, and "API" or "static" on stderr line 1
+#   fetch_menu_items <api_key_env> <api_url> <id_prefix> <id_map> <forced> <allowed> <static_items...>
+#
+# Parameters:
+#   api_key_env  — env var name with API key (e.g. "ZAI_API_KEY")
+#   api_url      — endpoint URL
+#   id_prefix    — prefix for preset IDs (e.g. "zai-", "nim-")
+#   id_map       — "api_id1:preset_id1|api_id2:preset_id2" mapping raw API IDs to preset IDs
+#   forced       — "preset_id1|preset_id2" presets always included even if not in API response
+#   allowed      — "api_id1|api_id2" whitelist of API IDs (empty "" = accept all)
+#   static_items — fallback "id|Label" array
 #
 # Example:
-#   mapfile -t DYNAMIC_ITEMS < <(build_group_menu_items "zai" "ZAI_API_KEY" \
-#       "https://api.z.ai/api/coding/paas/v4/models" "Bearer " "zai-" \
-#       "zai-glm51|Z.AI - GLM-5.1" "zai-glm|Z.AI - GLM-4.7")
+#   mapfile -t ITEMS < <(fetch_menu_items "ZAI_API_KEY" \
+#       "https://api.z.ai/api/coding/paas/v4/models" "zai-" \
+#       "glm-5.1:zai-glm51|glm-4.7:zai-glm|glm-4.7-flash:zai-flash47" \
+#       "zai-flash47" "" \
+#       "zai-glm51|Z.AI - GLM-5.1" "zai-glm|Z.AI - GLM-4.7" "zai-flash47|Z.AI - GLM-4.7-Flash" 2>/dev/null)
 
-build_group_menu_items() {
-    local provider="$1"
-    local api_key_env="$2"
-    local api_url="$3"
-    local auth_prefix="${4:-Bearer }"
-    local id_prefix="$5"
-    shift 5
+fetch_menu_items() {
+    local api_key_env="$1"
+    local api_url="$2"
+    local id_prefix="$3"
+    local id_map_str="$4"
+    local forced_str="$5"
+    local allowed_str="$6"
+    shift 6
     local static_items=("$@")
 
-    # Try dynamic fetch
     local key="${!api_key_env:-}"
     if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then
-        key=$(get_current_api_key "${api_key_env%%_API_KEY}" 2>/dev/null || true)
+        local prov_name="${api_key_env%%_API_KEY}"
+        key=$(get_current_api_key "$prov_name" 2>/dev/null || true)
     fi
 
     if [ -n "$key" ] && [ "$key" != "__SET_ME__" ]; then
         local response
         response=$(curl -s --connect-timeout 8 --max-time 12 \
-            -H "Authorization: ${auth_prefix}${key}" \
+            -H "Authorization: Bearer $key" \
             "$api_url" 2>/dev/null) || true
 
         if [ -n "$response" ]; then
-            local ids=()
-            ids=($(echo "$response" | grep -o '"id":"[^"]*"' | cut -d'"' -f4 | sort -u))
+            local raw_ids=()
+            raw_ids=($(echo "$response" | grep -o '"id":"[^"]*"' | cut -d'"' -f4 | sort -u))
 
-            if [ ${#ids[@]} -gt 0 ]; then
-                local dynamic_items=()
-                for raw_id in "${ids[@]}"; do
-                    local mid="$(echo "$raw_id" | xargs)"
-                    [ -z "$mid" ] && continue
-                    dynamic_items+=("${id_prefix}${mid}|${provider} - ${mid}")
+            if [ ${#raw_ids[@]} -gt 0 ]; then
+                local items=()
+                local used_presets=""
+
+                for raw_id in "${raw_ids[@]}"; do
+                    raw_id="$(echo "$raw_id" | xargs)"
+                    [ -z "$raw_id" ] && continue
+
+                    if [ -n "$allowed_str" ]; then
+                        local found=0
+                        IFS='|' read -ra ALLOWED <<< "$allowed_str"
+                        for a in "${ALLOWED[@]}"; do
+                            if [ "$raw_id" = "$a" ]; then found=1; break; fi
+                        done
+                        [ "$found" -eq 0 ] && continue
+                    fi
+
+                    local preset_id=""
+                    if [ -n "$id_map_str" ]; then
+                        IFS='|' read -ra MAPPINGS <<< "$id_map_str"
+                        for m in "${MAPPINGS[@]}"; do
+                            local m_api="${m%%:*}"
+                            local m_preset="${m##*:}"
+                            if [ "$raw_id" = "$m_api" ]; then
+                                preset_id="$m_preset"
+                                break
+                            fi
+                        done
+                    fi
+                    if [ -z "$preset_id" ]; then
+                        preset_id="${id_prefix}${raw_id}"
+                    fi
+
+                    items+=("${preset_id}|${raw_id}")
+                    used_presets="${used_presets}|${preset_id}|"
                 done
-                if [ ${#dynamic_items[@]} -gt 0 ]; then
-                    printf '%s\n' "${dynamic_items[@]}"
+
+                if [ -n "$forced_str" ]; then
+                    IFS='|' read -ra FORCED <<< "$forced_str"
+                    for f in "${FORCED[@]}"; do
+                        [ -z "$f" ] && continue
+                        if [[ "$used_presets" != *"|$f|"* ]]; then
+                            local f_label="${f#${id_prefix}}"
+                            items+=("$f|${f_label} (forced)")
+                        fi
+                    done
+                fi
+
+                if [ ${#items[@]} -gt 0 ]; then
+                    printf '%s\n' "${items[@]}"
                     echo "API" >&2
                     return 0
                 fi
@@ -538,18 +589,18 @@ build_group_menu_items() {
         fi
     fi
 
-    # Fallback to static
     printf '%s\n' "${static_items[@]}"
     echo "static" >&2
     return 0
 }
 
-# Fetch models from OpenRouter free tier (pricing.prompt=="0" and pricing.completion=="0")
+# OpenRouter free tier: pricing.prompt=="0" and pricing.completion=="0"
 # Requires jq.
-build_openrouter_free_items() {
+fetch_or_free_menu_items() {
     local api_key_env="$1"
     local id_prefix="$2"
-    shift 2
+    local id_map_str="$3"
+    shift 3
     local static_items=("$@")
 
     local key="${!api_key_env:-}"
@@ -568,14 +619,31 @@ build_openrouter_free_items() {
             free_ids=($(echo "$response" | jq -r '.data[] | select(.pricing.prompt == "0" and .pricing.completion == "0") | .id' 2>/dev/null | sort -u))
 
             if [ ${#free_ids[@]} -gt 0 ]; then
-                local dynamic_items=()
+                local items=()
                 for raw_id in "${free_ids[@]}"; do
-                    local mid="$(echo "$raw_id" | xargs)"
-                    [ -z "$mid" ] && continue
-                    dynamic_items+=("${id_prefix}${mid}|OpenRouter - ${mid}")
+                    raw_id="$(echo "$raw_id" | xargs)"
+                    [ -z "$raw_id" ] && continue
+
+                    local preset_id=""
+                    if [ -n "$id_map_str" ]; then
+                        IFS='|' read -ra MAPPINGS <<< "$id_map_str"
+                        for m in "${MAPPINGS[@]}"; do
+                            local m_api="${m%%:*}"
+                            local m_preset="${m##*:}"
+                            if [ "$raw_id" = "$m_api" ]; then
+                                preset_id="$m_preset"
+                                break
+                            fi
+                        done
+                    fi
+                    if [ -z "$preset_id" ]; then
+                        preset_id="${id_prefix}${raw_id}"
+                    fi
+
+                    items+=("${preset_id}|OpenRouter - ${raw_id}")
                 done
-                if [ ${#dynamic_items[@]} -gt 0 ]; then
-                    printf '%s\n' "${dynamic_items[@]}"
+                if [ ${#items[@]} -gt 0 ]; then
+                    printf '%s\n' "${items[@]}"
                     echo "API" >&2
                     return 0
                 fi
@@ -587,3 +655,23 @@ build_openrouter_free_items() {
     echo "static" >&2
     return 0
 }
+
+# Backward compatibility aliases
+build_group_menu_items() { fetch_menu_items "$@"; }
+build_openrouter_free_items() { fetch_or_free_menu_items "$@"; }
+
+# ── Bundled agentic model IDs (mirrors Windows launcher-provider-models.ps1) ──
+
+NIM_AGENTIC_IDS=(
+    "mistralai/mistral-medium-3.5-128b"
+    "z-ai/glm-5.1"
+    "stepfun-ai/step-3.5-flash"
+    "mistralai/mistral-large-3-675b-instruct-2512"
+    "deepseek-ai/deepseek-v4-flash"
+    "deepseek-ai/deepseek-v4-pro"
+    "qwen/qwen3.5-397b-a17b"
+    "qwen/qwen3-next-80b-a3b-instruct"
+    "qwen/qwen3-coder-480b-a35b-instruct"
+    "google/gemma-4-31b-it"
+    "nvidia/llama-3.1-nemotron-70b-instruct"
+)

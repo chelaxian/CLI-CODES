@@ -126,6 +126,10 @@ resolve_profile_from_state() {
             fi
             return 1
             ;;
+        zai-*|nim-*|openrouter-*)
+            echo "$profile_id"
+            return 0
+            ;;
         *)
             return 1
             ;;
@@ -293,7 +297,7 @@ show_submenu_for_group() {
 
 invoke_openclaude_zai_preset() {
     local preset_id="$1"
-    local model="${ZAI_PRESET_SPEC[$preset_id]}"
+    local model="${ZAI_PRESET_SPEC[$preset_id]:-${preset_id#zai-}}"
     if [ -z "$model" ]; then
         echo -e "${RED}Неизвестный Z.AI preset: $preset_id${RESET}" >&3
         return 1
@@ -317,10 +321,17 @@ invoke_openclaude_zai_preset() {
 
 invoke_openclaude_openai_preset() {
     local preset_id="$1"
-    local spec="${PRESET_SPEC[$preset_id]}"
+    local spec="${PRESET_SPEC[$preset_id]:-}"
+
     if [ -z "$spec" ]; then
-        echo -e "${RED}Неизвестный preset: $preset_id${RESET}" >&3
-        return 1
+        local base_url="" model_raw="$preset_id" key_env=""
+        case "$preset_id" in
+            nim-*) base_url="https://integrate.api.nvidia.com/v1"; key_env="NVIDIA_NIM_API_KEY"; model_raw="${preset_id#nim-}" ;;
+            bai-*) base_url="https://api.b.ai/v1"; key_env="BAI_API_KEY"; model_raw="${preset_id#bai-}" ;;
+            openrouter-*) base_url="https://openrouter.ai/api/v1"; key_env="OPENROUTER_API_KEY"; model_raw="${preset_id#openrouter-}" ;;
+            *) echo -e "${RED}Неизвестный preset: $preset_id${RESET}" >&3; return 1 ;;
+        esac
+        spec="${base_url}|${model_raw}|${key_env}"
     fi
 
     IFS='|' read -r base_url model key_env <<< "$spec"
@@ -443,53 +454,59 @@ fi
 echo -e "${GRAY}Загрузка списков моделей...${RESET}" >&3
 
 DYNAMIC_ZAI=()
-mapfile -t DYNAMIC_ZAI < <(build_group_menu_items "zai" "ZAI_API_KEY" \
-    "https://api.z.ai/api/coding/paas/v4/models" "Bearer " "zai-" \
+mapfile -t DYNAMIC_ZAI < <(fetch_menu_items "ZAI_API_KEY" \
+    "https://api.z.ai/api/coding/paas/v4/models" "zai-" \
+    "glm-5.1:zai-glm51|glm-4.7:zai-glm47|glm-4.7-flash:zai-flash47" \
+    "zai-flash47" "" \
     "zai-glm51|Z.AI - GLM-5.1 (paid, Anthropic-compatible)" \
     "zai-glm47|Z.AI - GLM-4.7 (paid, Anthropic-compatible)" \
     "zai-flash47|Z.AI - GLM-4.7-Flash (free, Anthropic-compatible)" 2>/dev/null) || true
 if [ ${#DYNAMIC_ZAI[@]} -gt 0 ]; then ZAI_MODELS=("${DYNAMIC_ZAI[@]}"); fi
 
 DYNAMIC_NIM=()
-mapfile -t DYNAMIC_NIM < <(build_group_menu_items "nim" "NVIDIA_NIM_API_KEY" \
-    "https://integrate.api.nvidia.com/v1/models" "Bearer " "nim-" \
+mapfile -t DYNAMIC_NIM < <(fetch_menu_items "NVIDIA_NIM_API_KEY" \
+    "https://integrate.api.nvidia.com/v1/models" "nim-" \
+    "mistralai/mistral-medium-3.5-128b:nim-mistral-medium|z-ai/glm-5.1:nim-glm51|stepfun-ai/step-3.5-flash:nim-step-3.5-flash|mistralai/mistral-large-3-675b-instruct-2512:nim-mistral-large-3|deepseek-ai/deepseek-v4-flash:nim-deepseek-v4-flash|google/gemma-4-31b-it:nim-gemma-4-31b|qwen/qwen3.5-397b-a17b:nim-qwen3.5-397b|qwen/qwen3-next-80b-a3b-instruct:nim-qwen3-next-80b|qwen/qwen3-coder-480b-a35b-instruct:nim-qwen3-coder-480b" \
+    "" "$(printf '%s|' "${NIM_AGENTIC_IDS[@]}" | sed 's/|$//')" \
     "${NIM_MODELS[@]}" 2>/dev/null) || true
 if [ ${#DYNAMIC_NIM[@]} -gt 0 ]; then NIM_MODELS=("${DYNAMIC_NIM[@]}"); fi
 
 DYNAMIC_BAI=()
-mapfile -t DYNAMIC_BAI < <(build_group_menu_items "bai" "BAI_API_KEY" \
-    "https://api.b.ai/v1/models" "Bearer " "bai-" \
+mapfile -t DYNAMIC_BAI < <(fetch_menu_items "BAI_API_KEY" \
+    "https://api.b.ai/v1/models" "bai-" "" "" "" \
     "${BAI_MODELS[@]}" 2>/dev/null) || true
 if [ ${#DYNAMIC_BAI[@]} -gt 0 ]; then BAI_MODELS=("${DYNAMIC_BAI[@]}"); fi
 
 DYNAMIC_OR=()
-mapfile -t DYNAMIC_OR < <(build_openrouter_free_items "OPENROUTER_API_KEY" "openrouter-" \
+mapfile -t DYNAMIC_OR < <(fetch_or_free_menu_items "OPENROUTER_API_KEY" "openrouter-" \
+    "deepseek/deepseek-chat-v3.1:free:openrouter-deepseek-v4-flash|qwen/qwen3-coder:free:openrouter-qwen3-coder|nvidia/nemotron-3-super-120b-a12b:free:openrouter-nemotron|poolside/laguna-m.1:free:openrouter-laguna" \
     "${OPENROUTER_MODELS[@]}" 2>/dev/null) || true
 if [ ${#DYNAMIC_OR[@]} -gt 0 ]; then OPENROUTER_MODELS=("${DYNAMIC_OR[@]}"); fi
 
 # Главное меню
+main() {
+local state last_id choice profile_id sub_result wizard_result wiz_provider wiz_model openclaude_exe
 while true; do
-    local state=$(get_launcher_state 2>/dev/null || true)
-    local last_id=$(resolve_profile_from_state "$state" 2>/dev/null || true)
+    state=$(get_launcher_state 2>/dev/null || true)
+    last_id=$(resolve_profile_from_state "$state" 2>/dev/null || true)
 
     local menu_items=()
     for profile in "${PROFILES[@]}"; do
         menu_items+=("${profile##*|}")
     done
 
-    local choice
     choice="$(show_tui_numbered_menu "OpenClaude" "OpenClaude - выбор профиля" "Z.AI · NIM · B.AI · OpenRouter" "${menu_items[@]}")"
 
     if [ "${choice:-0}" -eq 0 ]; then
         continue
     fi
 
-    local profile_id=$(echo "${PROFILES[$((choice-1))]}" | cut -d'|' -f1)
+    profile_id=$(echo "${PROFILES[$((choice-1))]}" | cut -d'|' -f1)
 
     case "$profile_id" in
         group:*)
             local group_key="${profile_id#group:}"
-            local sub_result=$(show_submenu_for_group "$group_key")
+            sub_result=$(show_submenu_for_group "$group_key")
             if [ -z "$sub_result" ] || [ "$sub_result" = "back" ]; then
                 continue
             fi
@@ -517,8 +534,8 @@ while true; do
             ;;
         custom-model)
             wizard_result=$(invoke_custom_model_wizard) || { echo -e "${YELLOW}Отменено${RESET}" >&3; continue; }
-            local wiz_provider=$(echo "$wizard_result" | cut -d'|' -f1)
-            local wiz_model=$(echo "$wizard_result" | cut -d'|' -f2)
+            wiz_provider=$(echo "$wizard_result" | cut -d'|' -f1)
+            wiz_model=$(echo "$wizard_result" | cut -d'|' -f2)
 
             openclaude_exe=$(resolve_openclaude_exe) || { echo -e "${RED}OpenClaude CLI не найден${RESET}" >&2; continue; }
 
@@ -529,30 +546,14 @@ while true; do
                 set_openclaude_profile "zai-custom-${wiz_model}-anthropic" "anthropic" "Z.AI $wiz_model" \
                     "https://api.z.ai/api/anthropic" "${ANTHROPIC_API_KEY:-}" "$wiz_model"
             else
-                local spec_key="custom-openclaude-$wiz_provider"
-                local base_for_provider=""
-                local key_env=""
-                local key_val=""
+                local base_for_provider="" key_env="" key_val=""
                 case "$wiz_provider" in
-                    nim)
-                        base_for_provider="https://integrate.api.nvidia.com/v1"
-                        key_env="NVIDIA_NIM_API_KEY"
-                        key_val="${!key_env:-}"
-                        if [ -z "$key_val" ]; then key_val="$(get_current_api_key "NVIDIA_NIM")"; fi
-                        ;;
-                    openrouter)
-                        base_for_provider="https://openrouter.ai/api/v1"
-                        key_env="OPENROUTER_API_KEY"
-                        key_val="${!key_env:-}"
-                        if [ -z "$key_val" ]; then key_val="$(get_current_api_key "OPENROUTER")"; fi
-                        ;;
-                    bai)
-                        base_for_provider="https://api.b.ai/v1"
-                        key_env="BAI_API_KEY"
-                        key_val="${!key_env:-}"
-                        if [ -z "$key_val" ]; then key_val="$(get_current_api_key "BAI")"; fi
-                        ;;
+                    nim) base_for_provider="https://integrate.api.nvidia.com/v1"; key_env="NVIDIA_NIM_API_KEY" ;;
+                    openrouter) base_for_provider="https://openrouter.ai/api/v1"; key_env="OPENROUTER_API_KEY" ;;
+                    bai) base_for_provider="https://api.b.ai/v1"; key_env="BAI_API_KEY" ;;
                 esac
+                key_val="${!key_env:-}"
+                if [ -z "$key_val" ]; then key_val="$(get_current_api_key "${key_env%%_API_KEY}")"; fi
                 remove_item Env:ANTHROPIC_BASE_URL Env:ANTHROPIC_API_KEY Env:ANTHROPIC_AUTH_TOKEN
                 export CLAUDE_CODE_USE_OPENAI=1
                 export OPENAI_API_KEY="$key_val"
@@ -588,3 +589,5 @@ while true; do
             ;;
     esac
 done
+}
+main "$@"

@@ -169,6 +169,10 @@ resolve_profile_from_state() {
             fi
             return 1
             ;;
+        zai-*|nim-*|openrouter-*)
+            echo "$profile_id"
+            return 0
+            ;;
         *)
             return 1
             ;;
@@ -666,6 +670,49 @@ invoke_opencode_profile() {
     esac
 }
 
+invoke_opencode_dynamic_fallback() {
+    local profile_id="$1"
+    local raw_model="" provider="" base_url="" api_key=""
+
+    case "$profile_id" in
+        zai-*)
+            raw_model="${profile_id#zai-}"
+            provider="zai"
+            base_url="https://api.z.ai/api/coding/paas/v4"
+            api_key=$(get_zai_api_key) || return 1
+            ;;
+        nim-*)
+            raw_model="${profile_id#nim-}"
+            provider="nvidia-nim"
+            base_url="https://integrate.api.nvidia.com/v1"
+            api_key=$(get_nim_api_key) || return 1
+            ;;
+        openrouter-*)
+            raw_model="${profile_id#openrouter-}"
+            provider="openrouter"
+            base_url="https://openrouter.ai/api/v1"
+            api_key=$(get_openrouter_api_key) || return 1
+            ;;
+        *)
+            echo -e "${RED}Неизвестный профиль: $profile_id${RESET}"
+            return 1
+            ;;
+    esac
+
+    local opencode_exe
+    opencode_exe=$(resolve_opencode_exe) || true
+    if [ -z "$opencode_exe" ]; then
+        echo -e "${RED}OpenCode CLI не найден. Установите: npm install -g opencode-ai@latest${RESET}"
+        return 1
+    fi
+
+    local config_path
+    config_path=$(write_opencode_config "$provider" "$raw_model" "$base_url" "$api_key")
+    export OPENCODE_CONFIG="$config_path"
+    echo -e "${CYAN}Запуск OpenCode ($provider $raw_model)…${RESET}"
+    "$opencode_exe"
+}
+
 # ── Мастер выбора модели (упрощённый для Linux) ────────────────────────────────
 
 invoke_custom_model_wizard() {
@@ -809,27 +856,32 @@ fi
 echo -e "${GRAY}Загрузка списков моделей...${RESET}" >&3
 
 DYNAMIC_ZAI_OC=()
-mapfile -t DYNAMIC_ZAI_OC < <(build_group_menu_items "zai" "ZAI_API_KEY" \
-    "https://api.z.ai/api/coding/paas/v4/models" "Bearer " "zai-" \
+mapfile -t DYNAMIC_ZAI_OC < <(fetch_menu_items "ZAI_API_KEY" \
+    "https://api.z.ai/api/coding/paas/v4/models" "zai-" \
+    "glm-5.1:zai-glm51|glm-4.7:zai-glm|glm-4.7-flash:zai-flash47" \
+    "zai-flash47" "" \
     "zai-glm51|Z.AI - GLM-5.1 (paid, tool calling)" \
     "zai-glm|Z.AI - GLM-4.7 (paid, tool calling)" \
     "zai-flash47|Z.AI - GLM-4.7-Flash (free, tool calling)" 2>/dev/null) || true
 if [ ${#DYNAMIC_ZAI_OC[@]} -gt 0 ]; then ZAI_MODELS=("${DYNAMIC_ZAI_OC[@]}"); fi
 
 DYNAMIC_NIM_OC=()
-mapfile -t DYNAMIC_NIM_OC < <(build_group_menu_items "nim" "NVIDIA_NIM_API_KEY" \
-    "https://integrate.api.nvidia.com/v1/models" "Bearer " "nim-" \
+mapfile -t DYNAMIC_NIM_OC < <(fetch_menu_items "NVIDIA_NIM_API_KEY" \
+    "https://integrate.api.nvidia.com/v1/models" "nim-" \
+    "mistralai/mistral-medium-3.5-128b:nim-mistral-medium|z-ai/glm-5.1:nim-glm51|stepfun-ai/step-3.5-flash:nim-step-3.5-flash|mistralai/mistral-large-3-675b-instruct-2512:nim-mistral-large-3|deepseek-ai/deepseek-v4-flash:nim-deepseek-v4-flash|google/gemma-4-31b-it:nim-gemma-4-31b|qwen/qwen3.5-397b-a17b:nim-qwen3.5-397b|qwen/qwen3-next-80b-a3b-instruct:nim-qwen3-next-80b|qwen/qwen3-coder-480b-a35b-instruct:nim-qwen3-coder-480b" \
+    "" "$(printf '%s|' "${NIM_AGENTIC_IDS[@]}" | sed 's/|$//')" \
     "${NIM_MODELS[@]}" 2>/dev/null) || true
 if [ ${#DYNAMIC_NIM_OC[@]} -gt 0 ]; then NIM_MODELS=("${DYNAMIC_NIM_OC[@]}"); fi
 
 DYNAMIC_BAI_OC=()
-mapfile -t DYNAMIC_BAI_OC < <(build_group_menu_items "bai" "BAI_API_KEY" \
-    "https://api.b.ai/v1/models" "Bearer " "bai-" \
+mapfile -t DYNAMIC_BAI_OC < <(fetch_menu_items "BAI_API_KEY" \
+    "https://api.b.ai/v1/models" "bai-" "" "" "" \
     "${BAI_MODELS[@]}" 2>/dev/null) || true
 if [ ${#DYNAMIC_BAI_OC[@]} -gt 0 ]; then BAI_MODELS=("${DYNAMIC_BAI_OC[@]}"); fi
 
 DYNAMIC_OR_OC=()
-mapfile -t DYNAMIC_OR_OC < <(build_openrouter_free_items "OPENROUTER_API_KEY" "openrouter-" \
+mapfile -t DYNAMIC_OR_OC < <(fetch_or_free_menu_items "OPENROUTER_API_KEY" "openrouter-" \
+    "deepseek/deepseek-chat-v3.1:free:openrouter-deepseek-v4-flash|qwen/qwen3-coder:free:openrouter-qwen3-coder|nvidia/nemotron-3-super-120b-a12b:free:openrouter-nemotron|poolside/laguna-m.1:free:openrouter-laguna" \
     "${OPENROUTER_MODELS[@]}" 2>/dev/null) || true
 if [ ${#DYNAMIC_OR_OC[@]} -gt 0 ]; then OPENROUTER_MODELS=("${DYNAMIC_OR_OC[@]}"); fi
 
@@ -1019,7 +1071,9 @@ while true; do
             ;;
     esac
     
-    invoke_opencode_profile "$profile_id"
+    if ! invoke_opencode_profile "$profile_id" 2>/dev/null; then
+        invoke_opencode_dynamic_fallback "$profile_id"
+    fi
     continue
 done
 }
