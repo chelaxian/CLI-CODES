@@ -34,7 +34,7 @@ PROFILES=(
 ZAI_MODELS=(
     "claude-zai-glm51|Z.AI - GLM-5.1 (paid, tool calling)"
     "claude-zai|Z.AI - GLM-4.7 (paid, tool calling)"
-    "claude-zai-flash47|Z.AI - GLM-4.7-Flash (free, tool calling)"
+    "claude-zai-flash47|Z.AI - GLM-4.7-Flash (free)"
 )
 
 NIM_MODELS=(
@@ -117,7 +117,7 @@ declare -A BAI_MODEL_SPEC=(
 )
 
 # Submenu subtitles per group
-GROUP_SUBTITLE_ZAI="Z.AI Coding (paid) + GLM-4.7-Flash (free)"
+GROUP_SUBTITLE_ZAI="Z.AI Coding (paid) + GLM-4.7-Flash"
 GROUP_SUBTITLE_NIM="NVIDIA NIM - 9 бесплатных agentic моделей"
 GROUP_SUBTITLE_OPENROUTER="OpenRouter - бесплатные agentic модели"
 GROUP_SUBTITLE_BAI="B.AI - https://api.b.ai/v1 (OpenAI-compatible)"
@@ -831,7 +831,7 @@ mapfile -t DYNAMIC_ZAI < <(fetch_menu_items "ZAI_API_KEY" \
     "claude-zai-flash47" "" \
     "claude-zai-glm51|Z.AI - GLM-5.1 (paid, tool calling)" \
     "claude-zai|Z.AI - GLM-4.7 (paid, tool calling)" \
-    "claude-zai-flash47|Z.AI - GLM-4.7-Flash (free, tool calling)" 2>/dev/null) || true
+    "claude-zai-flash47|Z.AI - GLM-4.7-Flash (free)" 2>/dev/null) || true
 if [ ${#DYNAMIC_ZAI[@]} -gt 0 ]; then ZAI_MODELS=("${DYNAMIC_ZAI[@]}"); fi
 
 DYNAMIC_NIM=()

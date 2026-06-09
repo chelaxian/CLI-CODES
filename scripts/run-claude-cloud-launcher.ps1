@@ -47,7 +47,19 @@ $script:Profiles = @(
     Id    = "group:nim"
     Label = "NVIDIA NIM - бесплатные agentic модели"
   }
-  # B.AI доступен через «Другая модель» (прямой OpenAI-compat, без proxy).
+  @{
+    Id    = "group:bai"
+    Label = "B.AI - DeepSeek/MiniMax/GLM/Kimi/GPT (OpenAI-compatible)"
+  }
+  @{
+    Id    = "group:openrouter"
+    Label = "OpenRouter - бесплатные agentic модели"
+  }
+  @{
+    Id    = "group:bai"
+    Label = "B.AI - DeepSeek/MiniMax/GLM/Kimi/GPT (OpenAI-compatible)"
+  }
+  # OpenRouter доступен через «Другая модель» (прямой OpenAI-compat, без proxy).
   @{
     Id    = "group:openrouter"
     Label = "OpenRouter - бесплатные agentic модели"
@@ -103,7 +115,7 @@ $script:GroupMenus = @{
   zai = @(
     @{ Id = "claude-zai-glm51";   Label = "Z.AI - GLM-5.1 (paid, tool calling)" }
     @{ Id = "claude-zai";         Label = "Z.AI - GLM-4.7 (paid, tool calling)" }
-    @{ Id = "claude-zai-flash47"; Label = "Z.AI - GLM-4.7-Flash (free, tool calling)" }
+    @{ Id = "claude-zai-flash47"; Label = "Z.AI - GLM-4.7-Flash (free)" }
   )
   nim = @(
     @{ Id = "claude-nim-mistral-medium";   Label = "NIM - Mistral Medium 3.5 128B (free, tool calling)" }
@@ -115,6 +127,45 @@ $script:GroupMenus = @{
     @{ Id = "claude-nim-qwen3.5-397b";     Label = "NIM - Qwen 3.5 397B A17B (free)" }
     @{ Id = "claude-nim-qwen3-next-80b";   Label = "NIM - Qwen 3 Next 80B A3B (free)" }
     @{ Id = "claude-nim-qwen3-coder-480b"; Label = "NIM - Qwen 3 Coder 480B A35B (free)" }
+  )
+  nim = @(
+    @{ Id = "claude-nim-mistral-medium";   Label = "NIM - Mistral Medium 3.5 128B (free, tool calling)" }
+    @{ Id = "claude-nim-glm51";            Label = "NIM - Z.AI GLM-5.1 (free, tool calling)" }
+    @{ Id = "claude-nim-step-3.5-flash";   Label = "NIM - Step 3.5 Flash (free, tool calling)" }
+    @{ Id = "claude-nim-mistral-large-3";  Label = "NIM - Mistral Large 3 675B (free, tool calling)" }
+    @{ Id = "claude-nim-deepseek-v4-flash"; Label = "NIM - DeepSeek V4 Flash 284B MoE (free)" }
+    @{ Id = "claude-nim-gemma-4-31b";      Label = "NIM - Google Gemma-4 31B (free)" }
+    @{ Id = "claude-nim-qwen3.5-397b";     Label = "NIM - Qwen 3.5 397B A17B (free)" }
+    @{ Id = "claude-nim-qwen3-next-80b";   Label = "NIM - Qwen 3 Next 80B A3B (free)" }
+    @{ Id = "claude-nim-qwen3-coder-480b"; Label = "NIM - Qwen 3 Coder 480B A35B (free)" }
+  )
+  bai = @(
+    @{ Id = "claude-bai-gpt-5-nano";        Label = "B.AI - GPT-5 Nano (OpenAI, agentic)" }
+    @{ Id = "claude-bai-gpt-5-mini";        Label = "B.AI - GPT-5 Mini (OpenAI, agentic)" }
+    @{ Id = "claude-bai-gpt-5.2";           Label = "B.AI - GPT-5.2 (OpenAI, agentic)" }
+    @{ Id = "claude-bai-gpt-5.4-nano";      Label = "B.AI - GPT-5.4 Nano (OpenAI, agentic)" }
+    @{ Id = "claude-bai-gpt-5.4-mini";      Label = "B.AI - GPT-5.4 Mini (OpenAI, agentic)" }
+    @{ Id = "claude-bai-gpt-5.4";           Label = "B.AI - GPT-5.4 (OpenAI, agentic)" }
+    @{ Id = "claude-bai-gpt-5.4-pro";       Label = "B.AI - GPT-5.4 Pro (OpenAI, agentic)" }
+    @{ Id = "claude-bai-gpt-5.5";           Label = "B.AI - GPT-5.5 (OpenAI, agentic)" }
+    @{ Id = "claude-bai-gpt-5.5-instant";   Label = "B.AI - GPT-5.5 Instant (OpenAI, agentic)" }
+    @{ Id = "claude-bai-claude-haiku-4.5";  Label = "B.AI - Claude Haiku 4.5 (Anthropic, agentic)" }
+    @{ Id = "claude-bai-claude-sonnet-4.5"; Label = "B.AI - Claude Sonnet 4.5 (Anthropic, agentic)" }
+    @{ Id = "claude-bai-claude-sonnet-4.6"; Label = "B.AI - Claude Sonnet 4.6 (Anthropic, agentic)" }
+    @{ Id = "claude-bai-claude-opus-4.5";   Label = "B.AI - Claude Opus 4.5 (Anthropic, agentic)" }
+    @{ Id = "claude-bai-claude-opus-4.6";   Label = "B.AI - Claude Opus 4.6 (Anthropic, agentic)" }
+    @{ Id = "claude-bai-claude-opus-4.7";   Label = "B.AI - Claude Opus 4.7 (Anthropic, agentic)" }
+    @{ Id = "claude-bai-claude-opus-4.8";   Label = "B.AI - Claude Opus 4.8 (Anthropic, agentic)" }
+    @{ Id = "claude-bai-deepseek-v4-pro";   Label = "B.AI - DeepSeek V4 Pro (agentic)" }
+    @{ Id = "claude-bai-deepseek-v4-flash"; Label = "B.AI - DeepSeek V4 Flash (agentic)" }
+    @{ Id = "claude-bai-gemini-3.1-pro";    Label = "B.AI - Gemini 3.1 Pro (Google, agentic)" }
+    @{ Id = "claude-bai-gemini-3.5-flash";  Label = "B.AI - Gemini 3.5 Flash (Google, agentic)" }
+    @{ Id = "claude-bai-glm-5";             Label = "B.AI - GLM-5 (Z.AI)" }
+    @{ Id = "claude-bai-glm-5.1";           Label = "B.AI - GLM-5.1 (Z.AI)" }
+    @{ Id = "claude-bai-kimi-k2.5";         Label = "B.AI - Kimi K2.5 (Moonshot)" }
+    @{ Id = "claude-bai-kimi-k2.6";         Label = "B.AI - Kimi K2.6 (Moonshot)" }
+    @{ Id = "claude-bai-minimax-m3";        Label = "B.AI - MiniMax M3 (agentic)" }
+    @{ Id = "claude-bai-minimax-m2.7";      Label = "B.AI - MiniMax M2.7 (fast)" }
   )
   openrouter = @(
     @{ Id = "claude-openrouter-deepseek-v4-flash"; Label = "OpenRouter - DeepSeek V4 Flash (free, text-only)" }
@@ -282,20 +333,34 @@ function Invoke-ClaudeCloudProfile {
       return
     }
     "custom-claude-bai" {
-      Write-Host ""
-      Write-Host "B.AI в Claude Code не поддерживается." -ForegroundColor Yellow
-      Write-Host "Используйте OpenClaude launcher (там работает через нативный provider profile)." -ForegroundColor Cyan
-      Write-Host "Нажмите любую клавишу для возврата в меню…" -ForegroundColor DarkGray
-      [void][Console]::ReadKey($true)
+      $st = Get-LauncherState
+      $mid = [string]$st.customModelId
+      if ([string]::IsNullOrWhiteSpace($mid)) {
+        throw "Нет customModelId в claude-cloud-launcher-state.json. Выберите модель в «Другая модель»."
+      }
+      $baiKey = Resolve-ApiKeyOrPrompt -CurrentKey $null -ProviderName "B.AI" -HelpUrl "https://chat.b.ai/key"
+      if ([string]::IsNullOrWhiteSpace($baiKey)) { return }
+      $env:OPENAI_API_KEY = $baiKey
+      $env:OPENAI_BASE_URL = "https://api.b.ai/v1"
+      $env:OPENAI_MODEL = $mid.Trim()
+      $env:CLAUDE_CODE_USE_OPENAI = "1"
+      $claudeExe = Resolve-ClaudeExe
+      if (-not $claudeExe) { throw "Claude Code CLI не найден." }
+      Invoke-CliCommand -ExePath $claudeExe
       return
     }
     default {
       if ($ProfileId -like "claude-bai-*") {
-        Write-Host ""
-        Write-Host "B.AI в Claude Code не поддерживается." -ForegroundColor Yellow
-        Write-Host "Используйте OpenClaude launcher." -ForegroundColor Cyan
-        Write-Host "Нажмите любую клавишу для возврата в меню…" -ForegroundColor DarkGray
-        [void][Console]::ReadKey($true)
+        $mid = $ProfileId.Substring("claude-bai-".Length)
+        $baiKey = Resolve-ApiKeyOrPrompt -CurrentKey $null -ProviderName "B.AI" -HelpUrl "https://chat.b.ai/key"
+        if ([string]::IsNullOrWhiteSpace($baiKey)) { return }
+        $env:OPENAI_API_KEY = $baiKey
+        $env:OPENAI_BASE_URL = "https://api.b.ai/v1"
+        $env:OPENAI_MODEL = $mid
+        $env:CLAUDE_CODE_USE_OPENAI = "1"
+        $claudeExe = Resolve-ClaudeExe
+        if (-not $claudeExe) { throw "Claude Code CLI не найден." }
+        Invoke-CliCommand -ExePath $claudeExe
         return
       }
       # Dynamic Z.AI dispatch
@@ -356,7 +421,7 @@ Write-Host "`nЗагрузка списков моделей..." -ForegroundColo
 $staticZaiCC = @(
   @{ Id = "claude-zai-glm51";   Label = "Z.AI - GLM-5.1 (paid, tool calling)" }
   @{ Id = "claude-zai";         Label = "Z.AI - GLM-4.7 (paid, tool calling)" }
-  @{ Id = "claude-zai-flash47"; Label = "Z.AI - GLM-4.7-Flash (free, tool calling)" }
+  @{ Id = "claude-zai-flash47"; Label = "Z.AI - GLM-4.7-Flash (free)" }
 )
 $staticNimCC = @(
   @{ Id = "claude-nim-mistral-medium";   Label = "NIM - Mistral Medium 3.5 128B (free, tool calling)" }
@@ -368,6 +433,36 @@ $staticNimCC = @(
   @{ Id = "claude-nim-qwen3.5-397b";     Label = "NIM - Qwen 3.5 397B A17B (free)" }
   @{ Id = "claude-nim-qwen3-next-80b";   Label = "NIM - Qwen 3 Next 80B A3B (free)" }
   @{ Id = "claude-nim-qwen3-coder-480b"; Label = "NIM - Qwen 3 Coder 480B A35B (free)" }
+)
+  @{ Id = "claude-nim-qwen3-coder-480b"; Label = "NIM - Qwen 3 Coder 480B A35B (free)" }
+)
+$staticBaiCC = @(
+  @{ Id = "claude-bai-gpt-5-nano";        Label = "B.AI - GPT-5 Nano (OpenAI, agentic)" }
+  @{ Id = "claude-bai-gpt-5-mini";        Label = "B.AI - GPT-5 Mini (OpenAI, agentic)" }
+  @{ Id = "claude-bai-gpt-5.2";           Label = "B.AI - GPT-5.2 (OpenAI, agentic)" }
+  @{ Id = "claude-bai-gpt-5.4-nano";      Label = "B.AI - GPT-5.4 Nano (OpenAI, agentic)" }
+  @{ Id = "claude-bai-gpt-5.4-mini";      Label = "B.AI - GPT-5.4 Mini (OpenAI, agentic)" }
+  @{ Id = "claude-bai-gpt-5.4";           Label = "B.AI - GPT-5.4 (OpenAI, agentic)" }
+  @{ Id = "claude-bai-gpt-5.4-pro";       Label = "B.AI - GPT-5.4 Pro (OpenAI, agentic)" }
+  @{ Id = "claude-bai-gpt-5.5";           Label = "B.AI - GPT-5.5 (OpenAI, agentic)" }
+  @{ Id = "claude-bai-gpt-5.5-instant";   Label = "B.AI - GPT-5.5 Instant (OpenAI, agentic)" }
+  @{ Id = "claude-bai-claude-haiku-4.5";  Label = "B.AI - Claude Haiku 4.5 (Anthropic, agentic)" }
+  @{ Id = "claude-bai-claude-sonnet-4.5"; Label = "B.AI - Claude Sonnet 4.5 (Anthropic, agentic)" }
+  @{ Id = "claude-bai-claude-sonnet-4.6"; Label = "B.AI - Claude Sonnet 4.6 (Anthropic, agentic)" }
+  @{ Id = "claude-bai-claude-opus-4.5";   Label = "B.AI - Claude Opus 4.5 (Anthropic, agentic)" }
+  @{ Id = "claude-bai-claude-opus-4.6";   Label = "B.AI - Claude Opus 4.6 (Anthropic, agentic)" }
+  @{ Id = "claude-bai-claude-opus-4.7";   Label = "B.AI - Claude Opus 4.7 (Anthropic, agentic)" }
+  @{ Id = "claude-bai-claude-opus-4.8";   Label = "B.AI - Claude Opus 4.8 (Anthropic, agentic)" }
+  @{ Id = "claude-bai-deepseek-v4-pro";   Label = "B.AI - DeepSeek V4 Pro (agentic)" }
+  @{ Id = "claude-bai-deepseek-v4-flash"; Label = "B.AI - DeepSeek V4 Flash (agentic)" }
+  @{ Id = "claude-bai-gemini-3.1-pro";    Label = "B.AI - Gemini 3.1 Pro (Google, agentic)" }
+  @{ Id = "claude-bai-gemini-3.5-flash";  Label = "B.AI - Gemini 3.5 Flash (Google, agentic)" }
+  @{ Id = "claude-bai-glm-5";             Label = "B.AI - GLM-5 (Z.AI)" }
+  @{ Id = "claude-bai-glm-5.1";           Label = "B.AI - GLM-5.1 (Z.AI)" }
+  @{ Id = "claude-bai-kimi-k2.5";         Label = "B.AI - Kimi K2.5 (Moonshot)" }
+  @{ Id = "claude-bai-kimi-k2.6";         Label = "B.AI - Kimi K2.6 (Moonshot)" }
+  @{ Id = "claude-bai-minimax-m3";        Label = "B.AI - MiniMax M3 (agentic)" }
+  @{ Id = "claude-bai-minimax-m2.7";      Label = "B.AI - MiniMax M2.7 (fast)" }
 )
 $staticOrCC = @(
   @{ Id = "claude-openrouter-deepseek-v4-flash"; Label = "OpenRouter - DeepSeek V4 Flash (free, text-only)" }
@@ -381,19 +476,50 @@ $nimMapCC = @{ "mistralai/mistral-medium-3.5-128b" = "claude-nim-mistral-medium"
 $nimResCC = Build-GroupMenuItems -Provider "nim" -StaticItems $staticNimCC -ApiKeyEnv "NVIDIA_NIM_API_KEY" -FetchScript "Get-NvidiaNimModelIdsFromApi" -AgenticOnly -IdPrefix "claude-nim-" -ApiIdToPresetId $nimMapCC
 $orMapCC = @{ "deepseek/deepseek-v4-flash:free" = "claude-openrouter-deepseek-v4-flash"; "qwen/qwen3-coder:free" = "claude-openrouter-qwen3-coder"; "nvidia/nemotron-3-super-120b-a12b:free" = "claude-openrouter-nemotron"; "poolside/laguna-m1:free" = "claude-openrouter-laguna" }
 $orResCC = Build-GroupMenuItems -Provider "openrouter" -StaticItems $staticOrCC -ApiKeyEnv "OPENROUTER_API_KEY" -FetchScript "Get-OpenRouterFreeModelIdsFromApi" -IdPrefix "claude-openrouter-" -ApiIdToPresetId $orMapCC
+$staticBaiCC = @(
+  @{ Id = "claude-bai-gpt-5-nano";        Label = "B.AI - GPT-5 Nano (OpenAI, agentic)" }
+  @{ Id = "claude-bai-gpt-5-mini";        Label = "B.AI - GPT-5 Mini (OpenAI, agentic)" }
+  @{ Id = "claude-bai-gpt-5.2";           Label = "B.AI - GPT-5.2 (OpenAI, agentic)" }
+  @{ Id = "claude-bai-gpt-5.4-nano";      Label = "B.AI - GPT-5.4 Nano (OpenAI, agentic)" }
+  @{ Id = "claude-bai-gpt-5.4-mini";      Label = "B.AI - GPT-5.4 Mini (OpenAI, agentic)" }
+  @{ Id = "claude-bai-gpt-5.4";           Label = "B.AI - GPT-5.4 (OpenAI, agentic)" }
+  @{ Id = "claude-bai-gpt-5.4-pro";       Label = "B.AI - GPT-5.4 Pro (OpenAI, agentic)" }
+  @{ Id = "claude-bai-gpt-5.5";           Label = "B.AI - GPT-5.5 (OpenAI, agentic)" }
+  @{ Id = "claude-bai-gpt-5.5-instant";   Label = "B.AI - GPT-5.5 Instant (OpenAI, agentic)" }
+  @{ Id = "claude-bai-claude-haiku-4.5";  Label = "B.AI - Claude Haiku 4.5 (Anthropic, agentic)" }
+  @{ Id = "claude-bai-claude-sonnet-4.5"; Label = "B.AI - Claude Sonnet 4.5 (Anthropic, agentic)" }
+  @{ Id = "claude-bai-claude-sonnet-4.6"; Label = "B.AI - Claude Sonnet 4.6 (Anthropic, agentic)" }
+  @{ Id = "claude-bai-claude-opus-4.5";   Label = "B.AI - Claude Opus 4.5 (Anthropic, agentic)" }
+  @{ Id = "claude-bai-claude-opus-4.6";   Label = "B.AI - Claude Opus 4.6 (Anthropic, agentic)" }
+  @{ Id = "claude-bai-claude-opus-4.7";   Label = "B.AI - Claude Opus 4.7 (Anthropic, agentic)" }
+  @{ Id = "claude-bai-claude-opus-4.8";   Label = "B.AI - Claude Opus 4.8 (Anthropic, agentic)" }
+  @{ Id = "claude-bai-deepseek-v4-pro";   Label = "B.AI - DeepSeek V4 Pro (agentic)" }
+  @{ Id = "claude-bai-deepseek-v4-flash"; Label = "B.AI - DeepSeek V4 Flash (agentic)" }
+  @{ Id = "claude-bai-gemini-3.1-pro";    Label = "B.AI - Gemini 3.1 Pro (Google, agentic)" }
+  @{ Id = "claude-bai-gemini-3.5-flash";  Label = "B.AI - Gemini 3.5 Flash (Google, agentic)" }
+  @{ Id = "claude-bai-glm-5";             Label = "B.AI - GLM-5 (Z.AI)" }
+  @{ Id = "claude-bai-glm-5.1";           Label = "B.AI - GLM-5.1 (Z.AI)" }
+  @{ Id = "claude-bai-kimi-k2.5";         Label = "B.AI - Kimi K2.5 (Moonshot)" }
+  @{ Id = "claude-bai-kimi-k2.6";         Label = "B.AI - Kimi K2.6 (Moonshot)" }
+  @{ Id = "claude-bai-minimax-m3";        Label = "B.AI - MiniMax M3 (agentic)" }
+  @{ Id = "claude-bai-minimax-m2.7";      Label = "B.AI - MiniMax M2.7 (fast)" }
+)
+$baiMapCC = @{}
+$baiResCC = Build-GroupMenuItems -Provider "bai" -StaticItems $staticBaiCC -ApiKeyEnv "BAI_API_KEY" -FetchScript "Get-BaiNonPremiumModelIds" -IdPrefix "claude-bai-" -ApiIdToPresetId $baiMapCC
 $groupHintsCC = @()
 if ($zaiResCC.Source -eq "static")  { $groupHintsCC += "Z.AI: статический список" }
 if ($nimResCC.Source -eq "static")  { $groupHintsCC += "NIM: статический список" }
 if ($orResCC.Source -eq "static")   { $groupHintsCC += "OpenRouter: статический список" }
 if ($zaiResCC.Source -eq "API")  { $script:GroupMenus.zai = $zaiResCC.Items }
 if ($nimResCC.Source -eq "API")  { $script:GroupMenus.nim = $nimResCC.Items }
+if ($baiResCC.Source -eq "API")  { $script:GroupMenus.bai = $baiResCC.Items }
 if ($orResCC.Source -eq "API")   { $script:GroupMenus.openrouter = $orResCC.Items }
 if ($groupHintsCC.Count -gt 0) {
   $updateHint = "$updateHint | ($($groupHintsCC -join ', '))"
 }
 
 while ($true) {
-  $choice = Show-TuiFramedMenu -AppBrand "Claude" -Title "Claude Code (облако) - провайдер" -Subtitle "Z.AI · NIM · OpenRouter (через free-claude-code)" -Items $items -InitialIndex $startIdx -MaxVisible 20 -UpdateHint $updateHint
+  $choice = Show-TuiFramedMenu -AppBrand "Claude" -Title "Claude Code (облако) - провайдер" -Subtitle "Z.AI · NIM · B.AI · OpenRouter (через free-claude-code)" -Items $items -InitialIndex $startIdx -MaxVisible 20 -UpdateHint $updateHint
   if (-not $choice) {
     Write-Host "Отменено." -ForegroundColor Yellow
     exit 0
@@ -442,12 +568,9 @@ while ($true) {
         Save-LauncherState -ProfileId "custom-claude-openrouter" -Extra @{ customModelId = [string]$w.ModelId }
         try { Invoke-ClaudeCloudProfile -ProfileId "custom-claude-openrouter" } catch { Write-Host "" }
       }
-      # B.AI wizard-выбор перенаправляем на OpenClaude
       "bai" {
-        Write-Host ""
-        Write-Host "B.AI в Claude Code не поддерживается." -ForegroundColor Yellow
-        Write-Host "Используйте OpenClaude launcher." -ForegroundColor Cyan
-        Start-Sleep -Seconds 3
+        Save-LauncherState -ProfileId "custom-claude-bai" -Extra @{ customModelId = [string]$w.ModelId }
+        try { Invoke-ClaudeCloudProfile -ProfileId "custom-claude-bai" } catch { Write-Host "" }
       }
       default {
         Save-LauncherState -ProfileId "custom-claude-nim" -Extra @{ customNimModel = [string]$w.ClaudeNimModel }

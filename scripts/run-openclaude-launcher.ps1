@@ -155,7 +155,7 @@ $script:GroupMenus = @{
   zai = @(
     @{ Id = "zai-glm51";   Label = "Z.AI - GLM-5.1 (paid, Anthropic-compatible, full tool support)" }
     @{ Id = "zai-glm47";   Label = "Z.AI - GLM-4.7 (paid, Anthropic-compatible, tool support)" }
-    @{ Id = "zai-flash47"; Label = "Z.AI - GLM-4.7-Flash (free, Anthropic-compatible)" }
+    @{ Id = "zai-flash47"; Label = "Z.AI - GLM-4.7-Flash (free)" }
   )
   nim = @(
     @{ Id = "nim-mistral-medium";   Label = "NIM - Mistral Medium 3.5 128B (free, tool calling)" }
@@ -360,7 +360,7 @@ $updateHint = Test-LauncherUpdates -AgentNpmPackage "@gitlawb/openclaude" -Agent
 $staticZaiOC = @(
   @{ Id = "zai-glm51";   Label = "Z.AI - GLM-5.1 (paid, Anthropic-compatible, full tool support)" }
   @{ Id = "zai-glm47";   Label = "Z.AI - GLM-4.7 (paid, Anthropic-compatible, tool support)" }
-  @{ Id = "zai-flash47"; Label = "Z.AI - GLM-4.7-Flash (free, Anthropic-compatible)" }
+  @{ Id = "zai-flash47"; Label = "Z.AI - GLM-4.7-Flash (free)" }
 )
 $staticNimOC = @(
   @{ Id = "nim-mistral-medium";   Label = "NIM - Mistral Medium 3.5 128B (free, tool calling)" }

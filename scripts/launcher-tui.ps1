@@ -623,7 +623,7 @@ function Build-GroupMenuItems {
               $lowerFid = $fid.ToLowerInvariant()
               $mappedId = if ($ApiIdToPresetId.ContainsKey($lowerFid)) { $ApiIdToPresetId[$lowerFid] } else { "$IdPrefix$fid" }
               if ($mappedId -notin $existingIds) {
-                $items += [pscustomobject]@{ Id = $mappedId; Label = "$Provider - $fid" }
+                $items += [pscustomobject]@{ Id = $mappedId; Label = "$Provider - $fid (free)" }
                 $existingIds += $mappedId
                 Write-Host "  [DEBUG] $Provider : forced add $fid -> $mappedId" -ForegroundColor DarkGray
               }

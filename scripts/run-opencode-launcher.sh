@@ -27,7 +27,7 @@ PROFILES=(
 ZAI_MODELS=(
     "zai-glm51|Z.AI - GLM-5.1 (paid, tool calling)"
     "zai-glm|Z.AI - GLM-4.7 (paid, tool calling)"
-    "zai-flash47|Z.AI - GLM-4.7-Flash (free, tool calling)"
+    "zai-flash47|Z.AI - GLM-4.7-Flash (free)"
 )
 
 NIM_MODELS=(
@@ -862,7 +862,7 @@ mapfile -t DYNAMIC_ZAI_OC < <(fetch_menu_items "ZAI_API_KEY" \
     "zai-flash47" "" \
     "zai-glm51|Z.AI - GLM-5.1 (paid, tool calling)" \
     "zai-glm|Z.AI - GLM-4.7 (paid, tool calling)" \
-    "zai-flash47|Z.AI - GLM-4.7-Flash (free, tool calling)" 2>/dev/null) || true
+    "zai-flash47|Z.AI - GLM-4.7-Flash (free)" 2>/dev/null) || true
 if [ ${#DYNAMIC_ZAI_OC[@]} -gt 0 ]; then ZAI_MODELS=("${DYNAMIC_ZAI_OC[@]}"); fi
 
 DYNAMIC_NIM_OC=()
@@ -915,7 +915,7 @@ while true; do
             local subtitle=""
             case "$group_key" in
                 zai)
-                    subtitle="Z.AI Coding (paid) + GLM-4.7-Flash (free)"
+                    subtitle="Z.AI Coding (paid) + GLM-4.7-Flash"
                     group_items=("${ZAI_MODELS[@]}")
                     ;;
                 nim)

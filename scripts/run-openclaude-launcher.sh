@@ -189,7 +189,7 @@ declare -A PRESET_SPEC=(
 ZAI_MODELS=(
     "zai-glm51|Z.AI - GLM-5.1 (paid, Anthropic-compatible, full tool support)"
     "zai-glm47|Z.AI - GLM-4.7 (paid, Anthropic-compatible, tool support)"
-    "zai-flash47|Z.AI - GLM-4.7-Flash (free, Anthropic-compatible)"
+    "zai-flash47|Z.AI - GLM-4.7-Flash (free)"
 )
 
 NIM_MODELS=(
@@ -460,7 +460,7 @@ mapfile -t DYNAMIC_ZAI < <(fetch_menu_items "ZAI_API_KEY" \
     "zai-flash47" "" \
     "zai-glm51|Z.AI - GLM-5.1 (paid, Anthropic-compatible)" \
     "zai-glm47|Z.AI - GLM-4.7 (paid, Anthropic-compatible)" \
-    "zai-flash47|Z.AI - GLM-4.7-Flash (free, Anthropic-compatible)" 2>/dev/null) || true
+    "zai-flash47|Z.AI - GLM-4.7-Flash (free)" 2>/dev/null) || true
 if [ ${#DYNAMIC_ZAI[@]} -gt 0 ]; then ZAI_MODELS=("${DYNAMIC_ZAI[@]}"); fi
 
 DYNAMIC_NIM=()

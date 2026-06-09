@@ -94,7 +94,7 @@ $script:GroupMenus = @{
   zai = @(
     @{ Id = "zai-glm51";   Label = "Z.AI - GLM-5.1 (paid, tool calling)" }
     @{ Id = "zai-glm";     Label = "Z.AI - GLM-4.7 (paid, tool calling)" }
-    @{ Id = "zai-flash47"; Label = "Z.AI - GLM-4.7-Flash (free, tool calling)" }
+    @{ Id = "zai-flash47"; Label = "Z.AI - GLM-4.7-Flash (free)" }
   )
   nim = @(
     @{ Id = "nim-mistral-medium";   Label = "NIM - Mistral Medium 3.5 128B (free, tool calling)" }
@@ -654,7 +654,7 @@ $updateHint = Test-LauncherUpdates -AgentNpmPackage "opencode-ai" -AgentDisplayN
 $staticZaiOC = @(
   @{ Id = "zai-glm51";   Label = "Z.AI - GLM-5.1 (paid, tool calling)" }
   @{ Id = "zai-glm";     Label = "Z.AI - GLM-4.7 (paid, tool calling)" }
-  @{ Id = "zai-flash47"; Label = "Z.AI - GLM-4.7-Flash (free, tool calling)" }
+  @{ Id = "zai-flash47"; Label = "Z.AI - GLM-4.7-Flash (free)" }
 )
 $staticNimOC = @(
   @{ Id = "nim-mistral-medium";   Label = "NIM - Mistral Medium 3.5 128B (free, tool calling)";     NimModel = "nim-mistral-medium-3.5-128b" }

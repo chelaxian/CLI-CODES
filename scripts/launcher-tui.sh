@@ -575,7 +575,7 @@ fetch_menu_items() {
                         [ -z "$f" ] && continue
                         if [[ "$used_presets" != *"|$f|"* ]]; then
                             local f_label="${f#${id_prefix}}"
-                            items+=("$f|${f_label} (forced)")
+                            items+=("$f|${f_label} (free)")
                         fi
                     done
                 fi
