@@ -40,17 +40,10 @@ set_openclaude_profile() {
                --arg key "$api_key" \
                --arg mdl "$model" '
         (if type == "array" then {} else . end) |
-        ((.providerProfiles // null) | if type == "array" then . elif type == "object" then [.[]] else [] end) as $raw |
-        $raw | map(select(.id != $id)) as $filtered |
-        $filtered + [{
-            "id": $id,
-            "provider": $prov,
-            "name": $nm,
-            "baseUrl": $base,
-            "apiKey": $key,
-            "model": $mdl
-        }] as $newProfiles |
-        .providerProfiles = $newProfiles |
+        .providerProfiles = (
+            ((.providerProfiles // []) | if type == "array" then . else [.[]] end | map(select(.id != $id)))
+            + [{"id": $id, "provider": $prov, "name": $nm, "baseUrl": $base, "apiKey": $key, "model": $mdl}]
+        ) |
         .activeProviderProfileId = $id
     ' "$config_file")"
     echo "$tmp" > "$config_file"
