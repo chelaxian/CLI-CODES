@@ -694,26 +694,60 @@ NIM_AGENTIC_IDS=(
 )
 
 # ── Update checker ──────────────────────────────────────────────────────────
-# Checks for updates to the CLI-CODES repo.
+# Checks for updates to: (1) the CLI-CODES repo, (2) the agent npm package.
 # Returns update hint string on stdout, or "" if no updates / check failed.
+# Non-blocking: any failure is silently ignored.
 test_launcher_updates() {
-    local repo="chelaxian/CLI-CODES"
-    local branch="main"
+    local agent_npm_package="${1:-}"
+    local agent_display_name="${2:-}"
+
+    local script_dir="${SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
+    local git_root
+    git_root="$(cd "$script_dir/.." && pwd)"
+
     local hints=""
 
-    local remote_sha
-    remote_sha=$(curl -s --connect-timeout 5 --max-time 8 \
-        "https://api.github.com/repos/$repo/commits/$branch" 2>/dev/null \
-        | grep -o '"sha":"[^"]*"' | head -1 | cut -d'"' -f4) || true
+    # ── Check repo updates ───────────────────────────────────────────────────
+    if [ -d "$git_root/.git" ] || [ -f "$git_root/.git" ]; then
+        local local_sha
+        local_sha=$(git -C "$git_root" rev-parse HEAD 2>/dev/null) || true
 
-    if [ -n "$remote_sha" ]; then
-        local script_dir="${SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
-        local git_dir="$(cd "$script_dir/.." && pwd)/.git"
-        if [ -d "$git_dir" ] || [ -f "$git_dir" ]; then
-            local local_sha
-            local_sha=$(git -C "$(dirname "$git_dir")" rev-parse HEAD 2>/dev/null) || true
-            if [ -n "$local_sha" ] && [ "$remote_sha" != "$local_sha" ]; then
+        if [ -n "$local_sha" ]; then
+            local remote_sha=""
+
+            # Method 1: git ls-remote (fast, no API rate limiting)
+            remote_sha=$(git -C "$git_root" ls-remote origin refs/heads/main 2>/dev/null | cut -f1) || true
+
+            # Method 2: GitHub API via curl (fallback)
+            if [ -z "$remote_sha" ] && command -v curl &>/dev/null; then
+                local repo="chelaxian/CLI-CODES"
+                local branch="main"
+                remote_sha=$(curl -s --connect-timeout 5 --max-time 8 \
+                    "https://api.github.com/repos/$repo/commits/$branch" 2>/dev/null \
+                    | grep -oE '"sha"[[:space:]]*:[[:space:]]*"[a-f0-9]+"' | head -1 \
+                    | grep -oE '[a-f0-9]{40}') || true
+            fi
+
+            if [ -n "$remote_sha" ] && [ "$remote_sha" != "$local_sha" ]; then
                 hints="ОБНОВЛЕНИЕ: доступно обновление на Github - запустите скрипт мастера установки и выберите [7]"
+            fi
+        fi
+    fi
+
+    # ── Check agent npm package updates ──────────────────────────────────────
+    if [ -n "$agent_npm_package" ] && command -v npm &>/dev/null; then
+        local latest
+        latest=$(npm view "$agent_npm_package" version 2>/dev/null) || true
+        if [ -n "$latest" ]; then
+            local installed
+            installed=$(npm list -g "$agent_npm_package" --depth=0 2>/dev/null) || true
+            if [ -n "$installed" ] && echo "$installed" | grep -qv "$latest"; then
+                local name="${agent_display_name:-$agent_npm_package}"
+                if [ -n "$hints" ]; then
+                    hints="$hints | ${name}: обновление $latest — npm i -g ${agent_npm_package}@latest"
+                else
+                    hints="${name}: обновление $latest — npm i -g ${agent_npm_package}@latest"
+                fi
             fi
         fi
     fi

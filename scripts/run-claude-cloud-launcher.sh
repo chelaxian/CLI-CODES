@@ -969,7 +969,7 @@ if [ ${#DYNAMIC_OR[@]} -gt 0 ]; then OPENROUTER_MODELS=("${DYNAMIC_OR[@]}"); fi
 
 # Main menu loop
 main() {
-local update_hint=$(test_launcher_updates)
+local update_hint=$(test_launcher_updates "@anthropic-ai/claude-code" "Claude Code")
 while true; do
     local state=$(get_launcher_state 2>/dev/null || true)
     local last_id=$(resolve_profile_from_state "$state" 2>/dev/null || true)
