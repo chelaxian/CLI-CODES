@@ -1,6 +1,6 @@
 # cloud-code-setup
 
-**1-click развёртывание Qwen Code, Claude Code и OpenCode с облачными моделями (NVIDIA NIM, Z.AI, Groq, OpenRouter)**
+**1-click развёртывание Qwen Code, Claude Code, OpenCode, OpenClaude и Freebuff с облачными моделями (NVIDIA NIM, Z.AI, B.AI, OpenRouter, Groq)**
 
 Работает на Windows и Linux. Устанавливается одной командой в терминале.
 
@@ -33,22 +33,19 @@ cd cloud-code-setup
 
 ## Что делает инсталлятор
 
-1. **Проверяет зависимости** — git, Node.js, npm
-2. **Спрашивает** что установить: Qwen Code, Claude Code, OpenCode или все инструменты
+1. **Проверяет зависимости** — git, Node.js, npm (автоустановка через winget/choco/scoop на Windows)
+2. **Спрашивает** что установить: Qwen Code, Claude Code, OpenCode, OpenClaude, Freebuff или все инструменты
 3. **Устанавливает CLI** через npm (если не установлен)
-4. **Запрашивает API ключи**:
-   - NVIDIA NIM API ключ (можно пропустить)
-   - Z.AI API ключ (можно пропустить)
-   - Groq API ключ (можно пропустить)
-   - OpenRouter API ключ (можно пропустить)
-   - B.AI API ключ (можно пропустить)
-5. **Создаёт ярлыки** на рабочем столе
-6. **Настраивает профили сессий** для Qwen Code
+4. **Запрашивает API ключи** (все можно пропустить):
+   - NVIDIA NIM, Z.AI, Groq, OpenRouter, B.AI
+5. **Создаёт ярлыки** на рабочем столе (Windows) / в `~` (Linux)
+6. **Настраивает профили сессий** для `/resume`
 
 Дополнительные пункты меню:
 
-- **[7] Обновление всех компонентов** — обновляет npm-пакеты и **синхронизирует ярлыки**: для каждого уже установленного CLI недостающие ярлыки создаются автоматически.
-- **[9] Добавить недостающие ярлыки** — без переустановки CLI просканирует уже установленные инструменты и дополнит недостающие ярлыки на рабочем столе (Windows) / в `~` (Linux).
+- **[7] Обновление всех компонентов** — обновляет npm-пакеты и **синхронизирует ярлыки**
+- **[8] Удаление** — полная очистка (репозиторий, npm-пакеты, конфиги, ключи, ярлыки)
+- **[9] Добавить недостающие ярлыки** — просканирует установленные CLI и дополнит ярлыки
 
 ---
 
@@ -57,93 +54,86 @@ cd cloud-code-setup
 | Документ | Описание |
 |----------|----------|
 | [docs/MANUAL-SETUP.md](docs/MANUAL-SETUP.md) | Полное пошаговое руководство по ручной установке (Windows + Linux) |
+| [docs/DEPLOY-FROM-SCRATCH.md](docs/DEPLOY-FROM-SCRATCH.md) | Развёртывание с нуля с полными текстами скриптов |
 
-Включает: архитектуру, требования, настройку LiteLLM, free-claude-code, claude-mem, устранение проблем.
+---
+
+## Поддерживаемые CLI
+
+| CLI | npm-пакет | Описание |
+|-----|-----------|----------|
+| **Qwen Code** | `qwen-code` | Coding agent от Alibaba |
+| **Claude Code** | `@anthropic-ai/claude-code` | Официальный Anthropic CLI |
+| **OpenCode** | `opencode-ai` | Open-source coding agent |
+| **OpenClaude** | `@gitlawb/openclaude` | Форк Claude Code с provider profiles |
+| **Freebuff** | `freebuff` | Coding agent от Codebuff (собственный TUI) |
+
+Все CLI, кроме Freebuff, запускаются через единообразное **TUI-меню** с псевдографикой, навигацией стрелками и динамической загрузкой каталогов моделей. Freebuff запускается напрямую (встроенный picker конфликтует с нашим TUI).
 
 ---
 
 ## Провайдеры и модели
 
-Все модели доступны из главного меню лаунчера (TUI):
+Все модели доступны из главного меню лаунчера. Каталоги обновляются динамически через API провайдера (с static fallback при отсутствии ключа).
 
-### NVIDIA NIM (free, tool calling)
-| Модель | Qwen Code | Claude Code | OpenCode |
-|--------|-----------|-------------|----------|
-| GLM-4.7 | + | + | + |
-| Qwen3.5-122B-A10B | + | + | + |
+### Z.AI (paid + free flash, tool calling)
 
-### Z.AI (paid, tool calling)
-| Модель | Qwen Code | Claude Code | OpenCode |
-|--------|-----------|-------------|----------|
-| GLM-4.7 | + | + | + |
-| GLM-5.1 | + | + | + |
+| Модель | Qwen | Claude | OpenCode | OpenClaude |
+|--------|------|--------|----------|------------|
+| GLM-5.1 | + | + | + | + |
+| GLM-4.7 | + | + | + | + |
+| GLM-4.7-Flash (free) | + | + | + | + |
 
-### Z.AI Flash (free, tool calling)
-| Модель | Qwen Code | Claude Code | OpenCode |
-|--------|-----------|-------------|----------|
-| GLM-4.7-Flash | + | + | + |
-| GLM-4.5-Flash | + | + | + |
+### NVIDIA NIM (free, 9 agentic моделей)
+
+| Модель | Qwen | Claude | OpenCode | OpenClaude |
+|--------|------|--------|----------|------------|
+| Mistral Medium 3.5 128B | + | + | + | + |
+| GLM-5.1 | + | + | + | + |
+| Step 3.5 Flash | + | + | + | + |
+| Mistral Large 3 675B | + | + | + | + |
+| DeepSeek V4 Flash 284B MoE | + | + | + | + |
+| Gemma-4 31B | + | + | + | + |
+| Qwen 3.5 397B A17B | + | + | + | + |
+| Qwen 3 Next 80B A3B | + | + | + | + |
+| Qwen 3 Coder 480B A35B | + | + | + | + |
+
+### B.AI (26 agentic моделей, OpenAI-compatible)
+
+В подменю B.AI модели с поддержкой tool/function calling:
+
+**OpenAI GPT-5 (9):** Nano, Mini, 5.2, 5.4 Nano/Mini/Pro, 5.5, 5.5 Instant
+
+**Anthropic Claude (7):** Haiku 4.5, Sonnet 4.5/4.6, Opus 4.5/4.6/4.7/4.8
+
+**Другие agentic (10):** DeepSeek V4 Pro/Flash, Gemini 3.1 Pro/3.5 Flash, GLM-5/5.1, Kimi K2.5/K2.6, MiniMax M3/M2.7
+
+> Полный каталог B.AI (28 моделей, включая DeepSeek V3.2 и Gemini 3 Flash) доступен через **«Другая модель» → B.AI**.
 
 ### OpenRouter (free, tool calling)
-| Модель | Qwen Code | Claude Code | OpenCode |
-|--------|-----------|-------------|----------|
-| DeepSeek V4 Flash | + | + | + |
-| Qwen3 Coder | + | + | + |
-| Nemotron 3 Super 120B | + | + | + |
-| Poolside Laguna M.1 (coding) | + | + | + |
 
-### B.AI (https://chat.b.ai/key, OpenAI-compatible, 26 agentic моделей в подменю)
+| Модель | Qwen | Claude | OpenCode | OpenClaude |
+|--------|------|--------|----------|------------|
+| DeepSeek V4 Flash | + | + | + | + |
+| Qwen3 Coder | + | + | + | + |
+| Nemotron 3 Super 120B | + | + | + | + |
+| Poolside Laguna M.1 | + | + | + | + |
 
-В главном подменю B.AI отображаются только модели с поддержкой tool/function calling (всего 26):
+### Groq (paid, через «Другая модель»)
 
-**OpenAI GPT-5 (9 моделей):**
+> Free Tier Groq ограничен TPM 6000/8000 — недостаточно для coding agent. Требуется Paid подписка.
 
-| Модель | Qwen Code | Claude Code | OpenCode |
-|--------|-----------|-------------|----------|
-| GPT-5 Nano / Mini | + | + | + |
-| GPT-5.2 | + | + | + |
-| GPT-5.4 Nano / Mini | + | + | + |
-| GPT-5.4 / 5.4 Pro | + | + | + |
-| GPT-5.5 / 5.5 Instant | + | + | + |
+---
 
-**Anthropic Claude 4.5+ (7 моделей):**
+## Где взять API ключи
 
-| Модель | Qwen Code | Claude Code | OpenCode |
-|--------|-----------|-------------|----------|
-| Claude Haiku 4.5 | + | + | + |
-| Claude Sonnet 4.5 / 4.6 | + | + | + |
-| Claude Opus 4.5 / 4.6 / 4.7 / 4.8 | + | + | + |
-
-**Другие agentic-семейства:**
-
-| Модель | Qwen Code | Claude Code | OpenCode |
-|--------|-----------|-------------|----------|
-| DeepSeek V4 Pro / Flash | + | + | + |
-| Gemini 3.1 Pro / 3.5 Flash (Google) | + | + | + |
-| GLM-5 / 5.1 (Z.AI) | + | + | + |
-| Kimi K2.5 / K2.6 (Moonshot) | + | + | + |
-| MiniMax M3 / M2.7 | + | + | + |
-
-> Полный каталог B.AI (28 моделей, включая **DeepSeek V3.2** и **Gemini 3 Flash**) доступен через пункт **«Другая модель» → B.AI (api.b.ai/v1)**. Эти две модели убраны из основного подменю, так как их tool calling нестабилен для coding-agent задач.
-
-### Groq (paid, chat only — через «Другая модель»)
-| Заметка | Qwen Code | Claude Code | OpenCode |
-|---------|-----------|-------------|----------|
-| Любая Groq модель c tool calling | + | — | + |
-
-> Free Tier на API провайдера **Groq** ограничен TPM 6000/8000 что не позволяет их использовать в coding agent инструментах типа Qwen, Claude, OpenCode из-за большого контекстного окна (~20K). Поэтому для использования моделей **Groq** требуется Paid подписка и API-ключ
-> 
-> Пункты **«Другая модель…»** позволяют выбрать любую модель из каталога провайдера. Для **NVIDIA NIM** есть отдельный фильтр **«только Agentic модели»** (по `build.nvidia.com?label=Agentic`). Для **OpenRouter** доступны два списка: **все модели** и **только бесплатные**.
-> 
-> Пункт **«Нативный логин»** — OAuth-авторизация через браузер (Qwen, Claude, OpenCode).
-
-### Где взять API ключи
-
-- **NVIDIA NIM**: [build.nvidia.com](https://build.nvidia.com/) — бесплатный ключ после регистрации
-- **Z.AI**: [console.z.ai](https://console.z.ai/) — GLM API (paid); [open.bigmodel.cn](https://open.bigmodel.cn/) — альтернативный вход
-- **Groq**: [console.groq.com](https://console.groq.com/) — бесплатный ключ, ультрабыстрая инференс
-- **OpenRouter**: [openrouter.ai](https://openrouter.ai/) — шлюз к множеству моделей, есть бесплатные
-- **B.AI**: [chat.b.ai/key](https://chat.b.ai/key) — OpenAI-compatible провайдер с 28 моделями от OpenAI, Anthropic, Google, DeepSeek, Zhipu, Moonshot, MiniMax. 26 agentic моделей в подменю + 2 (DeepSeek V3.2, Gemini 3 Flash) через «Другая модель»
+| Провайдер | URL | Тип |
+|-----------|-----|-----|
+| **NVIDIA NIM** | [build.nvidia.com](https://build.nvidia.com/) | Free |
+| **Z.AI** | [console.z.ai](https://console.z.ai/) / [open.bigmodel.cn](https://open.bigmodel.cn/) | Paid |
+| **B.AI** | [chat.b.ai/key](https://chat.b.ai/key) | Free/Paid |
+| **OpenRouter** | [openrouter.ai](https://openrouter.ai/) | Free/Paid |
+| **Groq** | [console.groq.com](https://console.groq.com/) | Free (limited) |
 
 ---
 
@@ -151,28 +141,56 @@ cd cloud-code-setup
 
 ### Запуск
 
-Просто дважды кликните на ярлык на рабочем столе:
+**Windows** — дважды кликните на ярлык на рабочем столе:
 
-- **Qwen Code (cloud)** — меню выбора модели/провайдера
-- **Claude Code (cloud)** — меню выбора провайдера
-- **OpenCode (cloud)** — меню выбора провайдера
+- **Qwen Code** — меню выбора модели/провайдера
+- **Claude Code** — меню выбора провайдера
+- **OpenCode** — меню выбора провайдера
+- **OpenClaude** — меню выбора провайдера
+- **Freebuff** — прямой запуск (собственный TUI)
+
+**Linux** — запуск через `.sh` файлы в `~/`:
+
+```bash
+~/openclaude-cloud.sh
+~/claude-cloud.sh
+~/qwen-code-cloud.sh
+~/opencode-cloud.sh
+~/freebuff-cloud.sh
+```
+
+### Быстрый старт
+
+Каждый лаунчер запоминает последний выбранный профиль. При повторном запуске выбирайте **«Запустить с последними настройками»** — модель и провайдер подхватятся автоматически.
 
 ### Смена API ключей
 
-В меню лаунчера выберите пункт **«Сменить ключ API провайдера»**:
-
-1. Выберите провайдера (NVIDIA NIM, Z.AI, Groq, OpenRouter или B.AI)
-2. Введите новый ключ
-3. Ключ сохраняется в переменных окружения
+В меню лаунчера: **«Сменить ключ API провайдера»** → выберите провайдера → введите новый ключ.
 
 ### Нативный логин (OAuth)
 
-Если у вас есть платная подписка, авторизуйтесь через браузер:
+| CLI | Способ |
+|-----|--------|
+| **Qwen Code** | Qwen OAuth или Alibaba Cloud Coding Plan |
+| **Claude Code** | Claude подписка (OAuth) или Anthropic Console |
+| **OpenCode** | `opencode providers login` |
+| **OpenClaude** | Vanilla / Opengateway |
 
-1. Выберите в меню лаунчера **«Нативный логин»**
-2. **Qwen Code**: Qwen OAuth или Alibaba Cloud Coding Plan
-3. **Claude Code**: Claude подписка (OAuth) или Anthropic Console
-4. **OpenCode**: интерактивный выбор провайдера через `opencode providers login`
+### Другая модель
+
+Пункт **«Другая модель…»** позволяет выбрать любую модель из полного каталога провайдера (загружается через API по вашему ключу). Для NIM есть фильтр **«только Agentic модели»**. Для OpenRouter — **только бесплатные**.
+
+---
+
+## Архитектура подключения
+
+| CLI | Z.AI | NIM | B.AI | OpenRouter | Groq |
+|-----|------|-----|------|------------|------|
+| **Claude Code** | Anthropic-compat | free-claude-code proxy | free-claude-code proxy | free-claude-code proxy | — |
+| **Qwen Code** | OpenAI-compat | Node-прокси / LiteLLM | OpenAI-compat | OpenAI-compat | OpenAI-compat |
+| **OpenCode** | opencode.json | opencode.json | opencode.json | opencode.json | opencode.json |
+| **OpenClaude** | Provider profiles | Provider profiles | Provider profiles | Provider profiles | — |
+| **Freebuff** | — | — | — | — | — |
 
 ---
 
@@ -180,32 +198,34 @@ cd cloud-code-setup
 
 ```
 cloud-code-setup/
-├── install.ps1                # Windows инсталлятор (1-click)
+├── install.ps1                # Windows thin installer
+├── install-full.ps1           # Windows полный инсталлятор
 ├── install.sh                 # Linux инсталлятор
-├── bootstrap.sh               # curl | bash точка входа
-├── README.md                  # Этот файл
+├── bootstrap.sh               # curl | bash entrypoint
+├── README.md
 ├── scripts/
-│   ├── launcher-tui.ps1       # TUI-меню (Windows)
-│   ├── launcher-tui.sh        # TUI-меню (Linux)
+│   ├── launcher-tui.ps1       # TUI-движок (Windows)
+│   ├── launcher-tui.sh        # TUI-движок (Linux)
 │   ├── launcher-api-keys.ps1  # Управление API ключами (Windows)
 │   ├── launcher-api-keys.sh   # Управление API ключами (Linux)
-│   ├── launcher-provider-models.ps1
-│   ├── launcher-custom-model-wizard.ps1
-│   ├── run-qwen-code-launcher.ps1    # Qwen Code лаунчер (Windows)
-│   ├── run-qwen-code-launcher.sh     # Qwen Code лаунчер (Linux)
-│   ├── run-qwen-code-dynamic.ps1     # Qwen Code dynamic provider (Windows)
-│   ├── run-qwen-code-dynamic.sh      # Qwen Code dynamic provider (Linux)
-│   ├── run-claude-cloud-launcher.ps1  # Claude Code лаунчер (Windows)
-│   ├── run-claude-cloud-launcher.sh   # Claude Code лаунчер (Linux)
-│   ├── run-opencode-launcher.ps1      # OpenCode лаунчер (Windows)
-│   ├── run-opencode-launcher.sh       # OpenCode лаунчер (Linux)
-│   └── ...                             # Вспомогательные скрипты
+│   ├── launcher-provider-models.ps1   # Каталоги моделей
+│   ├── launcher-custom-model-wizard.ps1  # Мастер «Другая модель»
+│   ├── create-desktop-shortcuts.ps1   # Ярлыки на рабочем столе
+│   ├── run-qwen-code-launcher.ps1     # Qwen Code (Windows)
+│   ├── run-qwen-code-launcher.sh      # Qwen Code (Linux)
+│   ├── run-claude-cloud-launcher.ps1  # Claude Code (Windows)
+│   ├── run-claude-cloud-launcher.sh   # Claude Code (Linux)
+│   ├── run-opencode-launcher.ps1      # OpenCode (Windows)
+│   ├── run-opencode-launcher.sh       # OpenCode (Linux)
+│   ├── run-openclaude-launcher.ps1    # OpenClaude (Windows)
+│   ├── run-openclaude-launcher.sh     # OpenClaude (Linux)
+│   ├── run-freebuff-launcher.ps1      # Freebuff (Windows)
+│   ├── run-freebuff-launcher.sh       # Freebuff (Linux)
+│   └── ...
 ├── qwen-sessions/             # Профили сессий Qwen Code
-│   ├── zai-glm47/
-│   ├── nim-glm-47/
-│   └── nim-deepseek-v31/
 └── docs/
-    └── ...
+    ├── MANUAL-SETUP.md        # Ручная установка
+    └── DEPLOY-FROM-SCRATCH.md # Развёртывание с нуля
 ```
 
 ---
@@ -218,9 +238,10 @@ cloud-code-setup/
 - **Node.js** LTS (18+)
 - **npm**
 
-### Опциональные (для продвинутых функций)
+### Опциональные (Linux)
+- **jq** — для OpenClaude launcher (работа с `~/.openclaude.json`)
+- **uv** — для free-claude-code proxy (автоустановка)
 - **LiteLLM** — для пресетов NIM с Qwen Code (порт 4000)
-- **free-claude-code** — для Claude Code через NIM
 
 ---
 
@@ -237,6 +258,12 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```bash
 chmod +x ~/cloud-code-setup/scripts/*.sh
 chmod +x ~/cloud-code-setup/install.sh
+```
+
+### Linux: «jq не установлен» (OpenClaude)
+
+```bash
+sudo apt install jq
 ```
 
 ### Ключи не подхватываются
