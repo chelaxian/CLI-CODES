@@ -22,6 +22,119 @@ skip()   { echo -e "${YELLOW}  [SKIP] $1${RESET}"; }
 warn()   { echo -e "${YELLOW}  [WARN] $1${RESET}"; }
 err()    { echo -e "${RED}  [ERR]  $1${RESET}" >&2; }
 
+MIN_NODE_MAJOR=18
+
+ensure_node_lts() {
+    if ! command -v node >/dev/null 2>&1; then
+        return 1
+    fi
+
+    local current_major
+    current_major=$(node --version 2>/dev/null | sed 's/^v//' | cut -d. -f1)
+
+    if [ -n "$current_major" ] && [ "$current_major" -ge "$MIN_NODE_MAJOR" ] 2>/dev/null; then
+        return 0
+    fi
+
+    echo ""
+    echo -e "${YELLOW}  Node.js v${current_major} < ${MIN_NODE_MAJOR} — требуется обновление${RESET}"
+    echo -e "${CYAN}  Обновление Node.js до LTS…${RESET}"
+
+    if command -v apt-get >/dev/null 2>&1; then
+        echo -e "${GRAY}  → NodeSource setup for apt…${RESET}"
+        if curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - 2>/dev/null; then
+            sudo apt-get install -y nodejs 2>/dev/null
+        else
+            warn "NodeSource setup failed, trying n-install…"
+            _install_node_via_n
+        fi
+    elif command -v dnf >/dev/null 2>&1; then
+        if curl -fsSL https://rpm.nodesource.com/setup_lts.x | sudo bash - 2>/dev/null; then
+            sudo dnf install -y nodejs 2>/dev/null
+        else
+            _install_node_via_n
+        fi
+    elif command -v yum >/dev/null 2>&1; then
+        if curl -fsSL https://rpm.nodesource.com/setup_lts.x | sudo bash - 2>/dev/null; then
+            sudo yum install -y nodejs 2>/dev/null
+        else
+            _install_node_via_n
+        fi
+    elif command -v brew >/dev/null 2>&1; then
+        brew install node 2>/dev/null
+    elif command -v pacman >/dev/null 2>&1; then
+        sudo pacman -S --noconfirm nodejs npm 2>/dev/null
+    else
+        warn "Не удалось автоматически обновить Node.js. Установите Node.js >= ${MIN_NODE_MAJOR} вручную."
+        return 1
+    fi
+
+    _verify_node_after_upgrade
+}
+
+_install_node_via_n() {
+    local N_DIR="$HOME/.n"
+    local N_BIN="${N_DIR}/bin/n"
+    local N_PREFIX="${N_DIR}"
+
+    echo -e "${CYAN}  → Установка через n (Node.js version manager)…${RESET}"
+
+    if ! command -v make >/dev/null 2>&1 || ! command -v gcc >/dev/null 2>&1; then
+        if command -v apt-get >/dev/null 2>&1; then
+            sudo apt-get install -y make gcc 2>/dev/null || true
+        elif command -v dnf >/dev/null 2>&1; then
+            sudo dnf install -y make gcc 2>/dev/null || true
+        fi
+    fi
+
+    curl -fsSL https://raw.githubusercontent.com/tj/n/master/bin/n -o "$N_BIN" 2>/dev/null || {
+        warn "Не удалось скачать n"
+        return 1
+    }
+    chmod +x "$N_BIN" 2>/dev/null
+
+    export N_PREFIX
+    export PATH="${N_PREFIX}/bin:${PATH}"
+
+    "$N_BIN" lts 2>/dev/null || {
+        warn "Не удалось установить Node.js LTS через n"
+        return 1
+    }
+
+    echo -e "${GRAY}  → Добавляю N_PREFIX в ~/.bashrc…${RESET}"
+    for rc in "$HOME/.bashrc" "$HOME/.zshrc"; do
+        if [ -f "$rc" ] && ! grep -q 'N_PREFIX' "$rc" 2>/dev/null; then
+            {
+                echo ''
+                echo 'export N_PREFIX="$HOME/.n"'
+                echo 'export PATH="$N_PREFIX/bin:$PATH"'
+            } >> "$rc"
+        fi
+    done
+}
+
+_verify_node_after_upgrade() {
+    hash -r 2>/dev/null || true
+    export PATH="/usr/local/bin:/usr/bin:$HOME/.n/bin:$HOME/.local/bin:$PATH"
+
+    if command -v node >/dev/null 2>&1; then
+        local new_ver
+        new_ver=$(node --version 2>/dev/null)
+        local new_major
+        new_major=$(echo "$new_ver" | sed 's/^v//' | cut -d. -f1)
+        if [ -n "$new_major" ] && [ "$new_major" -ge "$MIN_NODE_MAJOR" ] 2>/dev/null; then
+            ok "Node.js обновлён: $new_ver"
+            return 0
+        else
+            warn "Node.js обновлён до $new_ver, но всё ещё < ${MIN_NODE_MAJOR}. Перезапустите терминал."
+            return 1
+        fi
+    else
+        err "Node.js не найден после обновления. Перезапустите терминал и запустите install.sh снова."
+        return 1
+    fi
+}
+
 # ─── Заголовок ───────────────────────────────────────────────────────────────
 
 clear
@@ -74,6 +187,13 @@ ok "git: $(git --version 2>&1 | head -1)"
 ok "node: $(node --version 2>&1)"
 ok "npm: $(npm --version 2>&1)"
 
+if ! ensure_node_lts; then
+    err "Node.js >= ${MIN_NODE_MAJOR} не доступен. Некоторые пакеты могут не установиться."
+    echo -e "${YELLOW}  Установите Node.js >= ${MIN_NODE_MAJOR} и запустите install.sh снова.${RESET}"
+    read -p "Нажмите Enter для выхода…"
+    exit 1
+fi
+
 # ─── Клонирование ────────────────────────────────────────────────────────────
 
 step "КЛОНИРОВАНИЕ РЕПОЗИТОРИЯ"
@@ -115,7 +235,7 @@ while true; do
         fi
     fi
 
-    echo -e "  ${CYAN}[0]${RESET} Установка системных зависимостей (git, node, npm, curl)"
+    echo -e "  ${CYAN}[0]${RESET} Установка/обновление зависимостей (git, curl, Node.js ≥${MIN_NODE_MAJOR} LTS)"
     echo -e "  ${YELLOW}[1]${RESET} Установка сразу ВСЕХ агентов  ← рекомендуется"
     echo -e "  ${GREEN}[2]${RESET} Только Qwen Code"
     echo -e "  ${GREEN}[3]${RESET} Только Claude Code"
@@ -167,6 +287,7 @@ install_system_dependencies() {
     echo ""
 
     local missing=()
+    local node_needs_upgrade=false
     for cmd in git node npm curl; do
         if command -v "$cmd" >/dev/null 2>&1; then
             local path="$(command -v "$cmd")"
@@ -177,15 +298,26 @@ install_system_dependencies() {
         fi
     done
 
-    if [ "${#missing[@]}" -eq 0 ]; then
+    if command -v node >/dev/null 2>&1; then
+        local node_major
+        node_major=$(node --version 2>/dev/null | sed 's/^v//' | cut -d. -f1)
+        if [ -n "$node_major" ] && [ "$node_major" -lt "$MIN_NODE_MAJOR" ] 2>/dev/null; then
+            echo -e "  ${YELLOW}[OLD]${RESET}  node v${node_major} < ${MIN_NODE_MAJOR} — будет обновлён"
+            node_needs_upgrade=true
+        fi
+    fi
+
+    if [ "${#missing[@]}" -eq 0 ] && [ "$node_needs_upgrade" = false ]; then
         echo ""
         echo -e "${GREEN}Все необходимые зависимости уже установлены.${RESET}"
         return 0
     fi
 
-    echo ""
-    echo -e "${YELLOW}Отсутствуют: ${missing[*]}${RESET}"
-    echo -e "${CYAN}Определяем пакетный менеджер...${RESET}"
+    if [ "${#missing[@]}" -gt 0 ]; then
+        echo ""
+        echo -e "${YELLOW}Отсутствуют: ${missing[*]}${RESET}"
+        echo -e "${CYAN}Определяем пакетный менеджер...${RESET}"
+    fi
 
     local pm=""
     if command -v apt-get >/dev/null 2>&1; then pm="apt"
@@ -200,63 +332,103 @@ install_system_dependencies() {
     fi
     echo -e "${CYAN}Используется: $pm${RESET}"
 
+    local non_node_missing=()
+    for pkg in "${missing[@]}"; do
+        case "$pkg" in
+            node|npm) ;;
+            *) non_node_missing+=("$pkg") ;;
+        esac
+    done
+
     case "$pm" in
         apt)
             sudo apt-get update -qq
-            for pkg in "${missing[@]}"; do
-                local deb_pkg="$pkg"
-                case "$pkg" in
-                    node) deb_pkg="nodejs" ;;
-                    npm)  deb_pkg="npm" ;;
-                    curl) deb_pkg="curl" ;;
-                esac
-                sudo apt-get install -y "$deb_pkg"
-            done
+
+            if [ "${#non_node_missing[@]}" -gt 0 ]; then
+                sudo apt-get install -y "${non_node_missing[@]}"
+            fi
+
+            if printf '%s\n' "${missing[@]}" | grep -q '^node$\|^npm$' || [ "$node_needs_upgrade" = true ]; then
+                echo -e "${CYAN}  Установка Node.js LTS через NodeSource…${RESET}"
+                if curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -; then
+                    sudo apt-get install -y nodejs
+                else
+                    warn "NodeSource setup failed"
+                    _install_node_via_n
+                fi
+            fi
             ;;
         dnf|yum)
-            for pkg in "${missing[@]}"; do
-                local rpm_pkg="$pkg"
-                case "$pkg" in
-                    node) rpm_pkg="nodejs" ;;
-                esac
-                sudo "$pm" install -y "$rpm_pkg"
-            done
+            if [ "${#non_node_missing[@]}" -gt 0 ]; then
+                sudo "$pm" install -y "${non_node_missing[@]}"
+            fi
+
+            if printf '%s\n' "${missing[@]}" | grep -q '^node$\|^npm$' || [ "$node_needs_upgrade" = true ]; then
+                echo -e "${CYAN}  Установка Node.js LTS через NodeSource…${RESET}"
+                if curl -fsSL https://rpm.nodesource.com/setup_lts.x | sudo bash -; then
+                    sudo "$pm" install -y nodejs
+                else
+                    warn "NodeSource setup failed"
+                    _install_node_via_n
+                fi
+            fi
             ;;
         pacman)
             local pacman_pkgs=()
-            for pkg in "${missing[@]}"; do
-                case "$pkg" in
-                    node) pacman_pkgs+=("nodejs") ;;
-                    npm)  pacman_pkgs+=("npm") ;;
-                    *)    pacman_pkgs+=("$pkg") ;;
-                esac
+            for pkg in "${non_node_missing[@]}"; do
+                pacman_pkgs+=("$pkg")
             done
-            sudo pacman -S --noconfirm "${pacman_pkgs[@]}"
+            if printf '%s\n' "${missing[@]}" | grep -q '^node$\|^npm$' || [ "$node_needs_upgrade" = true ]; then
+                pacman_pkgs+=("nodejs" "npm")
+            fi
+            if [ "${#pacman_pkgs[@]}" -gt 0 ]; then
+                sudo pacman -S --noconfirm "${pacman_pkgs[@]}"
+            fi
             ;;
         apk)
-            for pkg in "${missing[@]}"; do
-                local apk_pkg="$pkg"
-                case "$pkg" in
-                    node) apk_pkg="nodejs" ;;
-                    npm)  apk_pkg="npm" ;;
-                esac
-                sudo apk add "$apk_pkg"
+            local apk_pkgs=()
+            for pkg in "${non_node_missing[@]}"; do
+                apk_pkgs+=("$pkg")
             done
+            if printf '%s\n' "${missing[@]}" | grep -q '^node$\|^npm$' || [ "$node_needs_upgrade" = true ]; then
+                apk_pkgs+=("nodejs" "npm")
+            fi
+            if [ "${#apk_pkgs[@]}" -gt 0 ]; then
+                sudo apk add "${apk_pkgs[@]}"
+            fi
             ;;
         brew)
-            brew install "${missing[@]}"
+            local brew_pkgs=("${non_node_missing[@]}")
+            if printf '%s\n' "${missing[@]}" | grep -q '^node$\|^npm$' || [ "$node_needs_upgrade" = true ]; then
+                brew_pkgs+=("node")
+            fi
+            if [ "${#brew_pkgs[@]}" -gt 0 ]; then
+                brew install "${brew_pkgs[@]}"
+            fi
             ;;
     esac
 
     echo ""
     echo -e "${CYAN}Проверка после установки:${RESET}"
+    hash -r 2>/dev/null || true
+    export PATH="/usr/local/bin:/usr/bin:$HOME/.n/bin:$HOME/.local/bin:$PATH"
     for cmd in git node npm curl; do
         if command -v "$cmd" >/dev/null 2>&1; then
-            echo -e "  ${GREEN}[OK]${RESET}   $cmd"
+            echo -e "  ${GREEN}[OK]${RESET}   $cmd → $(command -v "$cmd")"
         else
             echo -e "  ${YELLOW}[MISS]${RESET} $cmd — установите вручную или перезапустите терминал"
         fi
     done
+
+    if command -v node >/dev/null 2>&1; then
+        local final_major
+        final_major=$(node --version 2>/dev/null | sed 's/^v//' | cut -d. -f1)
+        if [ -n "$final_major" ] && [ "$final_major" -ge "$MIN_NODE_MAJOR" ] 2>/dev/null; then
+            echo -e "  ${GREEN}[OK]${RESET}   Node.js $(node --version 2>/dev/null) ≥ ${MIN_NODE_MAJOR}"
+        else
+            echo -e "  ${YELLOW}[WARN]${RESET}  Node.js $(node --version 2>/dev/null) < ${MIN_NODE_MAJOR} — перезапустите терминал"
+        fi
+    fi
 }
 
 if [ "$DO_INSTALL_DEPS" = true ]; then
