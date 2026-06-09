@@ -243,7 +243,6 @@ CLI-CODES/
 ### Опциональные (Linux)
 - **jq** — для OpenClaude launcher (работа с `~/.openclaude.json`)
 - **uv** — для free-claude-code proxy (автоустановка)
-- **LiteLLM** — для пресетов NIM с Qwen Code (порт 4000)
 
 ---
 
