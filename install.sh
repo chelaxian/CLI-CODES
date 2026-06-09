@@ -270,13 +270,13 @@ sync_launcher_shortcuts() {
 
     chmod +x "$scripts_dir"/*.sh 2>/dev/null || true
 
-    # Список: CLI-binary, имя ярлыка, лаунчер .sh
+    # Список: CLI-binary, имя ярлыка, имя .sh файла (без расширения), лаунчер .sh
     local entries=(
-        "qwen|Qwen Code (cloud)|$scripts_dir/run-qwen-code-launcher.sh"
-        "claude|Claude Code (cloud)|$scripts_dir/run-claude-cloud-launcher.sh"
-        "opencode|OpenCode (cloud)|$scripts_dir/run-opencode-launcher.sh"
-        "freebuff|Freebuff (cloud)|$scripts_dir/run-freebuff-launcher.sh"
-        "openclaude|OpenClaude (cloud)|$scripts_dir/run-openclaude-launcher.sh"
+        "qwen|Qwen Code|qwen-code|$scripts_dir/run-qwen-code-launcher.sh"
+        "claude|Claude Code|claude-code|$scripts_dir/run-claude-cloud-launcher.sh"
+        "opencode|OpenCode|opencode|$scripts_dir/run-opencode-launcher.sh"
+        "freebuff|Freebuff|freebuff|$scripts_dir/run-freebuff-launcher.sh"
+        "openclaude|OpenClaude|openclaude|$scripts_dir/run-openclaude-launcher.sh"
     )
 
     local added=0
@@ -285,7 +285,9 @@ sync_launcher_shortcuts() {
         local cli="${entry%%|*}"
         local rest="${entry#*|}"
         local name="${rest%%|*}"
-        local script="${rest##*|}"
+        local rest2="${rest#*|}"
+        local sh_name="${rest2%%|*}"
+        local script="${rest2##*|}"
 
         # Пропускаем если CLI не установлен
         if ! command -v "$cli" >/dev/null 2>&1; then
@@ -297,8 +299,7 @@ sync_launcher_shortcuts() {
             continue
         fi
 
-        local safe_name=$(echo "$name" | tr ' ' '-' | tr '[:upper:]' '[:lower:]')
-        local sh_path="$HOME/${safe_name}.sh"
+        local sh_path="$HOME/${sh_name}.sh"
 
         # .sh launcher (для серверов без GUI)
         if [ ! -f "$sh_path" ]; then
@@ -308,7 +309,7 @@ sync_launcher_shortcuts() {
 exec bash "$script" "\$@"
 EOF
             chmod +x "$sh_path"
-            echo -e "${GREEN}  [+] $safe_name.sh → $sh_path${RESET}"
+            echo -e "${GREEN}  [+] $sh_name.sh → $sh_path${RESET}"
             added=$((added + 1))
         else
             present=$((present + 1))
@@ -488,7 +489,7 @@ if $DO_UNINSTALL; then
     echo -e "${RED}  - Все сессии (qwen/claude/opencode-sessions)${RESET}"
     echo -e "${RED}  - Конфиги CLI (~/.claude, ~/.qwen)${RESET}"
     echo -e "${RED}  - API ключи из ~/.bashrc и ~/.zshrc${RESET}"
-    echo -e "${RED}  - Лаунчеры ~/qwen-code-cloud.sh, ~/claude-code-cloud.sh, ~/opencode-cloud.sh, ~/freebuff-cloud.sh, ~/openclaude-cloud.sh${RESET}"
+    echo -e "${RED}  - Лаунчеры ~/qwen-code.sh, ~/claude-code.sh, ~/opencode.sh, ~/freebuff.sh, ~/openclaude.sh${RESET}"
     echo -e "${RED}  - Desktop ярлыки (.desktop)${RESET}"
     echo -e "${RED}  - Глобальные npm пакеты (qwen-code, claude-code, opencode-ai, freebuff, openclaude)${RESET}"
     echo ""
@@ -536,7 +537,8 @@ if $DO_UNINSTALL; then
     done
 
     echo -e "${CYAN}Удаление лаунчеров...${RESET}"
-    for launcher in "$HOME/qwen-code-cloud.sh" "$HOME/claude-code-cloud.sh" "$HOME/opencode-cloud.sh" "$HOME/freebuff-cloud.sh" "$HOME/openclaude-cloud.sh"; do
+    for launcher in "$HOME/qwen-code.sh" "$HOME/claude-code.sh" "$HOME/opencode.sh" "$HOME/freebuff.sh" "$HOME/openclaude.sh" \
+                    "$HOME/qwen-code-cloud.sh" "$HOME/claude-code-cloud.sh" "$HOME/opencode-cloud.sh" "$HOME/freebuff-cloud.sh" "$HOME/openclaude-cloud.sh"; do
         if [ -f "$launcher" ]; then
             rm -f "$launcher"
             ok "Удалён: $launcher"
@@ -546,7 +548,8 @@ if $DO_UNINSTALL; then
     echo -e "${CYAN}Удаление desktop ярлыков...${RESET}"
     for d in "$HOME/Desktop" "$HOME/Рабочий стол"; do
         if [ -d "$d" ]; then
-            for f in "$d/Qwen Code (cloud).desktop" "$d/Claude Code (cloud).desktop" "$d/OpenCode (cloud).desktop" "$d/Freebuff (cloud).desktop" "$d/OpenClaude (cloud).desktop"; do
+            for f in "$d/Qwen Code.desktop" "$d/Claude Code.desktop" "$d/OpenCode.desktop" "$d/Freebuff.desktop" "$d/OpenClaude.desktop" \
+                      "$d/Qwen Code (cloud).desktop" "$d/Claude Code (cloud).desktop" "$d/OpenCode (cloud).desktop" "$d/Freebuff (cloud).desktop" "$d/OpenClaude (cloud).desktop"; do
                 if [ -f "$f" ]; then
                     rm -f "$f"
                     ok "Удалён: $f"
@@ -651,11 +654,35 @@ fi
 
 step "НАСТРОЙКА API КЛЮЧЕЙ"
 
+# Function to read key with asterisk display
+read_key_stars() {
+    local prompt="$1"
+    local var_name="$2"
+    local key=""
+    local char
+    
+    printf "%s" "$prompt"
+    while IFS= read -r -n1 -s char; do
+        if [[ -z "$char" ]]; then
+            printf '\n'
+            break
+        elif [[ "$char" == $'\x7f' || "$char" == $'\x08' ]]; then
+            if [ -n "$key" ]; then
+                key="${key%?}"
+                printf '\b \b'
+            fi
+        else
+            key+="$char"
+            printf '*'
+        fi
+    done < /dev/tty
+    eval "$var_name=\"\$key\""
+}
+
 echo -e "${YELLOW}Оставьте пустым, чтобы пропустить. Ключи можно изменить позже через меню лаунчера.${RESET}"
 echo ""
 
-read -s -p "NVIDIA NIM API ключ (Enter = пропуск): " nim_key < /dev/tty
-echo ""
+read_key_stars "NVIDIA NIM API ключ (Enter = пропуск): " nim_key
 if [ -n "$nim_key" ]; then
     for rc in "$HOME/.bashrc" "$HOME/.zshrc"; do
         if [ -f "$rc" ]; then
@@ -671,8 +698,7 @@ fi
 
 echo ""
 
-read -s -p "Z.AI API ключ (Enter = пропуск): " zai_key < /dev/tty
-echo ""
+read_key_stars "Z.AI API ключ (Enter = пропуск): " zai_key
 if [ -n "$zai_key" ]; then
     for rc in "$HOME/.bashrc" "$HOME/.zshrc"; do
         if [ -f "$rc" ]; then
@@ -688,8 +714,7 @@ fi
 
 echo ""
 
-read -s -p "Groq API ключ (Enter = пропуск): " groq_key < /dev/tty
-echo ""
+read_key_stars "Groq API ключ (Enter = пропуск): " groq_key
 if [ -n "$groq_key" ]; then
     for rc in "$HOME/.bashrc" "$HOME/.zshrc"; do
         if [ -f "$rc" ]; then
@@ -705,8 +730,7 @@ fi
 
 echo ""
 
-read -s -p "OpenRouter API ключ (Enter = пропуск): " or_key < /dev/tty
-echo ""
+read_key_stars "OpenRouter API ключ (Enter = пропуск): " or_key
 if [ -n "$or_key" ]; then
     for rc in "$HOME/.bashrc" "$HOME/.zshrc"; do
         if [ -f "$rc" ]; then
@@ -722,8 +746,7 @@ fi
 
 echo ""
 
-read -s -p "B.AI API ключ (Enter = пропуск): " bai_key < /dev/tty
-echo ""
+read_key_stars "B.AI API ключ (Enter = пропуск): " bai_key
 if [ -n "$bai_key" ]; then
     for rc in "$HOME/.bashrc" "$HOME/.zshrc"; do
         if [ -f "$rc" ]; then
@@ -795,8 +818,7 @@ EOF
 make_sh_launcher() {
     local name="$1"
     local exec_path="$2"
-    local safe_name=$(echo "$name" | tr ' ' '-' | tr '[:upper:]' '[:lower:]')
-    local sh_path="$HOME/${safe_name}.sh"
+    local sh_path="$HOME/${name}.sh"
 
     cat > "$sh_path" << EOF
 #!/bin/bash
@@ -804,16 +826,16 @@ make_sh_launcher() {
 exec bash "$exec_path" "\$@"
 EOF
     chmod +x "$sh_path"
-    ok "${safe_name}.sh → $sh_path"
+    ok "${name}.sh → $sh_path"
 }
 
 if $INSTALL_QWEN; then
     LAUNCHER="$SCRIPTS_DIR/run-qwen-code-launcher.sh"
     if [ -f "$LAUNCHER" ]; then
         if [ -n "$DESKTOP" ]; then
-            make_desktop_entry "Qwen Code (cloud)" "$LAUNCHER"
+            make_desktop_entry "Qwen Code" "$LAUNCHER"
         fi
-        make_sh_launcher "qwen-code-cloud" "$LAUNCHER"
+        make_sh_launcher "qwen-code" "$LAUNCHER"
     fi
 fi
 
@@ -821,9 +843,9 @@ if $INSTALL_CLAUDE; then
     LAUNCHER="$SCRIPTS_DIR/run-claude-cloud-launcher.sh"
     if [ -f "$LAUNCHER" ]; then
         if [ -n "$DESKTOP" ]; then
-            make_desktop_entry "Claude Code (cloud)" "$LAUNCHER"
+            make_desktop_entry "Claude Code" "$LAUNCHER"
         fi
-        make_sh_launcher "claude-code-cloud" "$LAUNCHER"
+        make_sh_launcher "claude-code" "$LAUNCHER"
     fi
 fi
 
@@ -831,9 +853,9 @@ if $INSTALL_OPENCODE; then
     LAUNCHER="$SCRIPTS_DIR/run-opencode-launcher.sh"
     if [ -f "$LAUNCHER" ]; then
         if [ -n "$DESKTOP" ]; then
-            make_desktop_entry "OpenCode (cloud)" "$LAUNCHER"
+            make_desktop_entry "OpenCode" "$LAUNCHER"
         fi
-        make_sh_launcher "opencode-cloud" "$LAUNCHER"
+        make_sh_launcher "opencode" "$LAUNCHER"
     fi
 fi
 
@@ -841,9 +863,9 @@ if $INSTALL_FREEBUFF; then
     LAUNCHER="$SCRIPTS_DIR/run-freebuff-launcher.sh"
     if [ -f "$LAUNCHER" ]; then
         if [ -n "$DESKTOP" ]; then
-            make_desktop_entry "Freebuff (cloud)" "$LAUNCHER"
+            make_desktop_entry "Freebuff" "$LAUNCHER"
         fi
-        make_sh_launcher "freebuff-cloud" "$LAUNCHER"
+        make_sh_launcher "freebuff" "$LAUNCHER"
     fi
 fi
 
@@ -851,9 +873,9 @@ if $INSTALL_OPENCLAUDE; then
     LAUNCHER="$SCRIPTS_DIR/run-openclaude-launcher.sh"
     if [ -f "$LAUNCHER" ]; then
         if [ -n "$DESKTOP" ]; then
-            make_desktop_entry "OpenClaude (cloud)" "$LAUNCHER"
+            make_desktop_entry "OpenClaude" "$LAUNCHER"
         fi
-        make_sh_launcher "openclaude-cloud" "$LAUNCHER"
+        make_sh_launcher "openclaude" "$LAUNCHER"
     fi
 fi
 
@@ -867,11 +889,11 @@ echo ""
 echo -e "${GRAY}Репозиторий: $INSTALL_DIR${RESET}"
 echo ""
 echo -e "${CYAN}Команды для запуска:${RESET}"
-if $INSTALL_QWEN;     then echo -e "${GREEN}  ~/qwen-code-cloud.sh${RESET}"; fi
-if $INSTALL_CLAUDE;   then echo -e "${GREEN}  ~/claude-code-cloud.sh${RESET}"; fi
-if $INSTALL_OPENCODE; then echo -e "${GREEN}  ~/opencode-cloud.sh${RESET}"; fi
-if $INSTALL_FREEBUFF; then echo -e "${GREEN}  ~/freebuff-cloud.sh${RESET}"; fi
-if $INSTALL_OPENCLAUDE; then echo -e "${GREEN}  ~/openclaude-cloud.sh${RESET}"; fi
+if $INSTALL_QWEN;     then echo -e "${GREEN}  ~/qwen-code.sh${RESET}"; fi
+if $INSTALL_CLAUDE;   then echo -e "${GREEN}  ~/claude-code.sh${RESET}"; fi
+if $INSTALL_OPENCODE; then echo -e "${GREEN}  ~/opencode.sh${RESET}"; fi
+if $INSTALL_FREEBUFF; then echo -e "${GREEN}  ~/freebuff.sh${RESET}"; fi
+if $INSTALL_OPENCLAUDE; then echo -e "${GREEN}  ~/openclaude.sh${RESET}"; fi
 echo ""
 echo -e "${YELLOW}Перезапустите терминал для применения API ключей. Запускайте через команды выше!${RESET}"
 echo ""

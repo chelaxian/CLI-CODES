@@ -78,7 +78,21 @@ read_secret_text() {
     local prompt="$1"
     local key=""
     printf "%s" "$prompt" >&3
-    read -s -r key
+    # Read char-by-char showing asterisks
+    while IFS= read -r -n1 -s char; do
+        if [[ -z "$char" ]]; then
+            printf '\n' >&3
+            break
+        elif [[ "$char" == $'\x7f' || "$char" == $'\x08' ]]; then
+            if [ -n "$key" ]; then
+                key="${key%?}"
+                printf '\b \b' >&3
+            fi
+        else
+            key+="$char"
+            printf '*' >&3
+        fi
+    done < /dev/tty
     echo "$key"
 }
 

@@ -21,10 +21,10 @@ enter_claude_shared_dir() {
 # Top-level menu: provider groups + utility entries
 PROFILES=(
     "last|Запустить с последними настройками (быстрый старт)"
-    "group:zai|Z.AI - модели (GLM-5.1 / GLM-4.7 / GLM-4.7-Flash)"
-    "group:nim|NVIDIA NIM - 9 бесплатных agentic моделей"
-    "group:openrouter|OpenRouter - бесплатные agentic модели"
+    "group:zai|Z.AI - GLM-5.1 / GLM-4.7 / GLM-4.7-Flash"
+    "group:nim|NVIDIA NIM - бесплатные agentic модели"
     "group:bai|B.AI - DeepSeek/MiniMax/GLM/Kimi/GPT (Anthropic-compatible)"
+    "group:openrouter|OpenRouter - бесплатные agentic модели"
     "custom-model|Другая модель… → выбор провайдера и модели"
     "native-login|Нативный логин (Anthropic OAuth / Console)"
     "change-api-key|Сменить ключ API провайдера"
@@ -755,10 +755,38 @@ if [ "${CLAUDE_CLOUD_LAUNCHER_QUICK:-0}" = "1" ]; then
         fi
     fi
     
-    echo -e "${YELLOW}Нет сохранённого профиля Claude (облако). Один раз выберите провайдер в меню.${RESET}"
+    echo -e "${YELLOW}Нет сохранённого профиля Claude. Один раз выберите провайдер в меню.${RESET}"
     sleep 3
     exit 2
 fi
+
+# ── Dynamic model fetching (with static fallback) ────────────────────────────
+echo -e "${GRAY}Загрузка списков моделей...${RESET}" >&3
+
+DYNAMIC_ZAI=()
+mapfile -t DYNAMIC_ZAI < <(build_group_menu_items "zai" "ZAI_API_KEY" \
+    "https://api.z.ai/api/coding/paas/v4/models" "Bearer " "claude-zai-" \
+    "claude-zai-glm51|Z.AI - GLM-5.1 (paid, tool calling)" \
+    "claude-zai|Z.AI - GLM-4.7 (paid, tool calling)" \
+    "claude-zai-flash47|Z.AI - GLM-4.7-Flash (free, tool calling)" 2>/dev/null) || true
+if [ ${#DYNAMIC_ZAI[@]} -gt 0 ]; then ZAI_MODELS=("${DYNAMIC_ZAI[@]}"); fi
+
+DYNAMIC_NIM=()
+mapfile -t DYNAMIC_NIM < <(build_group_menu_items "nim" "NVIDIA_NIM_API_KEY" \
+    "https://integrate.api.nvidia.com/v1/models" "Bearer " "claude-nim-" \
+    "${NIM_MODELS[@]}" 2>/dev/null) || true
+if [ ${#DYNAMIC_NIM[@]} -gt 0 ]; then NIM_MODELS=("${DYNAMIC_NIM[@]}"); fi
+
+DYNAMIC_BAI=()
+mapfile -t DYNAMIC_BAI < <(build_group_menu_items "bai" "BAI_API_KEY" \
+    "https://api.b.ai/v1/models" "Bearer " "claude-bai-" \
+    "${BAI_MODELS[@]}" 2>/dev/null) || true
+if [ ${#DYNAMIC_BAI[@]} -gt 0 ]; then BAI_MODELS=("${DYNAMIC_BAI[@]}"); fi
+
+DYNAMIC_OR=()
+mapfile -t DYNAMIC_OR < <(build_openrouter_free_items "OPENROUTER_API_KEY" "claude-openrouter-" \
+    "${OPENROUTER_MODELS[@]}" 2>/dev/null) || true
+if [ ${#DYNAMIC_OR[@]} -gt 0 ]; then OPENROUTER_MODELS=("${DYNAMIC_OR[@]}"); fi
 
 # Main menu loop
 main() {
@@ -775,11 +803,10 @@ while true; do
     done
     
     local choice
-    choice="$(show_tui_numbered_menu "Claude" "Claude Code (облако) - провайдер" "Z.AI · NIM · OpenRouter · B.AI (через free-claude-code)" "${menu_items[@]}")"
+    choice="$(show_tui_numbered_menu "Claude" "Claude Code - провайдер" "Z.AI · NIM · OpenRouter · B.AI (через free-claude-code)" "${menu_items[@]}")"
     
     if [ "${choice:-0}" -eq 0 ]; then
-        echo -e "${YELLOW}Отменено.${RESET}"
-        exit 0
+        continue
     fi
     
     local profile_id=$(echo "${PROFILES[$((choice-1))]}" | cut -d'|' -f1)

@@ -24,11 +24,10 @@ resolve_qwen_exe() {
 
 PROFILES=(
     "last|Запустить с последними настройками (быстрый старт)"
-    "group:zai|Z.AI - модели (GLM-5.1 / GLM-4.7 / GLM-4.7-Flash)"
-    "group:nim|NVIDIA NIM - 9 бесплатных agentic моделей"
-    # OpenRouter убран из пресетов (429 rate-limit / 404).
-    # Используйте «Другая модель…» → OpenRouter для ручного выбора.
+    "group:zai|Z.AI - GLM-5.1 / GLM-4.7 / GLM-4.7-Flash"
+    "group:nim|NVIDIA NIM - бесплатные agentic модели"
     "group:bai|B.AI - DeepSeek/MiniMax/GLM/Kimi/GPT (OpenAI-compatible)"
+    "group:openrouter|OpenRouter - бесплатные agentic модели"
     "custom-model|Другая модель… → выбор провайдера и модели"
     "native-login|Нативный логин (Qwen OAuth / Coding Plan)"
     "change-api-key|Сменить ключ API провайдера"
@@ -569,6 +568,42 @@ if [ "${QWEN_CODE_LAUNCHER_QUICK:-0}" = "1" ]; then
     exit 2
 fi
 
+# ── Dynamic model fetching (with static fallback) ────────────────────────────
+echo -e "${GRAY}Загрузка списков моделей...${RESET}" >&3
+
+DYNAMIC_ZAI=()
+mapfile -t DYNAMIC_ZAI < <(build_group_menu_items "zai" "ZAI_API_KEY" \
+    "https://api.z.ai/api/coding/paas/v4/models" "Bearer " "zai-" \
+    "zai-glm51|Z.AI - GLM-5.1 (paid, tool calling)" \
+    "zai-glm|Z.AI - GLM-4.7 (paid, tool calling)" \
+    "zai-flash47|Z.AI - GLM-4.7-Flash (free, tool calling)" 2>/dev/null) || true
+if [ ${#DYNAMIC_ZAI[@]} -gt 0 ]; then ZAI_MODELS=("${DYNAMIC_ZAI[@]}"); fi
+
+DYNAMIC_NIM=()
+mapfile -t DYNAMIC_NIM < <(build_group_menu_items "nim" "NVIDIA_NIM_API_KEY" \
+    "https://integrate.api.nvidia.com/v1/models" "Bearer " "nim-" \
+    "nim-mistral-medium|NIM - Mistral Medium 3.5 128B (free, tool calling)" \
+    "nim-glm51|NIM - Z.AI GLM-5.1 (free, tool calling)" \
+    "nim-step-3.5-flash|NIM - Step 3.5 Flash (free, tool calling)" \
+    "nim-mistral-large-3|NIM - Mistral Large 3 675B (free, tool calling)" \
+    "nim-deepseek-v4-flash|NIM - DeepSeek V4 Flash 284B MoE (free)" \
+    "nim-gemma-4-31b|NIM - Google Gemma-4 31B (free)" \
+    "nim-qwen3.5-397b|NIM - Qwen 3.5 397B A17B (free)" \
+    "nim-qwen3-next-80b|NIM - Qwen 3 Next 80B A3B (free)" \
+    "nim-qwen3-coder-480b|NIM - Qwen 3 Coder 480B A35B (free)" 2>/dev/null) || true
+if [ ${#DYNAMIC_NIM[@]} -gt 0 ]; then NIM_MODELS=("${DYNAMIC_NIM[@]}"); fi
+
+DYNAMIC_BAI=()
+mapfile -t DYNAMIC_BAI < <(build_group_menu_items "bai" "BAI_API_KEY" \
+    "https://api.b.ai/v1/models" "Bearer " "bai-" \
+    "${BAI_MODELS[@]}" 2>/dev/null) || true
+if [ ${#DYNAMIC_BAI[@]} -gt 0 ]; then BAI_MODELS=("${DYNAMIC_BAI[@]}"); fi
+
+DYNAMIC_OR=()
+mapfile -t DYNAMIC_OR < <(build_openrouter_free_items "OPENROUTER_API_KEY" "openrouter-" \
+    "${OPENROUTER_MODELS[@]}" 2>/dev/null) || true
+if [ ${#DYNAMIC_OR[@]} -gt 0 ]; then OPENROUTER_MODELS=("${DYNAMIC_OR[@]}"); fi
+
 # Главное меню
 main() {
 while true; do
@@ -587,8 +622,7 @@ while true; do
     choice="$(show_tui_numbered_menu "Qwen" "Qwen Code - выбор провайдера" "Z.AI · NIM · OpenRouter · B.AI" "${menu_items[@]}")"
     
     if [ "${choice:-0}" -eq 0 ]; then
-        echo -e "${YELLOW}Отменено.${RESET}"
-        exit 0
+        continue
     fi
     
     local profile_id=$(echo "${PROFILES[$((choice-1))]}" | cut -d'|' -f1)

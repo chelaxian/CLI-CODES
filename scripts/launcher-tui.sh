@@ -483,3 +483,107 @@ show_tui_wait_frame() {
 show_tui_framed_menu() {
     show_tui_numbered_menu "$@"
 }
+
+# ── Dynamic model fetching for bash launchers ──────────────────────────────────
+# Fetches models from provider API and returns them as "id|Label" lines on stdout.
+# Falls back to static items if API fails.
+#
+# Usage:
+#   build_group_menu_items <provider> <api_key_env> <api_url> <auth_header_prefix> <id_prefix> <static_items...>
+#   Returns: array of "id|Label" lines on stdout, and "API" or "static" on stderr line 1
+#
+# Example:
+#   mapfile -t DYNAMIC_ITEMS < <(build_group_menu_items "zai" "ZAI_API_KEY" \
+#       "https://api.z.ai/api/coding/paas/v4/models" "Bearer " "zai-" \
+#       "zai-glm51|Z.AI - GLM-5.1" "zai-glm|Z.AI - GLM-4.7")
+
+build_group_menu_items() {
+    local provider="$1"
+    local api_key_env="$2"
+    local api_url="$3"
+    local auth_prefix="${4:-Bearer }"
+    local id_prefix="$5"
+    shift 5
+    local static_items=("$@")
+
+    # Try dynamic fetch
+    local key="${!api_key_env:-}"
+    if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then
+        key=$(get_current_api_key "${api_key_env%%_API_KEY}" 2>/dev/null || true)
+    fi
+
+    if [ -n "$key" ] && [ "$key" != "__SET_ME__" ]; then
+        local response
+        response=$(curl -s --connect-timeout 8 --max-time 12 \
+            -H "Authorization: ${auth_prefix}${key}" \
+            "$api_url" 2>/dev/null) || true
+
+        if [ -n "$response" ]; then
+            local ids=()
+            ids=($(echo "$response" | grep -o '"id":"[^"]*"' | cut -d'"' -f4 | sort -u))
+
+            if [ ${#ids[@]} -gt 0 ]; then
+                local dynamic_items=()
+                for raw_id in "${ids[@]}"; do
+                    local mid="$(echo "$raw_id" | xargs)"
+                    [ -z "$mid" ] && continue
+                    dynamic_items+=("${id_prefix}${mid}|${provider} - ${mid}")
+                done
+                if [ ${#dynamic_items[@]} -gt 0 ]; then
+                    printf '%s\n' "${dynamic_items[@]}"
+                    echo "API" >&2
+                    return 0
+                fi
+            fi
+        fi
+    fi
+
+    # Fallback to static
+    printf '%s\n' "${static_items[@]}"
+    echo "static" >&2
+    return 0
+}
+
+# Fetch models from OpenRouter free tier (pricing.prompt=="0" and pricing.completion=="0")
+# Requires jq.
+build_openrouter_free_items() {
+    local api_key_env="$1"
+    local id_prefix="$2"
+    shift 2
+    local static_items=("$@")
+
+    local key="${!api_key_env:-}"
+    if [ -z "$key" ]; then
+        key=$(get_current_api_key "OPENROUTER" 2>/dev/null || true)
+    fi
+
+    if [ -n "$key" ] && command -v jq &>/dev/null; then
+        local response
+        response=$(curl -s --connect-timeout 8 --max-time 12 \
+            -H "Authorization: Bearer $key" \
+            "https://openrouter.ai/api/v1/models" 2>/dev/null) || true
+
+        if [ -n "$response" ]; then
+            local free_ids=()
+            free_ids=($(echo "$response" | jq -r '.data[] | select(.pricing.prompt == "0" and .pricing.completion == "0") | .id' 2>/dev/null | sort -u))
+
+            if [ ${#free_ids[@]} -gt 0 ]; then
+                local dynamic_items=()
+                for raw_id in "${free_ids[@]}"; do
+                    local mid="$(echo "$raw_id" | xargs)"
+                    [ -z "$mid" ] && continue
+                    dynamic_items+=("${id_prefix}${mid}|OpenRouter - ${mid}")
+                done
+                if [ ${#dynamic_items[@]} -gt 0 ]; then
+                    printf '%s\n' "${dynamic_items[@]}"
+                    echo "API" >&2
+                    return 0
+                fi
+            fi
+        fi
+    fi
+
+    printf '%s\n' "${static_items[@]}"
+    echo "static" >&2
+    return 0
+}

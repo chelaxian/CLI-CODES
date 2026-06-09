@@ -14,10 +14,10 @@ CONFIG_DIR="$SCRIPT_DIR/../opencode-sessions/_shared"
 
 PROFILES=(
     "last|Запустить с последними настройками (быстрый старт)"
-    "group:zai|Z.AI - модели (GLM-5.1 / GLM-4.7 / GLM-4.7-Flash)"
-    "group:nim|NVIDIA NIM - 9 бесплатных agentic моделей"
-    "group:openrouter|OpenRouter - бесплатные agentic модели"
+    "group:zai|Z.AI - GLM-5.1 / GLM-4.7 / GLM-4.7-Flash"
+    "group:nim|NVIDIA NIM - бесплатные agentic модели"
     "group:bai|B.AI - DeepSeek/MiniMax/GLM/Kimi/GPT (OpenAI-compatible)"
+    "group:openrouter|OpenRouter - бесплатные agentic модели"
     "custom-model|Другая модель… → выбор провайдера и модели"
     "native-login|Нативный логин (OpenCode Providers)"
     "change-api-key|Сменить ключ API провайдера"
@@ -805,6 +805,34 @@ if [ "${OPENCODE_LAUNCHER_QUICK:-0}" = "1" ]; then
     exit 2
 fi
 
+# ── Dynamic model fetching (with static fallback) ────────────────────────────
+echo -e "${GRAY}Загрузка списков моделей...${RESET}" >&3
+
+DYNAMIC_ZAI_OC=()
+mapfile -t DYNAMIC_ZAI_OC < <(build_group_menu_items "zai" "ZAI_API_KEY" \
+    "https://api.z.ai/api/coding/paas/v4/models" "Bearer " "zai-" \
+    "zai-glm51|Z.AI - GLM-5.1 (paid, tool calling)" \
+    "zai-glm|Z.AI - GLM-4.7 (paid, tool calling)" \
+    "zai-flash47|Z.AI - GLM-4.7-Flash (free, tool calling)" 2>/dev/null) || true
+if [ ${#DYNAMIC_ZAI_OC[@]} -gt 0 ]; then ZAI_MODELS=("${DYNAMIC_ZAI_OC[@]}"); fi
+
+DYNAMIC_NIM_OC=()
+mapfile -t DYNAMIC_NIM_OC < <(build_group_menu_items "nim" "NVIDIA_NIM_API_KEY" \
+    "https://integrate.api.nvidia.com/v1/models" "Bearer " "nim-" \
+    "${NIM_MODELS[@]}" 2>/dev/null) || true
+if [ ${#DYNAMIC_NIM_OC[@]} -gt 0 ]; then NIM_MODELS=("${DYNAMIC_NIM_OC[@]}"); fi
+
+DYNAMIC_BAI_OC=()
+mapfile -t DYNAMIC_BAI_OC < <(build_group_menu_items "bai" "BAI_API_KEY" \
+    "https://api.b.ai/v1/models" "Bearer " "bai-" \
+    "${BAI_MODELS[@]}" 2>/dev/null) || true
+if [ ${#DYNAMIC_BAI_OC[@]} -gt 0 ]; then BAI_MODELS=("${DYNAMIC_BAI_OC[@]}"); fi
+
+DYNAMIC_OR_OC=()
+mapfile -t DYNAMIC_OR_OC < <(build_openrouter_free_items "OPENROUTER_API_KEY" "openrouter-" \
+    "${OPENROUTER_MODELS[@]}" 2>/dev/null) || true
+if [ ${#DYNAMIC_OR_OC[@]} -gt 0 ]; then OPENROUTER_MODELS=("${DYNAMIC_OR_OC[@]}"); fi
+
 # ── Главное меню ─────────────────────────────────────────────────────────────
 
 main() {
@@ -823,8 +851,7 @@ while true; do
     choice="$(show_tui_framed_menu "OpenCode" "OpenCode - выбор провайдера" "Z.AI · NIM · OpenRouter · B.AI (OpenAI-compatible)" "${menu_items[@]}")"
     
     if [ "${choice:-0}" -eq 0 ]; then
-        echo -e "${YELLOW}Отменено.${RESET}"
-        exit 0
+        continue
     fi
     
     local profile_id=$(echo "${PROFILES[$((choice-1))]}" | cut -d'|' -f1)
