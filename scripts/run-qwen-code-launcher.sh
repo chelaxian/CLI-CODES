@@ -663,6 +663,7 @@ if [ ${#DYNAMIC_OR[@]} -gt 0 ]; then OPENROUTER_MODELS=("${DYNAMIC_OR[@]}"); fi
 
 # Главное меню
 main() {
+local update_hint=$(test_launcher_updates)
 while true; do
     local state=$(get_launcher_state 2>/dev/null || true)
     local last_id=$(resolve_profile_from_state "$state" 2>/dev/null || true)
@@ -676,7 +677,7 @@ while true; do
     done
     
     local choice
-    choice="$(show_tui_numbered_menu "Qwen" "Qwen Code - выбор провайдера" "Z.AI · NIM · OpenRouter · B.AI" "${menu_items[@]}")"
+    choice="$(show_tui_numbered_menu "Qwen" "Qwen Code - выбор провайдера" "Z.AI · NIM · OpenRouter · B.AI" $update_hint "${menu_items[@]}")"
     
     if [ "${choice:-0}" -eq 0 ]; then
         continue

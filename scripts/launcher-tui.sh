@@ -196,7 +196,9 @@ draw_tui_banner_openclaude() {
 }
 
 # Main TUI menu with arrow-key navigation
-# Args: app_brand title subtitle item1 item2 item3 ...
+# Args: app_brand title subtitle [update_hint] item1 item2 item3 ...
+# If 4th arg starts with "UPDATE:" or "ОБНОВЛЕНИЕ:" it is treated as update_hint,
+# otherwise all args from $4 onward are menu items.
 # Prints selected index (1-based) to stdout. Prints 0 for Esc/Ctrl+C/exit.
 # All visual output goes to FD 3 (/dev/tty).
 # Always returns 0.
@@ -205,6 +207,13 @@ show_tui_numbered_menu() {
     local title="$2"
     local subtitle="$3"
     shift 3
+
+    local update_hint=""
+    if [ $# -gt 0 ] && [[ "$1" == UPDATE:* || "$1" == ОБНОВЛЕНИЕ:* ]]; then
+        update_hint="$1"
+        shift
+    fi
+
     local items=("$@")
 
     local num_items=${#items[@]}
@@ -277,6 +286,20 @@ show_tui_numbered_menu() {
         printf "${banner_color}║${RESET}" >&3
         printf '%*s' "$inner_width" '' >&3
         printf "${banner_color}║${RESET}\n" >&3
+
+        if [ -n "$update_hint" ]; then
+            local uh_text="  ${update_hint}"
+            local uh_len=${#uh_text}
+            printf "${banner_color}║${RESET}${YELLOW}${uh_text}${RESET}" >&3
+            if [ "$uh_len" -lt "$inner_width" ]; then
+                printf '%*s' "$((inner_width - uh_len))" '' >&3
+            fi
+            printf "${banner_color}║${RESET}\n" >&3
+
+            printf "${banner_color}║${RESET}" >&3
+            printf '%*s' "$inner_width" '' >&3
+            printf "${banner_color}║${RESET}\n" >&3
+        fi
 
         printf "${banner_color}╠${RESET}" >&3
         draw_box_line '═' "$inner_width" >&3
@@ -669,3 +692,31 @@ NIM_AGENTIC_IDS=(
     "google/gemma-4-31b-it"
     "nvidia/llama-3.1-nemotron-70b-instruct"
 )
+
+# ── Update checker ──────────────────────────────────────────────────────────
+# Checks for updates to the cloud-code-setup repo.
+# Returns update hint string on stdout, or "" if no updates / check failed.
+test_launcher_updates() {
+    local repo="chelaxian/cloud-code-setup"
+    local branch="main"
+    local hints=""
+
+    local remote_sha
+    remote_sha=$(curl -s --connect-timeout 5 --max-time 8 \
+        "https://api.github.com/repos/$repo/commits/$branch" 2>/dev/null \
+        | grep -o '"sha":"[^"]*"' | head -1 | cut -d'"' -f4) || true
+
+    if [ -n "$remote_sha" ]; then
+        local script_dir="${SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
+        local git_dir="$(cd "$script_dir/.." && pwd)/.git"
+        if [ -d "$git_dir" ] || [ -f "$git_dir" ]; then
+            local local_sha
+            local_sha=$(git -C "$(dirname "$git_dir")" rev-parse HEAD 2>/dev/null) || true
+            if [ -n "$local_sha" ] && [ "$remote_sha" != "$local_sha" ]; then
+                hints="ОБНОВЛЕНИЕ: доступно обновление на Github - запустите скрипт мастера установки и выберите [7]"
+            fi
+        fi
+    fi
+
+    echo "$hints"
+}

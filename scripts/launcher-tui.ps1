@@ -399,7 +399,7 @@ function Test-LauncherUpdates {
         if (Test-Path -LiteralPath $gitDir) {
           $localSha = & git -C (Split-Path $PSScriptRoot) rev-parse HEAD 2>$null
           if ($localSha -and $remoteSha -ne $localSha.Trim()) {
-            $hints += "РЕПО: есть обновление скриптов — git pull"
+            $hints += "ОБНОВЛЕНИЕ: доступно обновление на Github - запустите скрипт мастера установки и выберите [7]"
           }
         }
       }

@@ -487,6 +487,7 @@ if [ ${#DYNAMIC_OR[@]} -gt 0 ]; then OPENROUTER_MODELS=("${DYNAMIC_OR[@]}"); fi
 # Главное меню
 main() {
 local state last_id choice profile_id sub_result wizard_result wiz_provider wiz_model openclaude_exe
+local update_hint=$(test_launcher_updates)
 while true; do
     state=$(get_launcher_state 2>/dev/null || true)
     last_id=$(resolve_profile_from_state "$state" 2>/dev/null || true)
@@ -496,7 +497,7 @@ while true; do
         menu_items+=("${profile##*|}")
     done
 
-    choice="$(show_tui_numbered_menu "OpenClaude" "OpenClaude - выбор профиля" "Z.AI · NIM · Groq · B.AI · OpenRouter" "${menu_items[@]}")"
+    choice="$(show_tui_numbered_menu "OpenClaude" "OpenClaude - выбор профиля" "Z.AI · NIM · Groq · B.AI · OpenRouter" $update_hint "${menu_items[@]}")"
 
     if [ "${choice:-0}" -eq 0 ]; then
         continue

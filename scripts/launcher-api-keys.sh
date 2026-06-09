@@ -68,6 +68,22 @@ get_current_api_key() {
             fi
             if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then echo "" ; else echo "$key" | xargs ; fi
             ;;
+        "OPENGATEWAY")
+            local key="${OPENGATEWAY_API_KEY:-}"
+            if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then
+                key=$(grep "^export OPENGATEWAY_API_KEY=" "$HOME/.bashrc" 2>/dev/null | cut -d'"' -f2)
+            fi
+            if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then
+                key=$(grep "^export OPENGATEWAY_API_KEY=" "$HOME/.zshrc" 2>/dev/null | cut -d'"' -f2)
+            fi
+            if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then
+                key="${OPENAI_API_KEY:-}"
+            fi
+            if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then
+                key=$(grep "^export OPENAI_API_KEY=" "$HOME/.bashrc" 2>/dev/null | cut -d'"' -f2)
+            fi
+            if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then echo "" ; else echo "$key" | xargs ; fi
+            ;;
         *)
             echo ""
             ;;
@@ -119,6 +135,7 @@ set_provider_api_key() {
         "GROQ") env_var="GROQ_API_KEY" ;;
         "OPENROUTER") env_var="OPENROUTER_API_KEY" ;;
         "BAI") env_var="BAI_API_KEY" ;;
+        "OPENGATEWAY") env_var="OPENGATEWAY_API_KEY" ;;
         *) printf "${RED}Неизвестный провайдер: $provider${RESET}\n" >&3; return 1 ;;
     esac
     
@@ -191,6 +208,7 @@ show_api_key_change_menu() {
         "Groq API ключ (https://console.groq.com/keys)"
         "OpenRouter API ключ (https://openrouter.ai/settings/keys)"
         "B.AI API ключ (https://chat.b.ai/key)"
+        "OpenGateway API ключ (Gitlawb) (https://gitlawb.com/opengateway/keys)"
     )
     
     local choice
@@ -211,6 +229,7 @@ show_api_key_change_menu() {
         3) provider_name="Groq"; env_var_name="GROQ"; provider_url="https://console.groq.com/keys" ;;
         4) provider_name="OpenRouter"; env_var_name="OPENROUTER"; provider_url="https://openrouter.ai/settings/keys" ;;
         5) provider_name="B.AI"; env_var_name="BAI"; provider_url="https://chat.b.ai/key" ;;
+        6) provider_name="OpenGateway"; env_var_name="OPENGATEWAY"; provider_url="https://gitlawb.com/opengateway/keys" ;;
         *) return 0 ;;
     esac
     

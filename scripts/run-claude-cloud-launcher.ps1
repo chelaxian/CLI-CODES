@@ -56,15 +56,6 @@ $script:Profiles = @(
     Label = "OpenRouter - бесплатные agentic модели"
   }
   @{
-    Id    = "group:bai"
-    Label = "B.AI - DeepSeek/MiniMax/GLM/Kimi/GPT (OpenAI-compatible)"
-  }
-  # OpenRouter доступен через «Другая модель» (прямой OpenAI-compat, без proxy).
-  @{
-    Id    = "group:openrouter"
-    Label = "OpenRouter - бесплатные agentic модели"
-  }
-  @{
     Id    = "custom-model"
     Label = "Другая модель… → выбор провайдера и модели"
   }
@@ -116,17 +107,6 @@ $script:GroupMenus = @{
     @{ Id = "claude-zai-glm51";   Label = "Z.AI - GLM-5.1 (paid, tool calling)" }
     @{ Id = "claude-zai";         Label = "Z.AI - GLM-4.7 (paid, tool calling)" }
     @{ Id = "claude-zai-flash47"; Label = "Z.AI - GLM-4.7-Flash (free)" }
-  )
-  nim = @(
-    @{ Id = "claude-nim-mistral-medium";   Label = "NIM - Mistral Medium 3.5 128B (free, tool calling)" }
-    @{ Id = "claude-nim-glm51";            Label = "NIM - Z.AI GLM-5.1 (free, tool calling)" }
-    @{ Id = "claude-nim-step-3.5-flash";   Label = "NIM - Step 3.5 Flash (free, tool calling)" }
-    @{ Id = "claude-nim-mistral-large-3";  Label = "NIM - Mistral Large 3 675B (free, tool calling)" }
-    @{ Id = "claude-nim-deepseek-v4-flash"; Label = "NIM - DeepSeek V4 Flash 284B MoE (free)" }
-    @{ Id = "claude-nim-gemma-4-31b";      Label = "NIM - Google Gemma-4 31B (free)" }
-    @{ Id = "claude-nim-qwen3.5-397b";     Label = "NIM - Qwen 3.5 397B A17B (free)" }
-    @{ Id = "claude-nim-qwen3-next-80b";   Label = "NIM - Qwen 3 Next 80B A3B (free)" }
-    @{ Id = "claude-nim-qwen3-coder-480b"; Label = "NIM - Qwen 3 Coder 480B A35B (free)" }
   )
   nim = @(
     @{ Id = "claude-nim-mistral-medium";   Label = "NIM - Mistral Medium 3.5 128B (free, tool calling)" }
@@ -432,8 +412,6 @@ $staticNimCC = @(
   @{ Id = "claude-nim-gemma-4-31b";      Label = "NIM - Google Gemma-4 31B (free)" }
   @{ Id = "claude-nim-qwen3.5-397b";     Label = "NIM - Qwen 3.5 397B A17B (free)" }
   @{ Id = "claude-nim-qwen3-next-80b";   Label = "NIM - Qwen 3 Next 80B A3B (free)" }
-  @{ Id = "claude-nim-qwen3-coder-480b"; Label = "NIM - Qwen 3 Coder 480B A35B (free)" }
-)
   @{ Id = "claude-nim-qwen3-coder-480b"; Label = "NIM - Qwen 3 Coder 480B A35B (free)" }
 )
 $staticBaiCC = @(

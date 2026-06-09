@@ -922,6 +922,7 @@ if [ ${#DYNAMIC_OR[@]} -gt 0 ]; then OPENROUTER_MODELS=("${DYNAMIC_OR[@]}"); fi
 
 # Main menu loop
 main() {
+local update_hint=$(test_launcher_updates)
 while true; do
     local state=$(get_launcher_state 2>/dev/null || true)
     local last_id=$(resolve_profile_from_state "$state" 2>/dev/null || true)
@@ -935,7 +936,7 @@ while true; do
     done
     
     local choice
-    choice="$(show_tui_numbered_menu "Claude" "Claude Code - провайдер" "Z.AI · NIM · Groq · OpenRouter · B.AI (через free-claude-code)" "${menu_items[@]}")"
+    choice="$(show_tui_numbered_menu "Claude" "Claude Code - провайдер" "Z.AI · NIM · Groq · OpenRouter · B.AI (через free-claude-code)" $update_hint "${menu_items[@]}")"
     
     if [ "${choice:-0}" -eq 0 ]; then
         continue
