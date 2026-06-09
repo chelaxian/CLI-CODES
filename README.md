@@ -35,13 +35,13 @@ cd CLI-CODES
 
 ## Что делает инсталлятор
 
-1. **Проверяет зависимости** — git, Node.js, npm (автоустановка через winget/choco/scoop на Windows)
-2. **Спрашивает** что установить: Qwen Code, Claude Code, OpenCode, OpenClaude, Freebuff или все инструменты
-3. **Устанавливает CLI** через npm (если не установлен)
-4. **Запрашивает API ключи** (все можно пропустить):
+- **Проверяет зависимости** — git, Node.js, npm (автоустановка через winget/choco/scoop на Windows)
+- **Спрашивает** что установить: Qwen Code, Claude Code, OpenCode, OpenClaude, Freebuff или все инструменты
+- **Устанавливает CLI** через npm (если не установлен)
+- **Запрашивает API ключи** (все можно пропустить):
    - NVIDIA NIM, Z.AI, Groq, OpenRouter, B.AI
-5. **Создаёт ярлыки** на рабочем столе (Windows) / в `~` (Linux)
-6. **Настраивает профили сессий** для `/resume`
+- **Создаёт ярлыки** на рабочем столе (Windows) / в `~` (Linux)
+- **Настраивает профили сессий** для `/resume`
 
 Дополнительные пункты меню:
 
@@ -58,7 +58,6 @@ cd CLI-CODES
 | Документ | Описание |
 |----------|----------|
 | [docs/MANUAL-SETUP.md](docs/MANUAL-SETUP.md) | Полное пошаговое руководство по ручной установке (Windows + Linux) |
-| [docs/DEPLOY-FROM-SCRATCH.md](docs/DEPLOY-FROM-SCRATCH.md) | Развёртывание с нуля с полными текстами скриптов |
 
 ---
 
