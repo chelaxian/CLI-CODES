@@ -203,65 +203,56 @@ FCC_DIR="$HOME/.free-claude-code"
 ensure_fcc_proxy() {
     local provider="$1"
     local model="$2"
-    local port="${3:-8082}"
-    # Optional extra .env lines (e.g. OPENAI_BASE_URL for B.AI routing)
+    local preferred_port="${3:-8082}"
     local extra_env="${4:-}"
 
-    # Check if proxy already running on this port AND responding to HTTP.
-    # Restart when .env points at another model; otherwise a stale proxy can keep
-    # serving a deprecated backend after the launcher profile changed.
-    if (ss -tlnp 2>/dev/null | grep -q ":${port} " || nc -z 127.0.0.1 "$port" 2>/dev/null); then
-        local env_file="$FCC_DIR/.env"
-        if [ -f "$env_file" ] && ! grep -qx "MODEL=\"${model}\"" "$env_file"; then
-            printf "${YELLOW}Proxy на порту ${port} запущен с другой моделью. Перезапуск...${RESET}\n" >&3
-            fuser -k "${port}/tcp" 2>/dev/null || true
-            sleep 1
-        else
-        local existing_code
-        existing_code=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:${port}/v1/models" 2>/dev/null) || true
-        if [ -n "$existing_code" ] && [ "$existing_code" != "000" ]; then
-            printf "${GREEN}  [OK] Proxy уже работает на порту ${port} (HTTP ${existing_code})${RESET}\n" >&3
-            echo "$port"
-            return 0
-        fi
-        fi
-        # Port is open but not HTTP — kill whatever is on it and restart
-        printf "${YELLOW}Порт ${port} занят, но не отвечает на HTTP. Перезапуск...${RESET}\n" >&3
-        fuser -k "${port}/tcp" 2>/dev/null || true
+    _is_port_in_use() {
+        ss -tlnp 2>/dev/null | grep -q ":${1} " || nc -z 127.0.0.1 "$1" 2>/dev/null
+    }
+
+    _kill_port() {
+        fuser -k "${1}/tcp" 2>/dev/null || true
         sleep 1
-    fi
+    }
 
-    # Install uv if missing
-    if ! command -v uv &>/dev/null; then
-        printf "${CYAN}Установка uv (Python package manager)...${RESET}\n" >&3
-        curl -LsSf https://astral.sh/uv/install.sh | sh 2>/dev/null || {
-            printf "${RED}Не удалось установить uv.${RESET}\n" >&3
-            return 1
-        }
-        export PATH="$HOME/.local/bin:$PATH"
-    fi
+    _is_port_free() {
+        ! (ss -tlnp 2>/dev/null | grep -q ":${1} " || nc -z 127.0.0.1 "$1" 2>/dev/null)
+    }
 
-    # Clone free-claude-code if missing
-    if [ ! -d "$FCC_DIR" ]; then
-        printf "${CYAN}Клонирование free-claude-code...${RESET}\n" >&3
-        git clone https://github.com/Alishahryar1/free-claude-code.git "$FCC_DIR" 2>/dev/null || {
-            printf "${RED}Не удалось клонировать free-claude-code.${RESET}\n" >&3
-            return 1
-        }
-    fi
+    _check_http() {
+        curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:${1}/v1/models" 2>/dev/null || true
+    }
 
-    # Update repo (suppress ALL output to avoid polluting stdout return value)
-    (cd "$FCC_DIR" && git pull origin main >/dev/null 2>&1) || true
+    _install_and_prepare() {
+        if ! command -v uv &>/dev/null; then
+            printf "${CYAN}Установка uv (Python package manager)...${RESET}\n" >&3
+            curl -LsSf https://astral.sh/uv/install.sh | sh 2>/dev/null || {
+                printf "${RED}Не удалось установить uv.${RESET}\n" >&3
+                return 1
+            }
+            export PATH="$HOME/.local/bin:$PATH"
+        fi
 
-    # Write .env
-    local nim_key="${NVIDIA_NIM_API_KEY:-}"
-    local or_key="${OPENROUTER_API_KEY:-}"
-    # B.AI rides the open_router transport but needs its own API key + base URL override.
-    if [ "$provider" = "bai" ]; then
-        or_key="${BAI_API_KEY:-}"
-    fi
-    local env_file="$FCC_DIR/.env"
-    cat > "$env_file" << ENVEOF
+        if [ ! -d "$FCC_DIR" ]; then
+            printf "${CYAN}Клонирование free-claude-code...${RESET}\n" >&3
+            git clone https://github.com/Alishahryar1/free-claude-code.git "$FCC_DIR" 2>/dev/null || {
+                printf "${RED}Не удалось клонировать free-claude-code.${RESET}\n" >&3
+                return 1
+            }
+        fi
+
+        (cd "$FCC_DIR" && git pull origin main >/dev/null 2>&1) || true
+
+        timeout 30 sh -c 'cd "$1" && uv sync &>/dev/null' _ "$FCC_DIR" 2>/dev/null || true
+    }
+
+    _write_env() {
+        local nim_key="${NVIDIA_NIM_API_KEY:-}"
+        local or_key="${OPENROUTER_API_KEY:-}"
+        if [ "$provider" = "bai" ]; then
+            or_key="${BAI_API_KEY:-}"
+        fi
+        cat > "$FCC_DIR/.env" << ENVEOF
 NVIDIA_NIM_API_KEY="${nim_key}"
 OPENROUTER_API_KEY="${or_key}"
 MODEL="${model}"
@@ -275,61 +266,117 @@ MESSAGING_PLATFORM="none"
 ENABLE_WEB_SERVER_TOOLS=false
 ${extra_env}
 ENVEOF
+    }
 
-    # Warm deps once (prevents long first-run hang) — timeout-safe
-    timeout 30 sh -c 'cd "$1" && uv sync &>/dev/null' _ "$FCC_DIR" 2>/dev/null || true
+    _start_proxy_on_port() {
+        local port="$1"
+        local log_file="$FCC_DIR/fcc-${port}.log"
 
-    # Start proxy in background (log to file for debugging)
-    local log_file="$FCC_DIR/fcc-${port}.log"
-    printf "${CYAN}Запуск free-claude-code proxy на порту ${port}...${RESET}\n" >&3
-    printf "${GRAY}Логи: ${log_file}${RESET}\n" >&3
+        printf "${CYAN}Запуск free-claude-code proxy на порту ${port}...${RESET}\n" >&3
+        printf "${GRAY}Логи: ${log_file}${RESET}\n" >&3
 
-    # Use nohup + disown so the process survives shell exits
-    # </dev/null: fully detach stdin so parent shell never blocks on pipe
-    nohup sh -c "cd '$FCC_DIR' && uv run uvicorn server:app --host 127.0.0.1 --port '$port' --log-level warning" </dev/null >>"$log_file" 2>&1 &
-    local proxy_pid=$!
-    disown "$proxy_pid" 2>/dev/null || true
+        nohup sh -c "cd '$FCC_DIR' && uv run uvicorn server:app --host 127.0.0.1 --port '$port' --log-level warning" </dev/null >>"$log_file" 2>&1 &
+        local proxy_pid=$!
+        disown "$proxy_pid" 2>/dev/null || true
 
-    # Brief pause for process to begin initializing
-    sleep 0.5
+        sleep 0.5
 
-    # Wait for proxy TCP port to become available (show progress)
-    local tries=0
-    printf "${GRAY}  Ожидание TCP" >&3
-    while [ $tries -lt 30 ]; do
-        if nc -z 127.0.0.1 "$port" 2>/dev/null; then
-            printf " ✓${RESET}\n" >&3
-            break
+        local tries=0
+        printf "${GRAY}  Ожидание TCP" >&3
+        while [ $tries -lt 30 ]; do
+            if nc -z 127.0.0.1 "$port" 2>/dev/null; then
+                printf " ✓${RESET}\n" >&3
+                break
+            fi
+            printf "." >&3
+            sleep 1
+            tries=$((tries + 1))
+        done
+
+        if [ $tries -ge 30 ]; then
+            printf "${RED}Proxy не запустился за 30 сек (TCP порт не открыт).${RESET}\n" >&3
+            printf "${YELLOW}Последние строки лога:${RESET}\n" >&3
+            tail -20 "$log_file" >&3 2>/dev/null || true
+            return 1
         fi
-        printf "." >&3
-        sleep 1
-        tries=$((tries + 1))
-    done
 
-    if [ $tries -ge 30 ]; then
-        printf "${RED}Proxy не запустился за 30 сек (TCP порт не открыт).${RESET}\n" >&3
+        local http_tries=0
+        while [ $http_tries -lt 15 ]; do
+            local http_code
+            http_code=$(_check_http "$port")
+            if [ -n "$http_code" ] && [ "$http_code" != "000" ]; then
+                printf "${GREEN}  [OK] Proxy запущен на порту ${port} (HTTP ${http_code})${RESET}\n" >&3
+                echo "$port"
+                return 0
+            fi
+            sleep 1
+            http_tries=$((http_tries + 1))
+        done
+
+        printf "${RED}Proxy TCP порт открыт, но HTTP не отвечает за 15 сек.${RESET}\n" >&3
         printf "${YELLOW}Последние строки лога:${RESET}\n" >&3
         tail -20 "$log_file" >&3 2>/dev/null || true
         return 1
-    fi
+    }
 
-    # Verify HTTP is actually responding (not just port open)
-    local http_tries=0
-    while [ $http_tries -lt 15 ]; do
-        local http_code
-        http_code=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:${port}/v1/models" 2>/dev/null) || true
-        if [ -n "$http_code" ] && [ "$http_code" != "000" ]; then
-            printf "${GREEN}  [OK] Proxy запущен на порту ${port} (HTTP ${http_code})${RESET}\n" >&3
+    _install_and_prepare || return 1
+    _write_env
+
+    local port="$preferred_port"
+    local max_port=$((preferred_port + 2))
+
+    while [ "$port" -le "$max_port" ]; do
+        if ! _is_port_in_use "$port"; then
+            local result
+            result=$(_start_proxy_on_port "$port") && {
+                echo "$result"
+                return 0
+            }
+            return 1
+        fi
+
+        local env_file="$FCC_DIR/.env"
+        if [ -f "$env_file" ] && ! grep -qx "MODEL=\"${model}\"" "$env_file"; then
+            printf "${YELLOW}Proxy на порту ${port} запущен с другой моделью. Перезапуск...${RESET}\n" >&3
+            _kill_port "$port"
+            if _is_port_free "$port"; then
+                local result
+                result=$(_start_proxy_on_port "$port") && {
+                    echo "$result"
+                    return 0
+                }
+                return 1
+            fi
+            printf "${YELLOW}Порт ${port} не освободился после kill. Пробуем следующий...${RESET}\n" >&3
+            port=$((port + 1))
+            continue
+        fi
+
+        local existing_code
+        existing_code=$(_check_http "$port")
+        if [ -n "$existing_code" ] && [ "$existing_code" != "000" ]; then
+            printf "${GREEN}  [OK] Proxy уже работает на порту ${port} (HTTP ${existing_code})${RESET}\n" >&3
             echo "$port"
             return 0
         fi
-        sleep 1
-        http_tries=$((http_tries + 1))
+
+        printf "${YELLOW}Порт ${port} занят, но не отвечает на HTTP. Пробуем освободить...${RESET}\n" >&3
+        _kill_port "$port"
+
+        if _is_port_free "$port"; then
+            local result
+            result=$(_start_proxy_on_port "$port") && {
+                echo "$result"
+                return 0
+            }
+            return 1
+        fi
+
+        printf "${YELLOW}Порт ${port} занят сторонним процессом. Пробуем порт $((port + 1))...${RESET}\n" >&3
+        port=$((port + 1))
     done
 
-    printf "${RED}Proxy TCP порт открыт, но HTTP не отвечает за 15 сек.${RESET}\n" >&3
-    printf "${YELLOW}Последние строки лога:${RESET}\n" >&3
-    tail -20 "$log_file" >&3 2>/dev/null || true
+    printf "${RED}Не удалось найти свободный порт в диапазоне ${preferred_port}-${max_port}.${RESET}\n" >&3
     return 1
 }
 
