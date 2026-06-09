@@ -15,6 +15,24 @@ $PSNativeCommandUseErrorActionPreference = $false
 . (Join-Path $PSScriptRoot "launcher-custom-model-wizard.ps1")
 . (Join-Path $PSScriptRoot "launcher-api-keys.ps1")
 
+function Resolve-ApiKeyOrPrompt {
+  param(
+    [string]$CurrentKey,
+    [string]$ProviderName,
+    [string]$HelpUrl
+  )
+  if (-not [string]::IsNullOrWhiteSpace($CurrentKey) -and $CurrentKey -ne "__SET_ME__") {
+    return $CurrentKey
+  }
+  $savedKey = Get-CurrentApiKey -Provider "BAI"
+  if (-not [string]::IsNullOrWhiteSpace($savedKey) -and $savedKey -ne "__SET_ME__") {
+    return $savedKey
+  }
+  Write-Host "$ProviderName API ключ не задан." -ForegroundColor Yellow
+  Write-Host "Получить ключ: $HelpUrl" -ForegroundColor DarkCyan
+  return (Read-SecretText "Введите $ProviderName API key")
+}
+
 $StatePath = Join-Path $PSScriptRoot "claude-cloud-launcher-state.json"
 $SessionScript = Join-Path $PSScriptRoot "run-claude-cloud-session.ps1"
 
@@ -205,7 +223,7 @@ function Invoke-ClaudeCloudProfile {
   )
 
   Clear-Host
-  Write-Host "Запуск сессии Claude Code (облако)…" -ForegroundColor Cyan
+  Write-Host "Запуск сессии Claude Code…" -ForegroundColor Cyan
   Write-Host "Профиль: $ProfileId" -ForegroundColor DarkGray
   [Console]::Out.Flush()
 
@@ -497,7 +515,7 @@ if ($groupHintsCC.Count -gt 0) {
 }
 
 while ($true) {
-  $choice = Show-TuiFramedMenu -AppBrand "Claude" -Title "Claude Code (облако) - провайдер" -Subtitle "Z.AI · NIM · B.AI · OpenRouter (через free-claude-code)" -Items $items -InitialIndex $startIdx -MaxVisible 20 -UpdateHint $updateHint
+  $choice = Show-TuiFramedMenu -AppBrand "Claude" -Title "Claude Code - провайдер" -Subtitle "Z.AI · NIM · B.AI · OpenRouter (через free-claude-code)" -Items $items -InitialIndex $startIdx -MaxVisible 20 -UpdateHint $updateHint
   if (-not $choice) {
     Write-Host "Отменено." -ForegroundColor Yellow
     exit 0
