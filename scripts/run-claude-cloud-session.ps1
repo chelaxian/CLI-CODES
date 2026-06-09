@@ -343,98 +343,126 @@ function Ensure-FreeClaudeCodeProxy {
     [hashtable]$ExtraEnv = @{}
   )
 
-  # Be strict: require a listening socket (HTTP checks can false-positive on some failures).
-  try {
-    $conn = Get-NetTCPConnection -LocalAddress 127.0.0.1 -LocalPort $Port -State Listen -ErrorAction Stop
-    if ($conn) { return }
-  } catch {}
+  $maxPort = $Port + 2
 
-  # Auto-install free-claude-code if missing
-  if (-not (Test-Path -LiteralPath $Dir)) {
-    Write-Host "free-claude-code не найден, клонирую..." -ForegroundColor Cyan
-    $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
-    & git clone https://github.com/Alishahryar1/free-claude-code.git $Dir 2>$null
-    $ErrorActionPreference = $prevEAP
-    if (-not (Test-Path -LiteralPath $Dir)) { throw "free-claude-code: не удалось клонировать в $Dir" }
-    Write-Host "  [OK] free-claude-code клонирован" -ForegroundColor Green
-  }
-
-  # Auto-install uv if missing
-  $uv = Join-Path $env:USERPROFILE ".local\bin\uv.exe"
-  if (-not (Test-Path -LiteralPath $uv)) {
-    Write-Host "uv не найден, устанавливаю..." -ForegroundColor Cyan
-    $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+  function Test-TcpListening([int]$P) {
     try {
-      $uvInstallScript = Join-Path $env:TEMP "uv-install.ps1"
-      Invoke-WebRequest -Uri "https://astral.sh/uv/install.ps1" -OutFile $uvInstallScript -UseBasicParsing
-      & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $uvInstallScript 2>$null
-      Remove-Item -LiteralPath $uvInstallScript -Force -ErrorAction SilentlyContinue
-    } catch {}
-    $ErrorActionPreference = $prevEAP
-    if (-not (Test-Path -LiteralPath $uv)) { throw "uv.exe не найден и не удалось установить автоматически" }
-    Write-Host "  [OK] uv установлен" -ForegroundColor Green
+      $conn = Get-NetTCPConnection -LocalAddress 127.0.0.1 -LocalPort $P -State Listen -ErrorAction Stop
+      return ($null -ne $conn)
+    } catch { return $false }
   }
 
-  Push-Location $Dir
-  try {
-    # Ensure Python 3.14 exists (no-op if already installed)
-    & $uv python install 3.14 | Out-Null
+  function Stop-PortProcess([int]$P) {
+    try {
+      $conns = Get-NetTCPConnection -LocalAddress 127.0.0.1 -LocalPort $P -State Listen -ErrorAction Stop
+      $pids = @($conns | ForEach-Object { $_.OwningProcess } | Sort-Object -Unique)
+      foreach ($pid in $pids) {
+        try { Stop-Process -Id $pid -Force -ErrorAction Stop } catch {}
+      }
+      Start-Sleep -Seconds 1
+    } catch {}
+  }
 
-    # Prepare env vars for the proxy process (avoid writing secrets to disk).
-    $env:NVIDIA_NIM_API_KEY = $NimKey
-    $env:MODEL = $Model
-    $env:ANTHROPIC_AUTH_TOKEN = $AuthToken
-
-    foreach ($ek in $ExtraEnv.Keys) {
-      Set-Item -Path "env:$ek" -Value $ExtraEnv[$ek]
+  function Start-ProxyInstance([int]$P) {
+    if (-not (Test-Path -LiteralPath $Dir)) {
+      Write-Host "free-claude-code не найден, клонирую..." -ForegroundColor Cyan
+      $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+      & git clone https://github.com/Alishahryar1/free-claude-code.git $Dir 2>$null
+      $ErrorActionPreference = $prevEAP
+      if (-not (Test-Path -LiteralPath $Dir)) { throw "free-claude-code: не удалось клонировать в $Dir" }
+      Write-Host "  [OK] free-claude-code клонирован" -ForegroundColor Green
     }
 
-    # Start proxy in background with logs.
-    $logDir = Join-Path $HOME ".qwen-local-setup"
-    if (-not (Test-Path -LiteralPath $logDir)) { New-Item -ItemType Directory -Path $logDir | Out-Null }
-    $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
-    $outLog = Join-Path $logDir "free-claude-code-$stamp.out.log"
-    $errLog = Join-Path $logDir "free-claude-code-$stamp.err.log"
+    $uv = Join-Path $env:USERPROFILE ".local\bin\uv.exe"
+    if (-not (Test-Path -LiteralPath $uv)) {
+      Write-Host "uv не найден, устанавливаю..." -ForegroundColor Cyan
+      $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+      try {
+        $uvInstallScript = Join-Path $env:TEMP "uv-install.ps1"
+        Invoke-WebRequest -Uri "https://astral.sh/uv/install.ps1" -OutFile $uvInstallScript -UseBasicParsing
+        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $uvInstallScript 2>$null
+        Remove-Item -LiteralPath $uvInstallScript -Force -ErrorAction SilentlyContinue
+      } catch {}
+      $ErrorActionPreference = $prevEAP
+      if (-not (Test-Path -LiteralPath $uv)) { throw "uv.exe не найден и не удалось установить автоматически" }
+      Write-Host "  [OK] uv установлен" -ForegroundColor Green
+    }
 
-    $cmd = "& `"$uv`" run uvicorn server:app --host 127.0.0.1 --port $Port"
-    $p = Start-Process -FilePath "powershell.exe" -ArgumentList @("-NoProfile","-ExecutionPolicy","Bypass","-Command",$cmd) -WindowStyle Hidden -PassThru -RedirectStandardOutput $outLog -RedirectStandardError $errLog
-  } finally {
-    Pop-Location
-  }
-
-  for ($i = 0; $i -lt 120; $i++) {
+    Push-Location $Dir
     try {
-      $conn = Get-NetTCPConnection -LocalAddress 127.0.0.1 -LocalPort $Port -State Listen -ErrorAction Stop
-      if ($conn) { return }
-    } catch {}
-    # NOTE: не проверяем $p.HasExited — powershell.exe обёртка может завершиться
-    # раньше времени, но uvicorn продолжает работать как дочерний процесс.
-    # Только TCP socket является надёжной проверкой готовности.
-    Start-Sleep -Seconds 1
+      & $uv python install 3.14 | Out-Null
+
+      $env:NVIDIA_NIM_API_KEY = $NimKey
+      $env:MODEL = $Model
+      $env:ANTHROPIC_AUTH_TOKEN = $AuthToken
+
+      foreach ($ek in $ExtraEnv.Keys) {
+        Set-Item -Path "env:$ek" -Value $ExtraEnv[$ek]
+      }
+
+      $logDir = Join-Path $HOME ".qwen-local-setup"
+      if (-not (Test-Path -LiteralPath $logDir)) { New-Item -ItemType Directory -Path $logDir | Out-Null }
+      $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+      $outLog = Join-Path $logDir "free-claude-code-$stamp.out.log"
+      $errLog = Join-Path $logDir "free-claude-code-$stamp.err.log"
+
+      $cmd = "& `"$uv`" run uvicorn server:app --host 127.0.0.1 --port $P"
+      $null = Start-Process -FilePath "powershell.exe" -ArgumentList @("-NoProfile","-ExecutionPolicy","Bypass","-Command",$cmd) -WindowStyle Hidden -PassThru -RedirectStandardOutput $outLog -RedirectStandardError $errLog
+    } finally {
+      Pop-Location
+    }
+
+    for ($i = 0; $i -lt 120; $i++) {
+      if (Test-TcpListening $P) { return $true }
+      Start-Sleep -Seconds 1
+    }
+
+    Write-Host ""
+    Write-Host "free-claude-code proxy не запустился за 120с на порту ${P}. Последние строки лога:" -ForegroundColor Yellow
+    if (Test-Path -LiteralPath $errLog) {
+      Write-Host "─── err.log ───" -ForegroundColor DarkGray
+      Get-Content -LiteralPath $errLog -Tail 30 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $_" -ForegroundColor Red }
+    }
+    if (Test-Path -LiteralPath $outLog) {
+      Write-Host "─── out.log ───" -ForegroundColor DarkGray
+      Get-Content -LiteralPath $outLog -Tail 30 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $_" -ForegroundColor Gray }
+    }
+    return $false
   }
 
-  # Tail последние 30 строк из логов для диагностики перед throw.
-  Write-Host ""
-  Write-Host "free-claude-code proxy не запустился за 120с. Последние строки лога:" -ForegroundColor Yellow
-  if (Test-Path -LiteralPath $errLog) {
-    Write-Host "─── err.log ───" -ForegroundColor DarkGray
-    Get-Content -LiteralPath $errLog -Tail 30 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $_" -ForegroundColor Red }
+  for ($tryPort = $Port; $tryPort -le $maxPort; $tryPort++) {
+    if (-not (Test-TcpListening $tryPort)) {
+      Write-Host "Запуск free-claude-code proxy на порту ${tryPort}..." -ForegroundColor Cyan
+      if (Start-ProxyInstance $tryPort) {
+        $script:ResolvedProxyPort = $tryPort
+        return
+      }
+      throw "free-claude-code proxy не удалось запустить на порту ${tryPort}."
+    }
+
+    $httpOk = Test-HttpResponding -Url "http://127.0.0.1:${tryPort}/v1/models" -TimeoutSec 3
+    if ($httpOk) {
+      Write-Host "  [OK] Proxy уже работает на порту ${tryPort}" -ForegroundColor Green
+      $script:ResolvedProxyPort = $tryPort
+      return
+    }
+
+    Write-Host "Порт ${tryPort} занят, но не отвечает на HTTP. Пробуем освободить..." -ForegroundColor Yellow
+    Stop-PortProcess $tryPort
+
+    if (-not (Test-TcpListening $tryPort)) {
+      Write-Host "Запуск free-claude-code proxy на порту ${tryPort}..." -ForegroundColor Cyan
+      if (Start-ProxyInstance $tryPort) {
+        $script:ResolvedProxyPort = $tryPort
+        return
+      }
+      throw "free-claude-code proxy не удалось запустить на порту ${tryPort}."
+    }
+
+    Write-Host "Порт ${tryPort} занят сторонним процессом. Пробуем порт $($tryPort + 1)..." -ForegroundColor Yellow
   }
-  if (Test-Path -LiteralPath $outLog) {
-    Write-Host "─── out.log ───" -ForegroundColor DarkGray
-    Get-Content -LiteralPath $outLog -Tail 30 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $_" -ForegroundColor Gray }
-  }
-  Write-Host ""
-  Write-Host "Полные логи:" -ForegroundColor Cyan
-  Write-Host "  $errLog" -ForegroundColor Cyan
-  Write-Host "  $outLog" -ForegroundColor Cyan
-  Write-Host ""
-  Write-Host "Возможные причины:" -ForegroundColor Yellow
-  Write-Host "  1) uv sync/Pip install не завершился (медленный интернет)" -ForegroundColor Yellow
-  Write-Host "  2) Python 3.14 не установлен или скачивается" -ForegroundColor Yellow
-  Write-Host "  3) Порт $Port занят другим процессом" -ForegroundColor Yellow
-  Write-Host "  Решение: запустите 'install.ps1 → [7] Обновление' чтобы пересоздать proxy." -ForegroundColor Yellow
-  throw "free-claude-code proxy did not become ready on port $Port after 120s. See logs above."
+
+  throw "Не удалось найти свободный порт в диапазоне ${Port}-${maxPort}."
 }
 
 # PATH до npx/node - до любых sidecar и до claude.cmd.
@@ -533,6 +561,7 @@ if ($Provider -in @("nim", "nim-qwen")) {
     $NvidiaNimApiKey = Read-SecretText "Введите NVIDIA NIM API key"
   }
   Ensure-FreeClaudeCodeProxy -Dir $FreeClaudeCodeDir -Port $proxyPortResolved -NimKey $NvidiaNimApiKey -Model $nimModelResolved -AuthToken $ProxyAuthToken
+  $proxyPortResolved = $script:ResolvedProxyPort
   $env:ANTHROPIC_AUTH_TOKEN = $ProxyAuthToken
   Remove-Item Env:ANTHROPIC_API_KEY -ErrorAction SilentlyContinue
   $env:ANTHROPIC_BASE_URL = ("http://127.0.0.1:{0}" -f $proxyPortResolved)
@@ -584,6 +613,7 @@ if ($Provider -eq "openrouter") {
   if ($PSBoundParameters.ContainsKey("ProxyPort")) { $orPort = $ProxyPort }
 
   Ensure-FreeClaudeCodeProxy -Dir $FreeClaudeCodeDir -Port $orPort -NimKey $orKey -Model $orModel -AuthToken $ProxyAuthToken -ExtraEnv @{ OPENROUTER_API_KEY = $orKey }
+  $orPort = $script:ResolvedProxyPort
   $env:OPENROUTER_API_KEY = $orKey
   $env:ANTHROPIC_AUTH_TOKEN = $ProxyAuthToken
   Remove-Item Env:ANTHROPIC_API_KEY -ErrorAction SilentlyContinue
@@ -655,6 +685,7 @@ OPENAI_BASE_URL="https://api.b.ai/v1"
     OPENAI_BASE_URL    = "https://api.b.ai/v1"
     OPENROUTER_API_KEY = $baiKey
   }
+  $baiPort = $script:ResolvedProxyPort
 
   $env:OPENROUTER_API_KEY = $baiKey
   $env:OPENAI_BASE_URL = "https://api.b.ai/v1"
