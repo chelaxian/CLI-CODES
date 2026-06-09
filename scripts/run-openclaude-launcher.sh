@@ -39,6 +39,7 @@ set_openclaude_profile() {
                --arg base "$base_url" \
                --arg key "$api_key" \
                --arg mdl "$model" '
+        (if type == "array" then {} else . end) |
         ((.providerProfiles // null) | if type == "array" then . elif type == "object" then [.[]] else [] end) as $raw |
         $raw | map(select(.id != $id)) as $filtered |
         $filtered + [{
@@ -63,7 +64,7 @@ clear_openclaude_profiles() {
         echo '{}' > "$config_file"
     fi
     local tmp
-    tmp="$(jq '.providerProfiles = [] | .activeProviderProfileId = null' "$config_file")"
+    tmp="$(jq 'if type == "array" then {} else . end | .providerProfiles = [] | .activeProviderProfileId = null' "$config_file")"
     echo "$tmp" > "$config_file"
 }
 
