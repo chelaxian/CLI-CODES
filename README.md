@@ -10,6 +10,8 @@
 
 ## Быстрая установка
 
+<img width="1159" height="956" alt="image" src="https://github.com/user-attachments/assets/17702687-fdd0-44ee-8c71-895b8680d97d" />
+
 ### Windows (PowerShell)
 
 ```powershell
