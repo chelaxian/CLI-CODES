@@ -734,23 +734,5 @@ test_launcher_updates() {
         fi
     fi
 
-    # ── Check agent npm package updates ──────────────────────────────────────
-    if [ -n "$agent_npm_package" ] && command -v npm &>/dev/null; then
-        local latest
-        latest=$(npm view "$agent_npm_package" version 2>/dev/null) || true
-        if [ -n "$latest" ]; then
-            local installed
-            installed=$(npm list -g "$agent_npm_package" --depth=0 2>/dev/null) || true
-            if [ -n "$installed" ] && echo "$installed" | grep -qv "$latest"; then
-                local name="${agent_display_name:-$agent_npm_package}"
-                if [ -n "$hints" ]; then
-                    hints="$hints | ${name}: обновление $latest — npm i -g ${agent_npm_package}@latest"
-                else
-                    hints="ОБНОВЛЕНИЕ: ${name}: обновление $latest — npm i -g ${agent_npm_package}@latest"
-                fi
-            fi
-        fi
-    fi
-
     echo "$hints"
 }
