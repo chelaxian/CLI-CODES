@@ -1,12 +1,12 @@
 #!/bin/bash
-# cloud-code-setup — Linux/macOS инсталлятор
-# Запуск: curl -fsSL https://raw.githubusercontent.com/chelaxian/cloud-code-setup/main/install.sh | bash
+# CLI-CODES — Linux/macOS инсталлятор
+# Запуск: curl -fsSL https://raw.githubusercontent.com/chelaxian/CLI-CODES/main/install.sh | bash
 # Или: git clone + ./install.sh
 
 set -e
 
-REPO_URL="${REPO_URL:-https://github.com/chelaxian/cloud-code-setup.git}"
-INSTALL_DIR="${INSTALL_DIR:-$HOME/cloud-code-setup}"
+REPO_URL="${REPO_URL:-https://github.com/chelaxian/CLI-CODES.git}"
+INSTALL_DIR="${INSTALL_DIR:-$HOME/CLI-CODES}"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'

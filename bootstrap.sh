@@ -1,10 +1,10 @@
 #!/bin/bash
-# cloud-code-setup — bootstrap (curl | bash)
+# CLI-CODES — bootstrap (curl | bash)
 # Определяет ОС и запускает нужный инсталлятор
 
 set -e
 
-REPO_RAW="https://raw.githubusercontent.com/chelaxian/cloud-code-setup/main"
+REPO_RAW="https://raw.githubusercontent.com/chelaxian/CLI-CODES/main"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -12,7 +12,7 @@ YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 RESET='\033[0m'
 
-echo -e "${CYAN}cloud-code-setup :: 1-click bootstrap${RESET}"
+echo -e "${CYAN}CLI-CODES :: 1-click bootstrap${RESET}"
 echo ""
 
 # Определение ОС
@@ -38,7 +38,7 @@ case "$OS" in
 esac
 
 # Создаём временную директорию
-TMPDIR="$(mktemp -d 2>/dev/null || echo /tmp/cloud-code-setup-$$)"
+TMPDIR="$(mktemp -d 2>/dev/null || echo /tmp/CLI-CODES-$$)"
 mkdir -p "$TMPDIR"
 trap 'rm -rf "$TMPDIR" 2>/dev/null' EXIT
 
@@ -58,19 +58,19 @@ if [ "$PLATFORM" = "windows" ]; then
     echo ""
     echo -e "${CYAN}Запустите в PowerShell (от имени администратора):${RESET}"
     echo ""
-    echo -e "${GREEN}irm https://raw.githubusercontent.com/chelaxian/cloud-code-setup/main/install.ps1 | iex${RESET}"
+    echo -e "${GREEN}irm https://raw.githubusercontent.com/chelaxian/CLI-CODES/main/install.ps1 | iex${RESET}"
     echo ""
     echo -e "${CYAN}Или вручную:${RESET}"
-    echo "  1. git clone https://github.com/chelaxian/cloud-code-setup.git"
-    echo "  2. cd cloud-code-setup"
+    echo "  1. git clone https://github.com/chelaxian/CLI-CODES.git"
+    echo "  2. cd CLI-CODES"
     echo "  3. .\\install.ps1"
     exit 0
 fi
 
 # Linux/macOS: обновляем локальный репозиторий и запускаем install.sh уже из него.
 # Так bootstrap не продолжит выполнять устаревший временный installer после git reset.
-INSTALL_DIR="${INSTALL_DIR:-$HOME/cloud-code-setup}"
-REPO_URL="${REPO_URL:-https://github.com/chelaxian/cloud-code-setup.git}"
+INSTALL_DIR="${INSTALL_DIR:-$HOME/CLI-CODES}"
+REPO_URL="${REPO_URL:-https://github.com/chelaxian/CLI-CODES.git}"
 
 if [ -d "$INSTALL_DIR/.git" ]; then
     echo -e "${CYAN}Обновление локального репозитория…${RESET}"

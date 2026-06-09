@@ -694,10 +694,10 @@ NIM_AGENTIC_IDS=(
 )
 
 # ── Update checker ──────────────────────────────────────────────────────────
-# Checks for updates to the cloud-code-setup repo.
+# Checks for updates to the CLI-CODES repo.
 # Returns update hint string on stdout, or "" if no updates / check failed.
 test_launcher_updates() {
-    local repo="chelaxian/cloud-code-setup"
+    local repo="chelaxian/CLI-CODES"
     local branch="main"
     local hints=""
 

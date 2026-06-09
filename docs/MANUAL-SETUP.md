@@ -104,15 +104,15 @@
 ### Windows (PowerShell)
 
 ```powershell
-git clone https://github.com/chelaxian/cloud-code-setup.git
-cd cloud-code-setup
+git clone https://github.com/chelaxian/CLI-CODES.git
+cd CLI-CODES
 ```
 
 ### Linux
 
 ```bash
-git clone https://github.com/chelaxian/cloud-code-setup.git
-cd cloud-code-setup
+git clone https://github.com/chelaxian/CLI-CODES.git
+cd CLI-CODES
 chmod +x scripts/*.sh
 ```
 
@@ -477,7 +477,7 @@ $lnk.Save()
 ### Вручную — Linux
 
 ```bash
-REPO_ROOT="$HOME/cloud-code-setup"
+REPO_ROOT="$HOME/CLI-CODES"
 DESKTOP="$HOME/Desktop"
 [ -d "$DESKTOP" ] || DESKTOP="$HOME"
 
@@ -641,7 +641,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ### Linux: «Permission denied»
 
 ```bash
-chmod +x ~/cloud-code-setup/scripts/*.sh
+chmod +x ~/CLI-CODES/scripts/*.sh
 ```
 
 ### Ключи не подхватываются

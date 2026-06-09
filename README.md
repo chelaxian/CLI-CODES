@@ -1,4 +1,4 @@
-# cloud-code-setup
+# CLI-CODES
 
 **1-click развёртывание Qwen Code, Claude Code, OpenCode, OpenClaude и Freebuff с облачными моделями (NVIDIA NIM, Z.AI, B.AI, OpenRouter, Groq)**
 
@@ -13,20 +13,20 @@
 ### Windows (PowerShell)
 
 ```powershell
-irm https://raw.githubusercontent.com/chelaxian/cloud-code-setup/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/chelaxian/CLI-CODES/main/install.ps1 | iex
 ```
 
 ### Linux / macOS
 
 ```bash
-sudo curl -fsSL https://raw.githubusercontent.com/chelaxian/cloud-code-setup/main/bootstrap.sh | bash
+sudo curl -fsSL https://raw.githubusercontent.com/chelaxian/CLI-CODES/main/bootstrap.sh | bash
 ```
 
 Или вручную:
 
 ```bash
-git clone https://github.com/chelaxian/cloud-code-setup.git
-cd cloud-code-setup
+git clone https://github.com/chelaxian/CLI-CODES.git
+cd CLI-CODES
 ./install.sh          # Linux
 .\install.ps1         # Windows
 ```
@@ -199,7 +199,7 @@ cd cloud-code-setup
 ## Структура проекта
 
 ```
-cloud-code-setup/
+CLI-CODES/
 ├── install.ps1                # Windows thin installer
 ├── install-full.ps1           # Windows полный инсталлятор
 ├── install.sh                 # Linux инсталлятор
@@ -258,8 +258,8 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ### Linux: «Permission denied»
 
 ```bash
-chmod +x ~/cloud-code-setup/scripts/*.sh
-chmod +x ~/cloud-code-setup/install.sh
+chmod +x ~/CLI-CODES/scripts/*.sh
+chmod +x ~/CLI-CODES/install.sh
 ```
 
 ### Linux: «jq не установлен» (OpenClaude)

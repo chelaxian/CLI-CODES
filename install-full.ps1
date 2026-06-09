@@ -1,23 +1,23 @@
-﻿# cloud-code-setup - Windows bootstrap (PowerShell)
-# 1-click: irm https://raw.githubusercontent.com/chelaxian/cloud-code-setup/main/install.ps1 | iex
-# Or: git clone https://github.com/chelaxian/cloud-code-setup.git && cd cloud-code-setup && .\install.ps1
+﻿# CLI-CODES - Windows bootstrap (PowerShell)
+# 1-click: irm https://raw.githubusercontent.com/chelaxian/CLI-CODES/main/install.ps1 | iex
+# Or: git clone https://github.com/chelaxian/CLI-CODES.git && cd CLI-CODES && .\install.ps1
 
 # TLS 1.2 for PowerShell 5.1
 try { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 -bor [Net.ServicePointManager]::SecurityProtocol } catch {}
 
 $ErrorActionPreference = "Stop"
 
-if (-not $RepoUrl) { $RepoUrl = "https://github.com/chelaxian/cloud-code-setup.git" }
+if (-not $RepoUrl) { $RepoUrl = "https://github.com/chelaxian/CLI-CODES.git" }
 if (-not $InstallDir) { $InstallDir = "" }
 
-Write-Host "cloud-code-setup :: starting..." -ForegroundColor Cyan
+Write-Host "CLI-CODES :: starting..." -ForegroundColor Cyan
 
 function Write-Status($Text, $Color = "White") {
     Write-Host $Text -ForegroundColor $Color
 }
 
 if (-not $InstallDir) {
-    $InstallDir = Join-Path $env:USERPROFILE "cloud-code-setup"
+    $InstallDir = Join-Path $env:USERPROFILE "CLI-CODES"
 }
 
 try { Clear-Host } catch { }

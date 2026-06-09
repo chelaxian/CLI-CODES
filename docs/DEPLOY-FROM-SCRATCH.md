@@ -3579,7 +3579,7 @@ TUI-меню для OpenCode с выбором провайдера (Z.AI / NVID
 ```powershell
 # Полный текст: scripts/run-opencode-launcher.ps1
 # Скопируйте из I:\qwen-local-setup\scripts\run-opencode-launcher.ps1
-# или из репозитория cloud-code-setup/scripts/run-opencode-launcher.ps1
+# или из репозитория CLI-CODES/scripts/run-opencode-launcher.ps1
 ```
 
 Ключевые особенности:

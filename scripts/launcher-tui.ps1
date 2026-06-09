@@ -371,7 +371,7 @@ function Invoke-ChildCliCatchCtrlC {
 }
 
 # ─── Test-LauncherUpdates ─────────────────────────────────────────────────────
-# Checks for updates to: (1) the cloud-code-setup repo scripts, (2) the agent binary.
+# Checks for updates to: (1) the CLI-CODES repo scripts, (2) the agent binary.
 # Returns a string (update hint) or "" if no updates / check failed.
 # Non-blocking: any failure is silently ignored.
 function Test-LauncherUpdates {
@@ -388,7 +388,7 @@ function Test-LauncherUpdates {
     $ProgressPreference = "SilentlyContinue"
 
     # Check repo updates
-    $repo = "chelaxian/cloud-code-setup"
+    $repo = "chelaxian/CLI-CODES"
     $branch = "main"
     try {
       $apiUrl = "https://api.github.com/repos/$repo/commits/$branch"

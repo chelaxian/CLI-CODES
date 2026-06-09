@@ -1,9 +1,9 @@
 $errors = @()
 $files = @(
-    "C:\Users\chelaxian\Projects\cloud-code-setup\install.ps1",
-    "C:\Users\chelaxian\Projects\cloud-code-setup\scripts\run-qwen-code-launcher.ps1",
-    "C:\Users\chelaxian\Projects\cloud-code-setup\scripts\run-claude-cloud-launcher.ps1",
-    "C:\Users\chelaxian\Projects\cloud-code-setup\scripts\run-opencode-launcher.ps1"
+    "C:\Users\chelaxian\Projects\CLI-CODES\install.ps1",
+    "C:\Users\chelaxian\Projects\CLI-CODES\scripts\run-qwen-code-launcher.ps1",
+    "C:\Users\chelaxian\Projects\CLI-CODES\scripts\run-claude-cloud-launcher.ps1",
+    "C:\Users\chelaxian\Projects\CLI-CODES\scripts\run-opencode-launcher.ps1"
 )
 
 foreach ($f in $files) {
