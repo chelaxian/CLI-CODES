@@ -1104,6 +1104,16 @@ while true; do
                     read
                     ;;
                 "vanilla")
+                    unset ANTHROPIC_API_KEY ANTHROPIC_BASE_URL ANTHROPIC_AUTH_TOKEN
+                    unset ANTHROPIC_DEFAULT_OPUS_MODEL ANTHROPIC_DEFAULT_SONNET_MODEL ANTHROPIC_DEFAULT_HAIKU_MODEL
+                    unset OPENAI_BASE_URL OPENAI_API_KEY OPENAI_MODEL CLAUDE_CODE_USE_OPENAI
+                    unset OPENROUTER_API_KEY NVIDIA_NIM_API_KEY BAI_API_KEY API_TIMEOUT_MS
+                    claude_settings="$HOME/.claude/settings.json"
+                    if [ -f "$claude_settings" ] && command -v jq &>/dev/null; then
+                        for ek in ANTHROPIC_API_KEY ANTHROPIC_BASE_URL ANTHROPIC_AUTH_TOKEN ANTHROPIC_DEFAULT_OPUS_MODEL ANTHROPIC_DEFAULT_SONNET_MODEL ANTHROPIC_DEFAULT_HAIKU_MODEL OPENAI_BASE_URL OPENAI_API_KEY OPENAI_MODEL CLAUDE_CODE_USE_OPENAI OPENROUTER_API_KEY NVIDIA_NIM_API_KEY BAI_API_KEY API_TIMEOUT_MS; do
+                            jq --arg k "$ek" 'del(.env[$k])' "$claude_settings" > "${claude_settings}.tmp" 2>/dev/null && mv -f "${claude_settings}.tmp" "$claude_settings"
+                        done
+                    fi
                     clear
                     echo -e "${CYAN}═══════════════════════════════════════════════════${RESET}"
                     echo -e "${CYAN}  Запуск Claude Code (ванильный запуск)${RESET}"
