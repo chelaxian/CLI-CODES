@@ -5,6 +5,7 @@
 Работает на Windows и Linux. Устанавливается одной командой в терминале.
 
 <img width="1600" height="800" alt="ezgif-4dd52e4654358b8a" src="https://github.com/user-attachments/assets/45e2e8f6-040f-49e0-987c-ac0e11b1d9ed" />
+
 ---
 
 ## Быстрая установка
