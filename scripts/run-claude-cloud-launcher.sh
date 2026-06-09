@@ -158,7 +158,7 @@ resolve_profile_from_state() {
         "claude-openrouter-hy3"|"claude-openrouter-nemotron"|"claude-openrouter-laguna"| \
         "claude-openrouter-deepseek-v4-flash"|"claude-openrouter-qwen3-coder"| \
         "custom-claude-zai"|"custom-claude-zai-general"|"custom-claude-nim"| \
-        "custom-claude-openrouter"|"custom-claude-bai")
+        "custom-claude-openrouter"|"custom-claude-bai"|"custom-claude-groq")
             echo "$profile_id"
             return 0
             ;;
@@ -346,6 +346,7 @@ invoke_claude_cloud_profile() {
         claude-nim*|custom-claude-nim*) env_var="NVIDIA_NIM"; provider_name="NVIDIA NIM"; provider_url="https://build.nvidia.com/api-key" ;;
         claude-openrouter*|custom-claude-openrouter*) env_var="OPENROUTER"; provider_name="OpenRouter"; provider_url="https://openrouter.ai/settings/keys" ;;
         claude-bai*|custom-claude-bai*) env_var="BAI"; provider_name="B.AI"; provider_url="https://chat.b.ai/key" ;;
+        claude-groq*|custom-claude-groq*) env_var="GROQ"; provider_name="Groq"; provider_url="https://console.groq.com/keys" ;;
     esac
     if [ -n "$env_var" ]; then
         if ! ensure_api_key_or_prompt "$env_var" "$provider_name" "$provider_url"; then
@@ -378,7 +379,7 @@ invoke_claude_cloud_profile() {
                 return 1
             fi
             ;;
-        claude-nim*|claude-openrouter*|claude-bai*|custom-claude-nim|custom-claude-openrouter|custom-claude-bai)
+        claude-nim*|claude-openrouter*|claude-bai*|claude-groq*|custom-claude-nim|custom-claude-openrouter|custom-claude-bai|custom-claude-groq)
             # Model determined in env-vars block below (via proxy)
             ;;
         *) model="" ;;
@@ -511,6 +512,37 @@ invoke_claude_cloud_profile() {
             fi
             export OPENROUTER_API_KEY="${BAI_API_KEY:-}"
             export OPENAI_BASE_URL="https://api.b.ai/v1"
+            export ANTHROPIC_AUTH_TOKEN="freecc"
+            unset ANTHROPIC_API_KEY
+            export ANTHROPIC_BASE_URL="http://127.0.0.1:${proxy_port}"
+            export ANTHROPIC_DEFAULT_OPUS_MODEL="$fcc_model"
+            export ANTHROPIC_DEFAULT_SONNET_MODEL="$fcc_model"
+            export ANTHROPIC_DEFAULT_HAIKU_MODEL="$fcc_model"
+            export API_TIMEOUT_MS="3000000"
+            ;;
+        custom-claude-groq)
+            local st=$(get_launcher_state)
+            local cm=$(echo "$st" | grep -o '"customModelId":"[^"]*"' | cut -d'"' -f4)
+            if [ -z "$cm" ]; then
+                printf "${RED}Нет customModelId для Groq. Выберите модель в «Другая модель».${RESET}\n" >&3
+                return 1
+            fi
+            local fcc_model="groq/$cm"
+            local groq_extra_env='OPENAI_BASE_URL="https://api.groq.com/openai/v1"'
+            local proxy_port
+            proxy_port=$(ensure_fcc_proxy "groq" "$fcc_model" "8086" "$groq_extra_env") || {
+                printf "${RED}Не удалось запустить free-claude-code proxy.${RESET}\n" >&3
+                return 1
+            }
+            local precheck_code
+            precheck_code=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:${proxy_port}/v1/models" 2>/dev/null) || true
+            if [ -z "$precheck_code" ] || [ "$precheck_code" = "000" ]; then
+                printf "${RED}Proxy на порту ${proxy_port} не отвечает на HTTP-запросы.${RESET}\n" >&3
+                printf "${YELLOW}Логи: $FCC_DIR/fcc-${proxy_port}.log${RESET}\n" >&3
+                return 1
+            fi
+            export OPENROUTER_API_KEY="${GROQ_API_KEY:-}"
+            export OPENAI_BASE_URL="https://api.groq.com/openai/v1"
             export ANTHROPIC_AUTH_TOKEN="freecc"
             unset ANTHROPIC_API_KEY
             export ANTHROPIC_BASE_URL="http://127.0.0.1:${proxy_port}"
@@ -698,6 +730,27 @@ get_claude_bai_api_key() {
     fi
 }
 
+get_claude_groq_api_key() {
+    local key="${GROQ_API_KEY:-}"
+    if [ -z "$key" ]; then
+        key=$(get_current_api_key "GROQ")
+    fi
+    if [ -z "$key" ]; then
+        printf "${YELLOW}Groq API ключ не задан.${RESET}\n" >&3
+        printf "${CYAN}Получить ключ: https://console.groq.com/keys${RESET}\n" >&3
+        local input
+        input=$(read_secret_text "Groq API key: ")
+        if [ -n "$input" ]; then
+            set_provider_api_key "GROQ" "$input"
+            echo "$input"
+        else
+            return 1
+        fi
+    else
+        echo "$key"
+    fi
+}
+
 # ── Мастер выбора модели ─────────────────────────────────────────────────────
 invoke_claude_custom_model_wizard() {
     local app_brand="$1"
@@ -705,6 +758,7 @@ invoke_claude_custom_model_wizard() {
     local prov_items=(
         "zai|Z.AI - Coding / Anthropic (GET /models по вашему ключу)"
         "nim|NVIDIA NIM - полный каталог (GET /v1/models)"
+        "groq|Groq - полный каталог моделей (paid, GET /v1/models)"
         "openrouter|OpenRouter - полный каталог моделей (GET /v1/models)"
         "bai|B.AI - https://api.b.ai/v1 (OpenAI-compatible)"
     )
@@ -762,6 +816,16 @@ invoke_claude_custom_model_wizard() {
             if [ -n "$response" ]; then
                 ids=($(echo "$response" | grep -o '"id":"[^"]*"' | cut -d'"' -f4 | sort -u))
             fi
+        elif [ "$prov_source" = "groq" ]; then
+            show_tui_wait_frame "$app_brand" "Загрузка каталога Groq…"
+            key=$(get_claude_groq_api_key) || true
+
+            local response
+            response=$(curl -s -H "Authorization: Bearer $key" -H "Content-Type: application/json" "https://api.groq.com/openai/v1/models" 2>/dev/null) || true
+
+            if [ -n "$response" ]; then
+                ids=($(echo "$response" | grep -o '"id":"[^"]*"' | cut -d'"' -f4 | sort -u))
+            fi
         elif [ "$prov_source" = "bai" ]; then
             show_tui_wait_frame "$app_brand" "Загрузка каталога B.AI…"
             key=$(get_claude_bai_api_key) || true
@@ -796,6 +860,8 @@ invoke_claude_custom_model_wizard() {
         local prov="nim"
         if [ "$prov_source" = "zai" ]; then
             prov="zai"
+        elif [ "$prov_source" = "groq" ]; then
+            prov="groq"
         elif [ "$prov_source" = "openrouter" ]; then
             prov="openrouter"
         elif [ "$prov_source" = "bai" ]; then
@@ -869,7 +935,7 @@ while true; do
     done
     
     local choice
-    choice="$(show_tui_numbered_menu "Claude" "Claude Code - провайдер" "Z.AI · NIM · OpenRouter · B.AI (через free-claude-code)" "${menu_items[@]}")"
+    choice="$(show_tui_numbered_menu "Claude" "Claude Code - провайдер" "Z.AI · NIM · Groq · OpenRouter · B.AI (через free-claude-code)" "${menu_items[@]}")"
     
     if [ "${choice:-0}" -eq 0 ]; then
         continue
@@ -1022,6 +1088,9 @@ while true; do
             local extra="\"customNimModel\":\"$wiz_model\""
             if [ "$wiz_provider" = "zai" ] || [ "$wiz_provider" = "zai-general" ]; then
                 new_id="custom-claude-zai"
+                extra="\"customModelId\":\"$wiz_model\""
+            elif [ "$wiz_provider" = "groq" ]; then
+                new_id="custom-claude-groq"
                 extra="\"customModelId\":\"$wiz_model\""
             elif [ "$wiz_provider" = "openrouter" ]; then
                 new_id="custom-claude-openrouter"

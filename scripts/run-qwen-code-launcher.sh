@@ -280,6 +280,27 @@ get_qwen_groq_api_key() {
     fi
 }
 
+get_qwen_bai_api_key() {
+    local key="${BAI_API_KEY:-}"
+    if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then
+        key=$(get_current_api_key "BAI")
+    fi
+    if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then
+        printf "${YELLOW}B.AI API ключ не задан.${RESET}\n" >&3
+        printf "${CYAN}Получить ключ: https://chat.b.ai/key${RESET}\n" >&3
+        local input
+        input=$(read_secret_text "B.AI API key: ")
+        if [ -n "$input" ]; then
+            set_provider_api_key "BAI" "$input"
+            echo "$input"
+        else
+            return 1
+        fi
+    else
+        echo "$key"
+    fi
+}
+
 get_qwen_openrouter_api_key() {
     local key="${OPENROUTER_API_KEY:-}"
     if [ -z "$key" ]; then
@@ -310,6 +331,7 @@ invoke_qwen_custom_model_wizard() {
         "nim|NVIDIA NIM - полный каталог (GET /v1/models)"
         "groq|Groq - полный каталог моделей (paid, GET /v1/models)"
         "openrouter|OpenRouter - полный каталог моделей (GET /v1/models)"
+        "bai|B.AI - DeepSeek/MiniMax/GLM/Kimi/GPT (GET /v1/models)"
     )
 
     while true; do
@@ -375,6 +397,16 @@ invoke_qwen_custom_model_wizard() {
             if [ -n "$response" ]; then
                 ids=($(echo "$response" | grep -o '"id":"[^"]*"' | cut -d'"' -f4 | sort -u))
             fi
+        elif [ "$prov_source" = "bai" ]; then
+            show_tui_wait_frame "$app_brand" "Загрузка каталога B.AI…"
+            key=$(get_qwen_bai_api_key) || { echo -e "${RED}Не удалось получить API ключ${RESET}"; read -p "Нажмите Enter..."; return 1; }
+
+            local response
+            response=$(curl -s -H "Authorization: Bearer $key" -H "Content-Type: application/json" "https://api.b.ai/v1/models" 2>/dev/null) || true
+
+            if [ -n "$response" ]; then
+                ids=($(echo "$response" | grep -o '"id":"[^"]*"' | cut -d'"' -f4 | sort -u))
+            fi
         fi
 
         if [ ${#ids[@]} -eq 0 ]; then
@@ -403,6 +435,8 @@ invoke_qwen_custom_model_wizard() {
             prov="groq"
         elif [ "$prov_source" = "openrouter" ]; then
             prov="openrouter"
+        elif [ "$prov_source" = "bai" ]; then
+            prov="bai"
         fi
 
         echo "$prov|$model_id"

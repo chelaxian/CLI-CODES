@@ -39,7 +39,8 @@ set_openclaude_profile() {
                --arg base "$base_url" \
                --arg key "$api_key" \
                --arg mdl "$model" '
-        (.providerProfiles // []) | map(select(.id != $id)) as $filtered |
+        ((.providerProfiles // null) | if type == "array" then . elif type == "object" then [.[]] else [] end) as $raw |
+        $raw | map(select(.id != $id)) as $filtered |
         $filtered + [{
             "id": $id,
             "provider": $prov,
@@ -48,7 +49,6 @@ set_openclaude_profile() {
             "apiKey": $key,
             "model": $mdl
         }] as $newProfiles |
-        {} |
         .providerProfiles = $newProfiles |
         .activeProviderProfileId = $id
     ' "$config_file")"
@@ -115,7 +115,7 @@ resolve_profile_from_state() {
         "openrouter-laguna"|"openrouter-qwen3-coder"| \
         "openrouter-deepseek-v4-flash"|"openrouter-nemotron"| \
         "custom-openclaude-zai"|"custom-openclaude-nim"| \
-        "custom-openclaude-openrouter"|"custom-openclaude-bai"|"vanilla")
+        "custom-openclaude-openrouter"|"custom-openclaude-bai"|"custom-openclaude-groq"|"vanilla")
             echo "$profile_id"
             return 0
             ;;
@@ -126,7 +126,7 @@ resolve_profile_from_state() {
             fi
             return 1
             ;;
-        zai-*|nim-*|openrouter-*)
+        zai-*|nim-*|openrouter-*|groq-*)
             echo "$profile_id"
             return 0
             ;;
@@ -327,6 +327,7 @@ invoke_openclaude_openai_preset() {
         local base_url="" model_raw="$preset_id" key_env=""
         case "$preset_id" in
             nim-*) base_url="https://integrate.api.nvidia.com/v1"; key_env="NVIDIA_NIM_API_KEY"; model_raw="${preset_id#nim-}" ;;
+            groq-*) base_url="https://api.groq.com/openai/v1"; key_env="GROQ_API_KEY"; model_raw="${preset_id#groq-}" ;;
             bai-*) base_url="https://api.b.ai/v1"; key_env="BAI_API_KEY"; model_raw="${preset_id#bai-}" ;;
             openrouter-*) base_url="https://openrouter.ai/api/v1"; key_env="OPENROUTER_API_KEY"; model_raw="${preset_id#openrouter-}" ;;
             *) echo -e "${RED}Неизвестный preset: $preset_id${RESET}" >&3; return 1 ;;
@@ -341,6 +342,7 @@ invoke_openclaude_openai_preset() {
     local key_prefix="$key_env"
     case "$key_env" in
         NVIDIA_NIM_API_KEY) provider_name="NVIDIA NIM"; help_url="https://build.nvidia.com/api-key"; key_prefix="NVIDIA_NIM" ;;
+        GROQ_API_KEY) provider_name="Groq"; help_url="https://console.groq.com/keys"; key_prefix="GROQ" ;;
         OPENROUTER_API_KEY) provider_name="OpenRouter"; help_url="https://openrouter.ai/settings/keys"; key_prefix="OPENROUTER" ;;
         BAI_API_KEY) provider_name="B.AI"; help_url="https://chat.b.ai/key"; key_prefix="BAI" ;;
     esac
@@ -371,6 +373,7 @@ invoke_custom_model_wizard() {
     local prov_items=(
         "zai|Z.AI - Coding / Anthropic"
         "nim|NVIDIA NIM - полный каталог"
+        "groq|Groq - полный каталог моделей (paid)"
         "openrouter|OpenRouter - полный каталог"
         "bai|B.AI - OpenAI-compatible"
     )
@@ -400,6 +403,10 @@ invoke_custom_model_wizard() {
             nim)
                 key="$(resolve_key NVIDIA_NIM_API_KEY "NVIDIA NIM" "https://build.nvidia.com/api-key" "NVIDIA_NIM")" || return 1
                 ids=($(curl -s -H "Authorization: Bearer $key" "https://integrate.api.nvidia.com/v1/models" 2>/dev/null | grep -o '"id":"[^"]*"' | cut -d'"' -f4 | sort -u)) || true
+                ;;
+            groq)
+                key="$(resolve_key GROQ_API_KEY "Groq" "https://console.groq.com/keys" "GROQ")" || return 1
+                ids=($(curl -s -H "Authorization: Bearer $key" "https://api.groq.com/openai/v1/models" 2>/dev/null | grep -o '"id":"[^"]*"' | cut -d'"' -f4 | sort -u)) || true
                 ;;
             openrouter)
                 key="$(resolve_key OPENROUTER_API_KEY "OpenRouter" "https://openrouter.ai/settings/keys" "OPENROUTER")" || return 1
@@ -495,7 +502,7 @@ while true; do
         menu_items+=("${profile##*|}")
     done
 
-    choice="$(show_tui_numbered_menu "OpenClaude" "OpenClaude - выбор профиля" "Z.AI · NIM · B.AI · OpenRouter" "${menu_items[@]}")"
+    choice="$(show_tui_numbered_menu "OpenClaude" "OpenClaude - выбор профиля" "Z.AI · NIM · Groq · B.AI · OpenRouter" "${menu_items[@]}")"
 
     if [ "${choice:-0}" -eq 0 ]; then
         continue
@@ -549,6 +556,7 @@ while true; do
                 local base_for_provider="" key_env="" key_val=""
                 case "$wiz_provider" in
                     nim) base_for_provider="https://integrate.api.nvidia.com/v1"; key_env="NVIDIA_NIM_API_KEY" ;;
+                    groq) base_for_provider="https://api.groq.com/openai/v1"; key_env="GROQ_API_KEY" ;;
                     openrouter) base_for_provider="https://openrouter.ai/api/v1"; key_env="OPENROUTER_API_KEY" ;;
                     bai) base_for_provider="https://api.b.ai/v1"; key_env="BAI_API_KEY" ;;
                 esac
