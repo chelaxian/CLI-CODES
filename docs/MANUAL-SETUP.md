@@ -1,6 +1,6 @@
 # Ручная установка: пошаговое руководство
 
-Полная инструкция для ручного развёртывания **Qwen Code**, **Claude Code** и **OpenCode** с облачными провайдерами **NVIDIA NIM**, **Z.AI**, **Groq** и **OpenRouter** на **Windows** и **Linux**.
+Полная инструкция для ручного развёртывания **Qwen Code**, **Claude Code**, **OpenCode**, **Freebuff** и **OpenClaude** с облачными провайдерами **NVIDIA NIM**, **Z.AI**, **B.AI**, **Groq** и **OpenRouter** на **Windows** и **Linux**.
 
 ---
 
@@ -8,60 +8,85 @@
 
 1. [Архитектура](#1-архитектура)
 2. [Требования](#2-требования)
-3. [Клонирование репозитория](#3-клонирование-репозитория)
+3. [Клонирование / Bootstrap](#3-клонирование--bootstrap)
 4. [Установка CLI](#4-установка-cli)
 5. [Настройка API ключей](#5-настройка-api-ключей)
-6. [Профили сессий Qwen Code](#6-профили-сессий-qwen-code)
-7. [LiteLLM для пресетов NIM (порт 4000)](#7-litellm-для-пресетов-nim-порт-4000)
-8. [free-claude-code для Claude Code → NIM](#8-free-claude-code-для-claude-code--nim)
-9. [claude-mem (опционально)](#9-claude-mem-опционально)
-10. [Создание ярлыков](#10-создание-ярлыков)
-11. [Управление API ключами через TUI](#11-управление-api-ключами-через-tui)
-12. [Нативный логин](#12-нативный-логин)
-13. [Проверка установки](#13-проверка-установки)
-14. [Устранение проблем](#14-устранение-проблем)
+6. [Профили сессий](#6-профили-сессий)
+7. [free-claude-code для Claude Code → NIM / OpenRouter / B.AI / Groq](#7-free-claude-code-для-claude-code--nim--openrouter--ba-i--groq)
+8. [claude-mem (опционально)](#8-claude-mem-опционально)
+9. [Создание ярлыков](#9-создание-ярлыков)
+10. [Управление API ключами через TUI](#10-управление-api-ключами-через-tui)
+11. [Нативный логин](#11-нативный-логин)
+12. [Проверка установки](#12-проверка-установки)
+13. [Устранение проблем](#13-устранение-проблем)
+14. [Быстрый чеклист](#14-быстрый-чеклист)
 
 ---
 
 ## 1. Архитектура
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                       Рабочая станция                         │
-│                                                              │
-│  ┌─────────────┐    ┌──────────────┐    ┌──────────────┐     │
-│  │  Qwen Code  │    │  Claude Code │    │   OpenCode   │     │
-│  │  (OpenAI)   │    │  (Anthropic) │    │   (OpenAI)   │     │
-│  └──────┬──────┘    └──────┬───────┘    └──────┬───────┘     │
-│         │                  │                   │             │
-│  ┌──────┴──────┐    ┌──────┴───────┐           │             │
-│  │  LiteLLM    │    │ free-claude- │           │             │
-│  │  :4000      │    │ code :8082   │           │             │
-│  └──────┬──────┘    └──────┬───────┘           │             │
-└─────────┼──────────────────┼───────────────────┼─────────────┘
-          │                  │                   │
-          ▼                  ▼                   ▼
-   ┌──────────────┐   ┌──────────────┐   ┌──────────────┐
-   │  NVIDIA NIM  │   │    Z.AI      │   │  NVIDIA NIM  │
-   │  (integrate) │   │  (api.z.ai)  │   │  (integrate) │
-   └──────────────┘   └──────────────┘   └──────────────┘
+┌───────────────────────────────────────────────────────────────────┐
+│                          Рабочая станция                          │
+│                                                                   │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐            │
+│  │  Qwen Code   │  │  Claude Code │  │   OpenCode   │            │
+│  │  (OpenAI)    │  │  (Anthropic) │  │   (OpenAI)   │            │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘            │
+│         │                 │                 │                    │
+│  ┌──────┴───────┐  ┌──────┴───────┐         │                    │
+│  │  Direct HTTPS │  │ free-claude- │         │                    │
+│  │  NIM/Groq/etc │  │ code :8082+  │         │                    │
+│  └──────────────┘  └──────────────┘         │                    │
+│                                                                   │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐            │
+│  │   Freebuff   │  │  OpenClaude  │  │  claude-mem  │            │
+│  │  (context   │  │  (OpenAI     │  │  (optional,  │            │
+│  │   logger)   │  │   proxy)    │  │   port 37777)│            │
+│  └──────────────┘  └──────────────┘  └──────────────┘            │
+└───────────────────────────────────────────────────────────────────┘
+         │               │               │               │
+         ▼               ▼               ▼               ▼
+  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+  │  Z.AI        │ │  NVIDIA NIM  │ │   B.AI       │ │   Groq       │
+  │  api.z.ai    │ │  integrate   │ │  api.b.ai    │ │  api.groq    │
+  │  (OpenAI +   │ │  .api.nvidia │ │  (OpenAI-    │ │  (OpenAI,    │
+  │   Anthropic) │ │  .com / v1)  │ │   compat.)   │ │   TPM лимит) │
+  └──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘
+                              │
+                              ▼
+                    ┌──────────────┐
+                    │  OpenRouter  │
+                    │  (бесплатные │
+                    │   модели)    │
+                    └──────────────┘
 ```
 
 **Потоки данных:**
 
-| CLI | Провайдер | Маршрут |
-|-----|-----------|---------|
-| Qwen Code | Z.AI | Прямой HTTPS → `api.z.ai/api/openai/v1` |
-| Qwen Code | NVIDIA NIM | LiteLLM `127.0.0.1:4000` → `integrate.api.nvidia.com` |
-| Qwen Code | Groq | Прямой HTTPS → `api.groq.com/openai/v1` |
-| Qwen Code | OpenRouter | Прямой HTTPS → `openrouter.ai/api/v1` |
-| Claude Code | Z.AI | Прямой HTTPS → `api.z.ai/api/anthropic` |
-| Claude Code | NVIDIA NIM | free-claude-code `127.0.0.1:8082` → `integrate.api.nvidia.com` |
-| Claude Code | OpenRouter | free-claude-code `127.0.0.1:8082` → `openrouter.ai` |
-| OpenCode | Z.AI | Прямой HTTPS → `api.z.ai/api/openai/v1` (opencode.json) |
-| OpenCode | NVIDIA NIM | Прямой HTTPS → `integrate.api.nvidia.com/v1` (opencode.json) |
-| OpenCode | Groq | Прямой HTTPS → `api.groq.com/openai/v1` (opencode.json) |
-| OpenCode | OpenRouter | Прямой HTTPS → `openrouter.ai/api/v1` (opencode.json) |
+| CLI | Провайдер | Протокол |
+|-----|-----------|----------|
+| Qwen Code | Z.AI | Прямой HTTPS → `https://api.z.ai/api/openai/v1` |
+| Qwen Code | NVIDIA NIM | Прямой HTTPS → `https://integrate.api.nvidia.com/v1` |
+| Qwen Code | Groq | Прямой HTTPS → `https://api.groq.com/openai/v1` (режим `--bare`) |
+| Qwen Code | OpenRouter | Прямой HTTPS → `https://openrouter.ai/api/v1` |
+| Qwen Code | B.AI | Прямой HTTPS → `https://api.b.ai/v1` |
+| Claude Code | Z.AI | Прямой HTTPS → `https://api.z.ai/api/anthropic` |
+| Claude Code | NVIDIA NIM | free-claude-code `127.0.0.1:8082` → NIM |
+| Claude Code | OpenRouter | free-claude-code `127.0.0.1:8084` → OpenRouter |
+| Claude Code | B.AI | free-claude-code `127.0.0.1:8085` → B.AI |
+| Claude Code | Groq | free-claude-code `127.0.0.1:8086` → Groq |
+| OpenCode | Z.AI | Прямой HTTPS → `https://api.z.ai/api/openai/v1` |
+| OpenCode | NVIDIA NIM | Прямой HTTPS → `https://integrate.api.nvidia.com/v1` |
+| OpenCode | Groq | Прямой HTTPS → `https://api.groq.com/openai/v1` |
+| OpenCode | OpenRouter | Прямой HTTPS → `https://openrouter.ai/api/v1` |
+| OpenCode | B.AI | Прямой HTTPS → `https://api.b.ai/v1` |
+| Freebuff | N/A | Прямой запуск (не требует API) |
+| OpenClaude | Z.AI | Прямой HTTPS → `https://api.z.ai/api/anthropic` (OpenAI-режим через env) |
+| OpenClaude | NVIDIA NIM | OpenAI-режим через env → NIM |
+| OpenClaude | Groq | OpenAI-режим через env → Groq |
+| OpenClaude | OpenRouter | OpenAI-режим через env → OpenRouter |
+| OpenClaude | B.AI | OpenAI-режим через env → B.AI |
 
 ---
 
@@ -74,20 +99,20 @@
 | **Git** | [git-scm.com](https://git-scm.com/download/win) | `sudo apt install git` |
 | **Node.js** LTS (18+) | [nodejs.org](https://nodejs.org/) | `sudo apt install nodejs npm` или [nvm](https://github.com/nvm-sh/nvm) |
 | **npm** | Ставится с Node.js | Ставится с Node.js |
+| **Python 3.10+** | Для free-claude-code (устанавливается автоматически через `uv`) | Для free-claude-code |
 
-### Для NIM пресетов (Qwen Code)
-
-| Инструмент | Назначение |
-|-----------|-----------|
-| **LiteLLM** (`pip install litellm[proxy]`) | Прокси `:4000` для NIM-моделей |
-| **Python 3.10+** | Для LiteLLM |
-
-### Для Claude Code + NIM
+### Для Claude Code + NIM / OpenRouter / B.AI / Groq
 
 | Инструмент | Назначение |
 |-----------|-----------|
 | **uv** ([docs.astral.sh/uv](https://docs.astral.sh/uv/)) | Запуск free-claude-code |
-| **free-claude-code** | Прокси Claude→NIM |
+| **free-claude-code** | Прокси Claude→NIM/OpenRouter/B.AI/Groq |
+
+### Для OpenClaude
+
+| Инструмент | Назначение |
+|-----------|-----------|
+| **jq** | Парсинг JSON в лаунчере (`sudo apt install jq`) |
 
 ### Опционально
 
@@ -95,21 +120,38 @@
 |-----------|-----------|
 | **claude-mem** | Память для Claude Code (порт 37777) |
 | **Obsidian** | Хранилище сессий Claude |
-| **Bun** | Fallback для claude-mem |
+| **curl** | Для API запросов в мастере моделей |
+| **nc / ss** | Проверка портов (Linux) |
+| **netstat** | Проверка портов (Windows) |
 
 ---
 
-## 3. Клонирование репозитория
+## 3. Клонирование / Bootstrap
 
-### Windows (PowerShell)
+### Способ 1: 1-click скрипт
 
+**Windows:**
+```powershell
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+irm https://raw.githubusercontent.com/chelaxian/CLI-CODES/main/install.ps1 | iex
+```
+
+**Linux:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/chelaxian/CLI-CODES/main/bootstrap.sh | bash
+```
+
+> `bootstrap.sh` автоматически определит ОС (Linux/macOS/Windows) и запустит нужный инсталлятор.
+
+### Способ 2: git clone
+
+**Windows (PowerShell):**
 ```powershell
 git clone https://github.com/chelaxian/CLI-CODES.git
 cd CLI-CODES
 ```
 
-### Linux
-
+**Linux:**
 ```bash
 git clone https://github.com/chelaxian/CLI-CODES.git
 cd CLI-CODES
@@ -158,7 +200,33 @@ npm install -g opencode-ai@latest
 opencode --help
 ```
 
-OpenCode использует `opencode.json` конфигурацию (переменная `OPENCODE_CONFIG`) для подключения к OpenAI-compatible API. Лаунчер `run-opencode-launcher.ps1` (или `.sh`) автоматически генерирует конфиг при выборе провайдера.
+### Freebuff
+
+```bash
+# Windows / Linux
+npm install -g freebuff@latest
+```
+
+Проверка:
+```bash
+freebuff --help
+```
+
+> Freebuff — CLI для логирования и контекст-менеджмента. Запускается напрямую через лаунчер (без TUI меню).
+
+### OpenClaude
+
+```bash
+# Windows / Linux
+npm install -g @gitlawb/openclaude@latest
+```
+
+Проверка:
+```bash
+openclaude --help
+```
+
+> OpenClaude — форк Claude Code с поддержкой OpenAI-совместимых провайдеров (NIM, Groq, OpenRouter, B.AI).
 
 ---
 
@@ -170,6 +238,7 @@ OpenCode использует `opencode.json` конфигурацию (пере
 |-----------|-------------|-----------|
 | **NVIDIA NIM** | [build.nvidia.com](https://build.nvidia.com/) | Да, с лимитами |
 | **Z.AI** | [open.bigmodel.cn](https://open.bigmodel.cn/) | Да, с лимитами |
+| **B.AI** | [chat.b.ai/key](https://chat.b.ai/key) | Да, с лимитами |
 | **Groq** | [console.groq.com](https://console.groq.com/) | Да, 14400 запросов/день |
 | **OpenRouter** | [openrouter.ai](https://openrouter.ai/) | Да, бесплатные модели |
 
@@ -182,9 +251,9 @@ OpenCode использует `opencode.json` конфигурацию (пере
 **Способ 2 — через PowerShell:**
 
 ```powershell
-# Сохранить ключ (перезапустите терминал после)
 [Environment]::SetEnvironmentVariable("NVIDIA_NIM_API_KEY", "ваш_ключ", "User")
 [Environment]::SetEnvironmentVariable("ZAI_API_KEY", "ваш_ключ", "User")
+[Environment]::SetEnvironmentVariable("BAI_API_KEY", "ваш_ключ", "User")
 [Environment]::SetEnvironmentVariable("GROQ_API_KEY", "ваш_ключ", "User")
 [Environment]::SetEnvironmentVariable("OPENROUTER_API_KEY", "ваш_ключ", "User")
 ```
@@ -192,18 +261,17 @@ OpenCode использует `opencode.json` конфигурацию (пере
 **Способ 3 — через GUI:**
 
 1. Win+R → `sysdm.cpl` → Дополнительно → Переменные среды
-2. Добавьте пользовательские переменные `NVIDIA_NIM_API_KEY`, `ZAI_API_KEY`, `GROQ_API_KEY`, `OPENROUTER_API_KEY`
+2. Добавьте пользовательские переменные `NVIDIA_NIM_API_KEY`, `ZAI_API_KEY`, `BAI_API_KEY`, `GROQ_API_KEY`, `OPENROUTER_API_KEY`
 
 ### Linux: ~/.bashrc / ~/.zshrc
 
 ```bash
-# Добавьте в конец ~/.bashrc (или ~/.zshrc)
 export NVIDIA_NIM_API_KEY="ваш_ключ"
 export ZAI_API_KEY="ваш_ключ"
+export BAI_API_KEY="ваш_ключ"
 export GROQ_API_KEY="ваш_ключ"
 export OPENROUTER_API_KEY="ваш_ключ"
 
-# Применить в текущей сессии
 source ~/.bashrc
 ```
 
@@ -222,15 +290,17 @@ source ~/.bashrc
 | **OpenCode** | Нативный логин → Вход через провайдера | `opencode providers login` (автоматически) |
 | **OpenCode** | Нативный логин → Показать провайдеров | `opencode providers list` (автоматически) |
 | **OpenCode** | Нативный логин → Запуск OpenCode | `opencode` |
+| **OpenClaude** | Нативный логин → vanilla | `openclaude` (без env) |
 
-Для использования нативного логина требуется платная подписка на соответствующий сервис (Claude Pro/Max, Qwen Coding Plan и т.д.).
+Для использования нативного логина требуется платная подписка на соответствующий сервис.
 
 ### Переменные окружения (справка)
 
 | Переменная | Назначение |
 |-----------|-----------|
-| `NVIDIA_NIM_API_KEY` | Доступ к NVIDIA integrate API |
+| `NVIDIA_NIM_API_KEY` | Доступ к NVIDIA NIM API |
 | `ZAI_API_KEY` | Z.AI Coding / Anthropic-совместимые вызовы |
+| `BAI_API_KEY` | B.AI API (OpenAI-compatible) |
 | `GROQ_API_KEY` | Groq API (бесплатно, 14400 запросов/день) |
 | `OPENROUTER_API_KEY` | OpenRouter API (бесплатные и платные модели) |
 
@@ -238,180 +308,99 @@ source ~/.bashrc
 
 ---
 
-## 6. Профили сессий Qwen Code
+## 6. Профили сессий
 
-Шаблоны уже включены в репозиторий в `qwen-sessions/`. При необходимости пересоздайте:
+### Qwen Code
 
-### Z.AI GLM-4.7 — `qwen-sessions/zai-glm47/.qwen/settings.json`
+Директория: `$REPO_ROOT/qwen-sessions/`
 
-```json
-{
-  "modelProviders": {
-    "openai": [
-      {
-        "id": "zai-glm-47",
-        "name": "Z.AI GLM-4.7",
-        "baseUrl": "https://api.z.ai/api/openai/v1",
-        "envKey": "ZAI_API_KEY"
-      }
-    ]
-  }
-}
-```
+Сессии разделены по провайдерам. Для большинства пресетов лаунчер автоматически создаёт контекст через динамические скрипты (`run-qwen-code-dynamic.ps1/sh`).
 
-### NIM GLM-4.7 — `qwen-sessions/nim-glm-47/.qwen/settings.json`
+**Примеры существующих сессий:**
 
-```json
-{
-  "modelProviders": {
-    "openai": [
-      {
-        "id": "nim-glm-47-tools",
-        "name": "NVIDIA NIM GLM-4.7 (LiteLLM)",
-        "baseUrl": "http://127.0.0.1:4000/v1",
-        "envKey": "NVIDIA_NIM_API_KEY"
-      }
-    ]
-  }
-}
-```
+| Папка | Провайдер | Модель |
+|-------|-----------|--------|
+| `zai-glm47/` | Z.AI | GLM-4.7 (OpenAI-совместимый) |
+| `nim-glm-47/` | NVIDIA NIM | GLM-4.7 (прямой HTTPS) |
+| `nim-deepseek-v31/` | NVIDIA NIM | DeepSeek V3.1 |
+| `_dynamic/` | Любой | Динамический выбор через лаунчер |
 
-### NIM Qwen3.5-122B — `qwen-sessions/nim-qwen35-122b/.qwen/settings.json`
+### Claude Code
 
-```json
-{
-  "modelProviders": {
-    "openai": [
-      {
-        "id": "nim-qwen3.5-122b-a10b-tools",
-        "name": "NVIDIA NIM Qwen3.5-122B-A10B (LiteLLM)",
-        "baseUrl": "http://127.0.0.1:4000/v1",
-        "envKey": "NVIDIA_NIM_API_KEY"
-      }
-    ]
-  }
-}
-```
+Директория: `$REPO_ROOT/claude-sessions/_shared/`
+
+Общие сессии для всех профилей. Launcher переключает env-переменные и запускает `claude` из этой директории.
+
+### OpenCode
+
+Директория: `$REPO_ROOT/opencode-sessions/_shared/`
+
+Launcher генерирует `opencode.json` с указанием провайдера и модели. Конфиг автоматически перезаписывается при выборе нового профиля.
+
+### Freebuff
+
+Freebuff не использует директории сессий в репо — сам управляет контекстом и историей.
+
+### OpenClaude
+
+OpenClaude хранит профили в `~/.openclaude.json` (не в репо). Launcher записывает `providerProfiles` и `activeProviderProfileId`.
 
 ---
 
-## 7. LiteLLM для пресетов NIM (порт 4000)
+## 7. free-claude-code для Claude Code → NIM / OpenRouter / B.AI / Groq
 
-**Только для Qwen Code + NIM.** Если вы используете только Z.AI — пропустите этот шаг.
-
-### Установка
-
-```bash
-pip install 'litellm[proxy]'
-```
-
-### Конфигурация
-
-Создайте директорию и файл конфигурации:
-
-**Windows:**
-```powershell
-mkdir "$env:USERPROFILE\.qwen\litellm" -Force
-```
-
-**Linux:**
-```bash
-mkdir -p ~/.qwen/litellm
-```
-
-Создайте файл `~/.qwen/litellm/litellm-nim-config.yaml`:
-
-```yaml
-# Ключ только через env NVIDIA_NIM_API_KEY (не пишите ключ в файл)
-model_list:
-  - model_name: nim-glm-4.7-tools
-    litellm_params:
-      model: openai/z-ai/glm4.7
-      api_base: https://integrate.api.nvidia.com/v1
-      api_key: os.environ/NVIDIA_NIM_API_KEY
-  - model_name: nim-qwen3.5-122b-a10b-tools
-    litellm_params:
-      model: openai/qwen/qwen3.5-122b-a10b
-      api_base: https://integrate.api.nvidia.com/v1
-      api_key: os.environ/NVIDIA_NIM_API_KEY
-
-general_settings:
-  master_key: optional-local-master-key
-```
-
-### Запуск прокси
-
-**Windows** — создайте `~/.qwen/litellm/start-nvidia-nim-proxy.ps1`:
-
-```powershell
-$env:NVIDIA_NIM_API_KEY = [Environment]::GetEnvironmentVariable("NVIDIA_NIM_API_KEY", "User")
-if ([string]::IsNullOrWhiteSpace($env:NVIDIA_NIM_API_KEY)) {
-  throw "Задайте NVIDIA_NIM_API_KEY"
-}
-$config = Join-Path $PSScriptRoot "litellm-nim-config.yaml"
-litellm --config $config --port 4000 --host 127.0.0.1
-```
-
-**Linux** — создайте `~/.qwen/litellm/start-nvidia-nim-proxy.sh`:
-
-```bash
-#!/bin/bash
-export NVIDIA_NIM_API_KEY="${NVIDIA_NIM_API_KEY:?$NVIDIA_NIM_API_KEY not set}"
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-litellm --config "$SCRIPT_DIR/litellm-nim-config.yaml" --port 4000 --host 127.0.0.1
-```
-
-Запуск:
-```bash
-chmod +x ~/.qwen/litellm/start-nvidia-nim-proxy.sh
-~/.qwen/litellm/start-nvidia-nim-proxy.sh
-```
-
-Проверка: `curl http://127.0.0.1:4000/v1/models` должен вернуть список моделей.
-
----
-
-## 8. free-claude-code для Claude Code → NIM
-
-**Только для Claude Code + NIM.** Если вы используете только Z.AI — пропустите этот шаг.
+**Для Claude Code + NIM или OpenRouter требуется free-claude-code прокси.** Если вы используете только Z.AI — пропустите этот шаг (Z.AI поддерживает Anthropic API напрямую).
 
 ### Установка
 
+free-claude-code устанавливается автоматически через инсталлятор при выборе Claude Code. При ручной установке:
+
+**Windows / Linux:**
 ```bash
-# Установите uv (если нет)
+# uv (если нет)
 # Windows: irm https://astral.sh/uv/install.ps1 | iex
 # Linux:   curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Клонируйте free-claude-code в отдельную директорию
-git clone <url-free-claude-code> $REPO_ROOT/free-claude-code
-cd $REPO_ROOT/free-claude-code
+# Клонируйте free-claude-code в домашнюю директорию
+git clone https://github.com/Alishahryar1/free-claude-code.git ~/.free-claude-code
 
 # Установите зависимости
+cd ~/.free-claude-code
 uv sync
 ```
 
 ### Порты по умолчанию
 
-| Модель | Порт |
-|--------|------|
-| GLM-4.7 NIM | 8082 |
-| Qwen3.5-122B-A10B | 8083 |
+| Провайдер | Порт |
+|-----------|------|
+| NVIDIA NIM | 8082 |
+| OpenRouter | 8084 |
+| B.AI | 8085 |
+| Groq | 8086 |
 
 ### Запуск прокси
 
-Скрипт `run-claude-cloud-session.ps1` автоматически запускает free-claude-code при выборе профиля NIM в лаунчере.
+Скрипт `run-claude-cloud-session.ps1` (или `.sh`) автоматически запускает free-claude-code при выборе профиля NIM/OpenRouter/B.AI/Groq в лаунчере.
 
-Ручной запуск (для отладки):
+Для отладки/ручного запуска:
 
+**NIM:**
 ```bash
-cd $REPO_ROOT/free-claude-code
-NVIDIA_NIM_API_KEY="ваш_ключ" MODEL="nvidia_nim/z-ai/glm4.7" ANTHROPIC_AUTH_TOKEN="freecc" \
+cd ~/.free-claude-code
+NVIDIA_NIM_API_KEY="ваш_ключ" MODEL="nvidia_nim/z-ai/glm-5.1" ANTHROPIC_AUTH_TOKEN="freecc" \
   uv run uvicorn server:app --host 127.0.0.1 --port 8082
+```
+
+**OpenRouter:**
+```bash
+cd ~/.free-claude-code
+OPENROUTER_API_KEY="ваш_ключ" MODEL="open_router/deepseek/deepseek-chat-v3.1:free" ANTHROPIC_AUTH_TOKEN="freecc" \
+  uv run uvicorn server:app --host 127.0.0.1 --port 8084
 ```
 
 ---
 
-## 9. claude-mem (опционально)
+## 8. claude-mem (опционально)
 
 Память для Claude Code — воркер на `127.0.0.1:37777`.
 
@@ -425,9 +414,16 @@ npx claude-mem start
 
 Откройте в браузере: `http://127.0.0.1:37777/`
 
+### Очистка
+
+```powershell
+# Windows
+.\scripts\clear-claude-mem.ps1
+```
+
 ---
 
-## 10. Создание ярлыков
+## 9. Создание ярлыков
 
 ### Автоматически (рекомендуется)
 
@@ -443,106 +439,85 @@ cd $REPO_ROOT
 ./install.sh
 ```
 
-Инсталлятор создаст ярлыки на рабочем столе автоматически.
+Инсталлятор создаст/обновит ярлыки автоматически.
 
-### Вручную — Windows
+### Ручная сборка ярлыков
 
-```powershell
-$shell = New-Object -ComObject WScript.Shell
-$desktop = [Environment]::GetFolderPath("Desktop")
-$repoRoot = "ПУТЬ_К_РЕПО"
+#### Windows
 
-# Qwen Code
-$lnk = $shell.CreateShortcut("$desktop\Qwen Code (cloud).lnk")
-$lnk.TargetPath = "powershell.exe"
-$lnk.Arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$repoRoot\scripts\run-qwen-code-launcher.ps1`""
-$lnk.WorkingDirectory = $repoRoot
-$lnk.Save()
+После установки через `install.ps1` ярлыки создаются автоматически в скрытой папке `Desktop\Cloud Launchers\`:
 
-# Claude Code
-$lnk = $shell.CreateShortcut("$desktop\Claude Code (cloud).lnk")
-$lnk.TargetPath = "cmd.exe"
-$lnk.Arguments = "/k chcp 65001 >nul & powershell -NoProfile -ExecutionPolicy Bypass -File `"$repoRoot\scripts\run-claude-cloud-launcher.ps1`""
-$lnk.WorkingDirectory = $repoRoot
-$lnk.Save()
+- **Qwen Code (cloud).cmd / .lnk**
+- **Claude Code (cloud).cmd / .lnk**
+- **OpenCode (cloud).cmd / .lnk**
+- **Freebuff (cloud).cmd / .lnk**
+- **OpenClaude (cloud).cmd / .lnk**
 
-# OpenCode
-$lnk = $shell.CreateShortcut("$desktop\OpenCode (cloud).lnk")
-$lnk.TargetPath = "cmd.exe"
-$lnk.Arguments = "/k chcp 65001 >nul & powershell -NoProfile -ExecutionPolicy Bypass -File `"$repoRoot\scripts\run-opencode-launcher.ps1`""
-$lnk.WorkingDirectory = $repoRoot
-$lnk.Save()
-```
+На рабочем столе остаётся по одному `.lnk` на каждый инструмент (без приставки `(cloud)`), который points на скрытую папку.
 
-### Вручную — Linux
+#### Linux
+
+Создаются `.sh` в `~/` и `.desktop` на рабочем столе:
 
 ```bash
 REPO_ROOT="$HOME/CLI-CODES"
+SCRIPTS="$REPO_ROOT/scripts"
 DESKTOP="$HOME/Desktop"
 [ -d "$DESKTOP" ] || DESKTOP="$HOME"
 
-# Qwen Code
-cat > "$DESKTOP/Qwen Code (cloud).desktop" << EOF
+for entry in \
+  "Qwen Code:run-qwen-code-launcher.sh" \
+  "Claude Code:run-claude-cloud-launcher.sh" \
+  "OpenCode:run-opencode-launcher.sh" \
+  "Freebuff:run-freebuff-launcher.sh" \
+  "OpenClaude:run-openclaude-launcher.sh"; do
+  
+  name="${entry%%:*}"
+  script="${entry##*:}"
+  
+  cat > "$HOME/${name,,}.sh" << EOF
+#!/bin/bash
+exec bash "$SCRIPTS/$script" "\$@"
+EOF
+  chmod +x "$HOME/${name,,}.sh"
+  
+  cat > "$DESKTOP/$name.desktop" << EOF
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=Qwen Code (cloud)
-Exec=bash "$REPO_ROOT/scripts/run-qwen-code-launcher.sh"
+Name=$name
+Exec=bash "$SCRIPTS/$script"
 Path=$REPO_ROOT
 Terminal=true
+StartupNotify=true
 Categories=Development;
 EOF
-chmod +x "$DESKTOP/Qwen Code (cloud).desktop"
-
-# Claude Code
-cat > "$DESKTOP/Claude Code (cloud).desktop" << EOF
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=Claude Code (cloud)
-Exec=bash "$REPO_ROOT/scripts/run-claude-cloud-launcher.sh"
-Path=$REPO_ROOT
-Terminal=true
-Categories=Development;
-EOF
-chmod +x "$DESKTOP/Claude Code (cloud).desktop"
-
-# OpenCode
-cat > "$DESKTOP/OpenCode (cloud).desktop" << EOF
-[Desktop Entry]
-Version=1.0
-Type=Application
-Name=OpenCode (cloud)
-Exec=bash "$REPO_ROOT/scripts/run-opencode-launcher.sh"
-Path=$REPO_ROOT
-Terminal=true
-Categories=Development;
-EOF
-chmod +x "$DESKTOP/OpenCode (cloud).desktop"
+  chmod +x "$DESKTOP/$name.desktop"
+done
 ```
 
 ---
 
-## 11. Управление API ключами через TUI
+## 10. Управление API ключами через TUI
 
-Во всех лаунчерах (Qwen Code, Claude Code, OpenCode) есть встроенное меню для смены API ключей:
+Во всех лаунчерах (Qwen Code, Claude Code, OpenCode, OpenClaude) есть встроенное меню для смены API ключей:
 
 1. Запустите ярлык
 2. Выберите **«Сменить ключ API провайдера»**
-3. Выберите провайдера: **NVIDIA NIM**, **Z.AI**, **Groq** или **OpenRouter**
-4. Текущий ключ показан замаскированным (например `nv1234...5678ab`)
+3. Выберите провайдера: **NVIDIA NIM**, **Z.AI**, **B.AI**, **Groq** или **OpenRouter**
+4. Текущий ключ показан замаскированным
 5. Введите новый ключ (скрытый ввод)
 6. **ESC** — вернуться в предыдущее меню
 
 Ключи сохраняются:
 - **Windows**: в переменных пользователя (`[Environment]::SetEnvironmentVariable`)
-- **Linux**: в `~/.bashrc` и `~/.zshrc`
+- **Linux**: в `~/.bashrc` и `~/.zshrc` через helper-функции `launcher-api-keys.sh`
 
 ---
 
-## 12. Нативный логин
+## 11. Нативный логин
 
-Каждый лаунчер поддерживает нативную авторизацию (OAuth через браузер), если у вас есть платная подписка:
+Каждый лаунчер поддерживает нативную авторизацию (OAuth через браузер).
 
 ### Qwen Code
 
@@ -552,7 +527,6 @@ chmod +x "$DESKTOP/OpenCode (cloud).desktop"
 | **Coding Plan** | Alibaba Cloud Coding Plan (API-ключ, регионы china/global) |
 
 Выберите в меню **«Нативный логин (Qwen OAuth / Coding Plan)»** → нужный способ.
-Также там есть пункт **«Запуск Qwen Code (ванильный запуск)»**, который просто запускает `qwen` без пресетов.
 
 ### Claude Code
 
@@ -562,31 +536,32 @@ chmod +x "$DESKTOP/OpenCode (cloud).desktop"
 | **Anthropic Console** | API-биллинг через Anthropic Console |
 
 Выберите в меню **«Нативный логин (Anthropic OAuth / Console)»** → нужный способ.
-Также там есть пункт **«Запуск Claude Code (ванильный запуск)»**, который просто запускает `claude` без пресетов.
 
 ### OpenCode
 
 Интерактивное меню `opencode providers login` с выбором провайдера и метода входа.
 
-Выберите в меню **«Нативный логин (OpenCode Providers)»** → нужное действие:
-- **Вход через провайдера**: автоматически запускает `opencode providers login`
-- **Показать подключённых провайдеров**: автоматически запускает `opencode providers list`
-- **Запуск OpenCode (ванильный запуск)**: просто запускает `opencode` без пресетов
+Выберите в меню **«Нативный логин (OpenCode Providers)»** → нужное действие.
+
+### OpenClaude
+
+Выберите **«Нативный запуск (vanilla / Opengateway)»** — запускает `openclaude` без предустановленных env-переменных (очищает все cloud-переменные).
 
 ---
 
-## 13. Проверка установки
+## 12. Проверка установки
 
 ### Проверка зависимостей
 
 ```bash
-# Должны быть доступны:
 git --version
 node --version
 npm --version
-qwen --help      # если установлен Qwen Code
-claude --help    # если установлен Claude Code
-opencode --help  # если установлен OpenCode
+qwen --help
+claude --help
+opencode --help
+freebuff --help
+openclaude --help
 ```
 
 ### Проверка API ключей
@@ -595,6 +570,7 @@ opencode --help  # если установлен OpenCode
 ```powershell
 [Environment]::GetEnvironmentVariable("NVIDIA_NIM_API_KEY", "User")
 [Environment]::GetEnvironmentVariable("ZAI_API_KEY", "User")
+[Environment]::GetEnvironmentVariable("BAI_API_KEY", "User")
 [Environment]::GetEnvironmentVariable("GROQ_API_KEY", "User")
 [Environment]::GetEnvironmentVariable("OPENROUTER_API_KEY", "User")
 ```
@@ -603,34 +579,43 @@ opencode --help  # если установлен OpenCode
 ```bash
 echo $NVIDIA_NIM_API_KEY
 echo $ZAI_API_KEY
+echo $BAI_API_KEY
 echo $GROQ_API_KEY
 echo $OPENROUTER_API_KEY
 ```
 
-### Проверка LiteLLM (если установлен)
-
-```bash
-curl http://127.0.0.1:4000/v1/models
-```
-
-Должен вернуть JSON со списком моделей.
-
 ### Проверка free-claude-code (если установлен)
 
 ```bash
-curl http://127.0.0.1:8082/v1/models
+curl http://127.0.0.1:8082/v1/models  # NIM
+curl http://127.0.0.1:8084/v1/models  # OpenRouter
+curl http://127.0.0.1:8085/v1/models  # B.AI
+curl http://127.0.0.1:8086/v1/models  # Groq
 ```
 
-### Быстрый тест — Qwen Code + Z.AI
+### Проверка OpenCode config (если установлен)
 
+```bash
+cat $REPO_ROOT/opencode-sessions/_shared/opencode.json
+```
+
+### Быстрые тесты
+
+**Qwen Code:**
 ```bash
 cd $REPO_ROOT/qwen-sessions/zai-glm47
 qwen
 ```
 
+**Claude Code:**
+```bash
+cd $REPO_ROOT/claude-sessions/_shared
+claude
+```
+
 ---
 
-## 14. Устранение проблем
+## 13. Устранение проблем
 
 ### Windows: «Политика выполнения скриптов»
 
@@ -641,7 +626,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ### Linux: «Permission denied»
 
 ```bash
-chmod +x ~/CLI-CODES/scripts/*.sh
+chmod +x $REPO_ROOT/scripts/*.sh
 ```
 
 ### Ключи не подхватываются
@@ -650,46 +635,37 @@ chmod +x ~/CLI-CODES/scripts/*.sh
 
 **Linux**: Выполните `source ~/.bashrc` или откройте новый терминал.
 
-### LiteLLM не стартует
-
-1. Проверьте что `litellm` установлен: `pip show litellm`
-2. Проверьте что `NVIDIA_NIM_API_KEY` задан
-3. Проверьте что конфиг YAML валидный
-4. Смотрите логи: `$env:USERPROFILE\.qwen\litellm\logs\` (Windows) или `~/.qwen/litellm/logs/` (Linux)
-
 ### free-claude-code не стартует
 
 1. Проверьте что `uv` установлен: `uv --version`
-2. Проверьте что зависимости установлены: `cd free-claude-code && uv sync`
-3. Проверьте что порт не занят: `ss -ltnp | grep 8082` (Linux) или `netstat -an | findstr 8082` (Windows)
+2. Проверьте что зависимости установлены: `cd ~/.free-claude-code && uv sync`
+3. Проверьте что порт не занят:
+   - **Linux**: `ss -ltnp | grep 8082`
+   - **Windows**: `netstat -an | findstr 8082`
 
-### Qwen Code: «API key not found»
-
-Скрипт `run-qwen-code-cloud-zai-glm47.ps1` ищет ключ в следующем порядке:
-1. `ZAI_API_KEY` (переменная пользователя)
-2. `ZAI_API_KEY` (env процесса)
-3. `OPENAI_API_KEY` (переменная пользователя)
-4. `OPENAI_API_KEY` (env процесса)
-5. Интерактивный ввод (скрытый)
-
-### Claude Code: модели NIM не работают
+### Claude Code: модели не в белом списке
 
 Для моделей **вне белого списка** Claude Code запускается с `--tools minimal`. Белый список:
+- `z-ai/glm5.1`
 - `z-ai/glm4.7`
 - `qwen/qwen3.5-122b-a10b`
 
-### Ошибка 400 от NIM API
+### NIM: «Model not found» / 404
 
-- **Массив в `content`** → скрипты автоматически делают flatten
-- **`tool_choice=auto`** на бэкенде без поддержки → автоматически `none`
-- **Длинная история** при маленьком контексте → автоматическая обрезка
+Убедитесь что модель доступна в [NIM каталоге](https://build.nvidia.com/models). Некоторые модели требуют специальный доступ.
+
+### B.AI: конфиг и переменные
+
+B.AI работает через OpenAI-совместимый эндпоинт `https://api.b.ai/v1`:
+- Для Qwen Code/OpenCode/OpenClaude: прямой HTTPS
+- Для Claude Code: через free-claude-code (порт 8085) с `OPENAI_BASE_URL="https://api.b.ai/v1"`
 
 ### Groq: «Request too large» / TPM limit exceeded
 
-Groq бесплатный тариф имеет жёсткие лимиты TPM (6000-12000 токенов в минуту). Системный промпт агента (tool definitions + инструкции) занимает ~20-30K токенов, что **превышает лимит**. 
+Groq бесплатный тариф имеет жёсткие лимиты TPM (6000-12000 токенов в минуту). Системный промпт агента (~20-30K токенов) **превышает лимит**.
 
-Решение в лаунчерах:
-- **Qwen Code**: запуск в режиме чата (`--bare`, без инструментов) — только текстовый диалог, без агента
+Решение:
+- **Qwen Code**: запуск в режиме чата (`--bare`, без инструментов)
 - **OpenCode**: урезанный контекст `maxTokens=2048`, `contextLength=4096`
 
 Для полноценной работы агента используйте **Z.AI**, **NVIDIA NIM** или **OpenRouter**.
@@ -699,12 +675,12 @@ Groq бесплатный тариф имеет жёсткие лимиты TPM 
 OpenRouter имеет лимиты: ~20 RPM, ~50 RPD для бесплатных моделей. Лаунчеры автоматически урезают контекст:
 - **Qwen Code**: `contextWindowSize=16384`, `max_tokens=8192`, `skipStartupContext=true`
 - **OpenCode**: `maxTokens=8192`, `contextLength=16384`
+- **Claude Code**: через free-claude-code сrate-limit на стороне прокси
 
 Если ошибка повторяется — подождите или используйте платный API-ключ.
 
 ### Очистка памяти claude-mem
 
-Если во время тестов память `claude-mem` забилась:
 ```powershell
 # Windows
 .\scripts\clear-claude-mem.ps1
@@ -712,25 +688,41 @@ OpenRouter имеет лимиты: ~20 RPM, ~50 RPD для бесплатных
 
 ---
 
-## Быстрый чеклист
+## 14. Быстрый чеклист
 
-### Минимальная установка (только Z.AI)
+### Минимальная установка (только Qwen + Z.AI)
 
 - [ ] Git установлен
 - [ ] Node.js + npm установлены
 - [ ] Qwen Code CLI: `npm i -g @qwen-code/qwen-code`
 - [ ] Claude Code CLI: `npm i -g @anthropic-ai/claude-code`
+- [ ] OpenCode CLI: `npm i -g opencode-ai`
+- [ ] Freebuff CLI: `npm i -g freebuff`
+- [ ] OpenClaude CLI: `npm i -g @gitlawb/openclaude`
 - [ ] Репозиторий клонирован
 - [ ] `ZAI_API_KEY` задан
 - [ ] Ярлыки созданы (через `install.ps1` / `install.sh`)
 
-### Полная установка (Z.AI + NIM + Groq + OpenRouter)
+### Полная установка (все провайдеры)
 
 - [ ] Всё из минимальной установки
 - [ ] `NVIDIA_NIM_API_KEY` задан
+- [ ] `BAI_API_KEY` задан
 - [ ] `GROQ_API_KEY` задан
 - [ ] `OPENROUTER_API_KEY` задан
-- [ ] LiteLLM установлен и настроен (`:4000`)
-- [ ] free-claude-code клонирован и зависимости установлены
+- [ ] free-claude-code установлен (`~/.free-claude-code`)
+- [ ] uv установлен (для free-claude-code)
 - [ ] (Опционально) claude-mem запущен (`:37777`)
 - [ ] (Опционально) Obsidian установлен
+
+---
+
+## Дополнительные ресурсы
+
+- **Репозиторий**: [github.com/chelaxian/CLI-CODES](https://github.com/chelaxian/CLI-CODES)
+- **NVIDIA NIM**: [build.nvidia.com](https://build.nvidia.com/)
+- **Z.AI**: [open.bigmodel.cn](https://open.bigmodel.cn/)
+- **B.AI**: [chat.b.ai](https://chat.b.ai/)
+- **Groq**: [console.groq.com](https://console.groq.com/)
+- **OpenRouter**: [openrouter.ai](https://openrouter.ai/)
+- **free-claude-code**: [github.com/Alishahryar1/free-claude-code](https://github.com/Alishahryar1/free-claude-code)
