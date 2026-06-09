@@ -1,5 +1,5 @@
 #!/bin/bash
-# Меню Claude Code (облако) - Linux версия
+# Меню Claude Code - Linux версия
 
 set -e
 
@@ -936,7 +936,7 @@ while true; do
     done
     
     local choice
-    choice="$(show_tui_numbered_menu "Claude" "Claude Code - провайдер" "Z.AI · NIM · Groq · OpenRouter · B.AI (через free-claude-code)" $update_hint "${menu_items[@]}")"
+    choice="$(show_tui_numbered_menu "Claude" "Claude Code - провайдер" "Z.AI · NIM · Groq · OpenRouter · B.AI (через free-claude-code)" ${update_hint:+"$update_hint"} "${menu_items[@]}")"
     
     if [ "${choice:-0}" -eq 0 ]; then
         continue

@@ -901,7 +901,7 @@ while true; do
     done
     
     local choice
-    choice="$(show_tui_framed_menu "OpenCode" "OpenCode - выбор провайдера" "Z.AI · NIM · OpenRouter · B.AI (OpenAI-compatible)" $update_hint "${menu_items[@]}")"
+    choice="$(show_tui_framed_menu "OpenCode" "OpenCode - выбор провайдера" "Z.AI · NIM · OpenRouter · B.AI (OpenAI-compatible)" ${update_hint:+"$update_hint"} "${menu_items[@]}")"
     
     if [ "${choice:-0}" -eq 0 ]; then
         continue

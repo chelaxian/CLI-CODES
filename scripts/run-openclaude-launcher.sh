@@ -497,7 +497,7 @@ while true; do
         menu_items+=("${profile##*|}")
     done
 
-    choice="$(show_tui_numbered_menu "OpenClaude" "OpenClaude - выбор профиля" "Z.AI · NIM · Groq · B.AI · OpenRouter" $update_hint "${menu_items[@]}")"
+    choice="$(show_tui_numbered_menu "OpenClaude" "OpenClaude - выбор профиля" "Z.AI · NIM · Groq · B.AI · OpenRouter" ${update_hint:+"$update_hint"} "${menu_items[@]}")"
 
     if [ "${choice:-0}" -eq 0 ]; then
         continue

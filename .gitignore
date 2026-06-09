@@ -43,3 +43,7 @@ venv/
 
 # free-claude-code (cloned separately)
 free-claude-code/
+
+# other local files
+test-parse-final.ps1
+docs/DEPLOY-FROM-SCRATCH.md

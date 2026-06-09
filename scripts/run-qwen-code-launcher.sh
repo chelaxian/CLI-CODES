@@ -677,7 +677,7 @@ while true; do
     done
     
     local choice
-    choice="$(show_tui_numbered_menu "Qwen" "Qwen Code - выбор провайдера" "Z.AI · NIM · OpenRouter · B.AI" $update_hint "${menu_items[@]}")"
+    choice="$(show_tui_numbered_menu "Qwen" "Qwen Code - выбор провайдера" "Z.AI · NIM · OpenRouter · B.AI" ${update_hint:+"$update_hint"} "${menu_items[@]}")"
     
     if [ "${choice:-0}" -eq 0 ]; then
         continue
