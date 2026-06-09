@@ -227,8 +227,7 @@ CLI-CODES/
 │   └── ...
 ├── qwen-sessions/             # Профили сессий Qwen Code
 └── docs/
-    ├── MANUAL-SETUP.md        # Ручная установка
-    └── DEPLOY-FROM-SCRATCH.md # Развёртывание с нуля
+    └── MANUAL-SETUP.md        # Ручная установка
 ```
 
 ---
