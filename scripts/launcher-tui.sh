@@ -746,7 +746,7 @@ test_launcher_updates() {
                 if [ -n "$hints" ]; then
                     hints="$hints | ${name}: обновление $latest — npm i -g ${agent_npm_package}@latest"
                 else
-                    hints="${name}: обновление $latest — npm i -g ${agent_npm_package}@latest"
+                    hints="ОБНОВЛЕНИЕ: ${name}: обновление $latest — npm i -g ${agent_npm_package}@latest"
                 fi
             fi
         fi
