@@ -336,29 +336,15 @@ function Invoke-ClaudeCloudProfile {
       if ([string]::IsNullOrWhiteSpace($mid)) {
         throw "Нет customModelId в claude-cloud-launcher-state.json. Выберите модель в «Другая модель»."
       }
-      $baiKey = Resolve-ApiKeyOrPrompt -CurrentKey $null -ProviderName "B.AI" -HelpUrl "https://chat.b.ai/key"
-      if ([string]::IsNullOrWhiteSpace($baiKey)) { return }
-      $env:OPENAI_API_KEY = $baiKey
-      $env:OPENAI_BASE_URL = "https://api.b.ai/v1"
-      $env:OPENAI_MODEL = $mid.Trim()
-      $env:CLAUDE_CODE_USE_OPENAI = "1"
-      $claudeExe = Resolve-ClaudeExe
-      if (-not $claudeExe) { throw "Claude Code CLI не найден." }
-      Invoke-CliCommand -ExePath $claudeExe
+      & $SessionScript -Provider bai -ZaiAnthropicModelId $mid.Trim() -ClaudeTools default `
+        -ClaudeMemMaxWaitSec 25 -SkipCommonPreamble
       return
     }
     default {
       if ($ProfileId -like "claude-bai-*") {
         $mid = $ProfileId.Substring("claude-bai-".Length)
-        $baiKey = Resolve-ApiKeyOrPrompt -CurrentKey $null -ProviderName "B.AI" -HelpUrl "https://chat.b.ai/key"
-        if ([string]::IsNullOrWhiteSpace($baiKey)) { return }
-        $env:OPENAI_API_KEY = $baiKey
-        $env:OPENAI_BASE_URL = "https://api.b.ai/v1"
-        $env:OPENAI_MODEL = $mid
-        $env:CLAUDE_CODE_USE_OPENAI = "1"
-        $claudeExe = Resolve-ClaudeExe
-        if (-not $claudeExe) { throw "Claude Code CLI не найден." }
-        Invoke-CliCommand -ExePath $claudeExe
+        & $SessionScript -Provider bai -ZaiAnthropicModelId $mid -ClaudeTools default `
+          -ClaudeMemMaxWaitSec 60 -SkipCommonPreamble
         return
       }
       # Dynamic Z.AI dispatch
