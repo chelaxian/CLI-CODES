@@ -619,7 +619,6 @@ while ($true) {
         Remove-Item Env:ANTHROPIC_DEFAULT_OPUS_MODEL, Env:ANTHROPIC_DEFAULT_SONNET_MODEL, Env:ANTHROPIC_DEFAULT_HAIKU_MODEL -ErrorAction SilentlyContinue
         Remove-Item Env:OPENAI_BASE_URL, Env:OPENAI_API_KEY, Env:OPENAI_MODEL, Env:CLAUDE_CODE_USE_OPENAI -ErrorAction SilentlyContinue
         Remove-Item Env:OPENROUTER_API_KEY, Env:NVIDIA_NIM_API_KEY, Env:BAI_API_KEY, Env:API_TIMEOUT_MS -ErrorAction SilentlyContinue
-        & $SessionScript -Provider zai -PrepareOnly -SkipClaudeMem -SkipCommonPreamble
         $claudeSettingsPath = Join-Path $HOME ".claude\settings.json"
         if (Test-Path -LiteralPath $claudeSettingsPath) {
           try {
@@ -628,12 +627,17 @@ while ($true) {
               foreach ($ek in @("ANTHROPIC_API_KEY","ANTHROPIC_BASE_URL","ANTHROPIC_AUTH_TOKEN","ANTHROPIC_DEFAULT_OPUS_MODEL","ANTHROPIC_DEFAULT_SONNET_MODEL","ANTHROPIC_DEFAULT_HAIKU_MODEL","OPENAI_BASE_URL","OPENAI_API_KEY","OPENAI_MODEL","CLAUDE_CODE_USE_OPENAI","OPENROUTER_API_KEY","NVIDIA_NIM_API_KEY","BAI_API_KEY","API_TIMEOUT_MS")) {
                 if ($csObj.env.PSObject.Properties[$ek]) { $csObj.env.PSObject.Properties.Remove($ek) }
               }
+              if (-not $csObj.env.PSObject.Properties["CLAUDE_CODE_ATTRIBUTION_HEADER"]) {
+                $csObj.env | Add-Member -NotePropertyName "CLAUDE_CODE_ATTRIBUTION_HEADER" -NotePropertyValue "0" -Force
+              }
+              if (-not $csObj.env.PSObject.Properties["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"]) {
+                $csObj.env | Add-Member -NotePropertyName "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC" -NotePropertyValue "1" -Force
+              }
               $json = ($csObj | ConvertTo-Json -Depth 10)
               [System.IO.File]::WriteAllText($claudeSettingsPath, $json, (New-Object System.Text.UTF8Encoding($false)))
             }
           } catch {}
         }
-        Restore-ProcessEnvFromUser -Key "ANTHROPIC_API_KEY"
         Clear-Host
         Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Cyan
         Write-Host "  Запуск Claude Code (ванильный запуск)" -ForegroundColor Cyan

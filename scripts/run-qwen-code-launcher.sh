@@ -760,6 +760,9 @@ while true; do
                     unset OPENAI_API_KEY OPENAI_BASE_URL OPENAI_MODEL API_TIMEOUT_MS QWEN_CODE_MAX_OUTPUT_TOKENS QWEN_CODE_EMIT_TOOL_USE_SUMMARIES
                     unset ANTHROPIC_BASE_URL ANTHROPIC_API_KEY ANTHROPIC_AUTH_TOKEN ANTHROPIC_DEFAULT_OPUS_MODEL ANTHROPIC_DEFAULT_SONNET_MODEL ANTHROPIC_DEFAULT_HAIKU_MODEL
                     unset DASHSCOPE_API_KEY QWEN_API_KEY ALIYUN_API_KEY
+                    if [ -n "$(get_current_api_key BAILIAN_CODING_PLAN 2>/dev/null)" ]; then
+                        export BAILIAN_CODING_PLAN_API_KEY="$(get_current_api_key BAILIAN_CODING_PLAN)"
+                    fi
                     clear
                     echo -e "${CYAN}═══════════════════════════════════════════════════${RESET}"
                     echo -e "${CYAN}  Запуск Qwen Code (ванильный запуск)${RESET}"
