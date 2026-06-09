@@ -94,32 +94,6 @@ fi
 
 # ─── Выбор инструментов ──────────────────────────────────────────────────────
 
-step "ЧТО УСТАНОВИТЬ?"
-
-if [ -d "$INSTALL_DIR/.git" ]; then
-    current_commit="$(cd "$INSTALL_DIR" && git rev-parse --short HEAD 2>/dev/null || true)"
-    if [ -n "$current_commit" ]; then
-        echo -e "${GRAY}Версия installer: ${current_commit}${RESET}"
-        echo ""
-    fi
-fi
-
-echo -e "  ${CYAN}[0]${RESET} Установка системных зависимостей (git, node, npm, curl)"
-echo -e "  ${YELLOW}[1]${RESET} Установка сразу ВСЕХ агентов  ← рекомендуется"
-echo -e "  ${GREEN}[2]${RESET} Только Qwen Code"
-echo -e "  ${GREEN}[3]${RESET} Только Claude Code"
-echo -e "  ${GREEN}[4]${RESET} Только OpenCode"
-echo -e "  ${GREEN}[5]${RESET} Только Freebuff"
-echo -e "  ${GREEN}[6]${RESET} Только OpenClaude"
-echo -e "  ${YELLOW}[7]${RESET} Обновление ВСЕХ компонентов (проверяет актуальность)"
-echo -e "  ${RED}[8]${RESET} Полное удаление проекта с ПК (uninstall)"
-echo -e "  ${CYAN}[9]${RESET} Обновить ярлыки на рабочем столе (актуализация, скрытие скриптов)"
-echo -e "  ${GRAY}[X]${RESET} Выход из мастера установки"
-echo ""
-
-read -p "Ваш выбор [1]: " install_choice
-install_choice="${install_choice:-1}"
-
 INSTALL_QWEN=false
 INSTALL_CLAUDE=false
 INSTALL_OPENCODE=false
@@ -129,6 +103,60 @@ DO_UNINSTALL=false
 DO_UPDATE=false
 DO_SYNC_SHORTCUTS=false
 DO_INSTALL_DEPS=false
+
+while true; do
+    step "ЧТО УСТАНОВИТЬ?"
+
+    if [ -d "$INSTALL_DIR/.git" ]; then
+        current_commit="$(cd "$INSTALL_DIR" && git rev-parse --short HEAD 2>/dev/null || true)"
+        if [ -n "$current_commit" ]; then
+            echo -e "${GRAY}Версия installer: ${current_commit}${RESET}"
+            echo ""
+        fi
+    fi
+
+    echo -e "  ${CYAN}[0]${RESET} Установка системных зависимостей (git, node, npm, curl)"
+    echo -e "  ${YELLOW}[1]${RESET} Установка сразу ВСЕХ агентов  ← рекомендуется"
+    echo -e "  ${GREEN}[2]${RESET} Только Qwen Code"
+    echo -e "  ${GREEN}[3]${RESET} Только Claude Code"
+    echo -e "  ${GREEN}[4]${RESET} Только OpenCode"
+    echo -e "  ${GREEN}[5]${RESET} Только Freebuff"
+    echo -e "  ${GREEN}[6]${RESET} Только OpenClaude"
+    echo -e "  ${YELLOW}[7]${RESET} Обновление ВСЕХ компонентов (проверяет актуальность)"
+    echo -e "  ${RED}[8]${RESET} Полное удаление проекта с ПК (uninstall)"
+    echo -e "  ${CYAN}[9]${RESET} Обновить ярлыки на рабочем столе (актуализация, скрытие скриптов)"
+    echo -e "  ${GRAY}[X]${RESET} Выход из мастера установки"
+    echo ""
+
+    read -p "Ваш выбор [1]: " install_choice
+    install_choice="${install_choice:-1}"
+    install_choice="$(echo "$install_choice" | tr '[:lower:]' '[:upper:]')"
+
+    INSTALL_QWEN=false
+    INSTALL_CLAUDE=false
+    INSTALL_OPENCODE=false
+    INSTALL_FREEBUFF=false
+    INSTALL_OPENCLAUDE=false
+    DO_UNINSTALL=false
+    DO_UPDATE=false
+    DO_SYNC_SHORTCUTS=false
+    DO_INSTALL_DEPS=false
+
+    case "$install_choice" in
+        0) DO_INSTALL_DEPS=true; break ;;
+        1) INSTALL_QWEN=true; INSTALL_CLAUDE=true; INSTALL_OPENCODE=true; INSTALL_FREEBUFF=true; INSTALL_OPENCLAUDE=true; break ;;
+        2) INSTALL_QWEN=true; break ;;
+        3) INSTALL_CLAUDE=true; break ;;
+        4) INSTALL_OPENCODE=true; break ;;
+        5) INSTALL_FREEBUFF=true; break ;;
+        6) INSTALL_OPENCLAUDE=true; break ;;
+        7) DO_UPDATE=true; break ;;
+        8) DO_UNINSTALL=true; break ;;
+        9) DO_SYNC_SHORTCUTS=true; break ;;
+        X|Q) echo -e "${YELLOW}Выход.${RESET}"; exit 0 ;;
+        *) warn "Неверный выбор. Попробуйте снова." ;;
+    esac
+done
 
 # Установка системных зависимостей
 install_system_dependencies() {
@@ -230,21 +258,6 @@ install_system_dependencies() {
         fi
     done
 }
-
-case "$install_choice" in
-    0) DO_INSTALL_DEPS=true ;;
-    1) INSTALL_QWEN=true; INSTALL_CLAUDE=true; INSTALL_OPENCODE=true; INSTALL_FREEBUFF=true; INSTALL_OPENCLAUDE=true ;;
-    2) INSTALL_QWEN=true ;;
-    3) INSTALL_CLAUDE=true ;;
-    4) INSTALL_OPENCODE=true ;;
-    5) INSTALL_FREEBUFF=true ;;
-    6) INSTALL_OPENCLAUDE=true ;;
-    7) DO_UPDATE=true ;;
-    8) DO_UNINSTALL=true ;;
-    9) DO_SYNC_SHORTCUTS=true ;;
-    X|x|Q|q) echo -e "${YELLOW}Выход.${RESET}"; exit 0 ;;
-    *) warn "Неверный выбор. Устанавливаем все инструменты."; INSTALL_QWEN=true; INSTALL_CLAUDE=true; INSTALL_OPENCODE=true; INSTALL_FREEBUFF=true; INSTALL_OPENCLAUDE=true ;;
-esac
 
 if [ "$DO_INSTALL_DEPS" = true ]; then
     install_system_dependencies

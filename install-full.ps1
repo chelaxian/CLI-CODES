@@ -168,27 +168,55 @@ if (Test-Path -LiteralPath (Join-Path $InstallDir ".git")) {
 
 Write-Host ""
 
-Write-Status "======================================================================" "Cyan"
-Write-Status "ЧТО УСТАНАВЛИВАЕМ?" "Magenta"
-Write-Status "======================================================================" "Cyan"
-Write-Host ""
-Write-Status "  [0] Установка системных зависимостей (git, node, npm, curl)" "Cyan"
-Write-Status "  [1] Установка сразу ВСЕХ агентов  ← рекомендуется" "Yellow"
-Write-Status "  [2] Только Qwen Code" "Green"
-Write-Status "  [3] Только Claude Code" "Green"
-Write-Status "  [4] Только OpenCode" "Green"
-Write-Status "  [5] Только Freebuff" "Green"
-Write-Status "  [6] Только OpenClaude" "Green"
-Write-Status "  [7] Обновление ВСЕХ компонентов (проверяет актуальность)" "Yellow"
-Write-Status "  [8] Полное удаление проекта с ПК (uninstall)" "Red"
-Write-Status "  [9] Обновить ярлыки на рабочем столе (актуализация, скрытие скриптов)" "Cyan"
-Write-Status "  [X] Выход из мастера установки" "Gray"
-Write-Host ""
+$installQwen = $false
+$installClaude = $false
+$installOpenCode = $false
+$installFreebuff = $false
+$installOpenClaude = $false
 
-$installChoice = Read-Host "Ваш выбор [1]"
+:menuLoop while ($true) {
+    Write-Status "======================================================================" "Cyan"
+    Write-Status "ЧТО УСТАНАВЛИВАЕМ?" "Magenta"
+    Write-Status "======================================================================" "Cyan"
+    Write-Host ""
+    Write-Status "  [0] Установка системных зависимостей (git, node, npm, curl)" "Cyan"
+    Write-Status "  [1] Установка сразу ВСЕХ агентов  ← рекомендуется" "Yellow"
+    Write-Status "  [2] Только Qwen Code" "Green"
+    Write-Status "  [3] Только Claude Code" "Green"
+    Write-Status "  [4] Только OpenCode" "Green"
+    Write-Status "  [5] Только Freebuff" "Green"
+    Write-Status "  [6] Только OpenClaude" "Green"
+    Write-Status "  [7] Обновление ВСЕХ компонентов (проверяет актуальность)" "Yellow"
+    Write-Status "  [8] Полное удаление проекта с ПК (uninstall)" "Red"
+    Write-Status "  [9] Обновить ярлыки на рабочем столе (актуализация, скрытие скриптов)" "Cyan"
+    Write-Status "  [X] Выход из мастера установки" "Gray"
+    Write-Host ""
 
-if ([string]::IsNullOrWhiteSpace($installChoice)) { $installChoice = "1" }
-$installChoice = $installChoice.Trim().ToUpper()
+    $installChoice = Read-Host "Ваш выбор [1]"
+    if ([string]::IsNullOrWhiteSpace($installChoice)) { $installChoice = "1" }
+    $installChoice = $installChoice.Trim().ToUpper()
+
+    $installQwen = $false
+    $installClaude = $false
+    $installOpenCode = $false
+    $installFreebuff = $false
+    $installOpenClaude = $false
+
+    switch ($installChoice) {
+        "0" { break menuLoop }
+        "1" { $installQwen = $true; $installClaude = $true; $installOpenCode = $true; $installFreebuff = $true; $installOpenClaude = $true; break menuLoop }
+        "2" { $installQwen = $true; break menuLoop }
+        "3" { $installClaude = $true; break menuLoop }
+        "4" { $installOpenCode = $true; break menuLoop }
+        "5" { $installFreebuff = $true; break menuLoop }
+        "6" { $installOpenClaude = $true; break menuLoop }
+        "7" { break menuLoop }
+        "8" { break menuLoop }
+        "9" { break menuLoop }
+        "X" { Write-Status "Выход." "Yellow"; return }
+        default { Write-Status "Неверный выбор. Попробуйте снова." "Yellow" }
+    }
+}
 
 # ─── [0] Установка системных зависимостей ─────────────────────────────────────
 function Install-SystemDependencies {
@@ -809,23 +837,6 @@ if ($installChoice -eq "8") {
     Write-Host ""
     Read-Host "Нажмите Enter для выхода"
     return
-}
-
-$installQwen = $false
-$installClaude = $false
-$installOpenCode = $false
-$installFreebuff = $false
-$installOpenClaude = $false
-
-switch ($installChoice) {
-    "1" { $installQwen = $true; $installClaude = $true; $installOpenCode = $true; $installFreebuff = $true; $installOpenClaude = $true }
-    "2" { $installQwen = $true }
-    "3" { $installClaude = $true }
-    "4" { $installOpenCode = $true }
-    "5" { $installFreebuff = $true }
-    "6" { $installOpenClaude = $true }
-    "X" { Write-Status "Выход." "Yellow"; return }
-    default { Write-Status "Неверный выбор. Устанавливаем все инструменты." "Yellow"; $installQwen = $true; $installClaude = $true; $installOpenCode = $true; $installFreebuff = $true; $installOpenClaude = $true }
 }
 
 Write-Host ""
