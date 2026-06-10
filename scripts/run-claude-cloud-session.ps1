@@ -661,7 +661,7 @@ if ($Provider -eq "bai") {
   }
 
   $fccModel = "open_router/$baiModel"
-  $baiPort = 8085
+  $baiPort = 8088
 
   # Write .env for free-claude-code proxy (same as Linux ensure_fcc_proxy).
   $envFile = Join-Path $FreeClaudeCodeDir ".env"

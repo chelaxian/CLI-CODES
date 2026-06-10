@@ -545,8 +545,9 @@ while ($true) {
       "vanilla" {
         Remove-Item Env:OPENAI_API_KEY, Env:OPENAI_BASE_URL, Env:OPENAI_MODEL, Env:API_TIMEOUT_MS, Env:QWEN_CODE_MAX_OUTPUT_TOKENS, Env:QWEN_CODE_EMIT_TOOL_USE_SUMMARIES -ErrorAction SilentlyContinue
         Remove-Item Env:ANTHROPIC_BASE_URL, Env:ANTHROPIC_API_KEY, Env:ANTHROPIC_AUTH_TOKEN, Env:ANTHROPIC_DEFAULT_OPUS_MODEL, Env:ANTHROPIC_DEFAULT_SONNET_MODEL, Env:ANTHROPIC_DEFAULT_HAIKU_MODEL -ErrorAction SilentlyContinue
-        Remove-Item Env:DASHSCOPE_API_KEY, Env:QWEN_API_KEY, Env:ALIYUN_API_KEY -ErrorAction SilentlyContinue
         Restore-ProcessEnvFromUser -Key "BAILIAN_CODING_PLAN_API_KEY"
+        Restore-ProcessEnvFromUser -Key "DASHSCOPE_API_KEY"
+        Restore-ProcessEnvFromUser -Key "ALIYUN_API_KEY"
         Clear-Host
         Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Cyan
         Write-Host "  Запуск Qwen Code (ванильный запуск)" -ForegroundColor Cyan

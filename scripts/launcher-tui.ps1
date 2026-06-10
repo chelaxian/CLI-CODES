@@ -421,7 +421,15 @@ function Test-LauncherUpdates {
             }
           }
         }
-      } catch {}
+    } catch {
+    if ($_.Exception -is [System.Management.Automation.PipelineStoppedException] -or
+        $_.Exception.Message -match "Ctrl\+C") {
+      return
+    }
+    Write-Host ""
+    Write-Host "  Ошибка при запуске: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host ""
+  }
     }
   } catch {} finally {
     $ErrorActionPreference = $prevEAP

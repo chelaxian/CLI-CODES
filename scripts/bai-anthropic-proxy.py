@@ -22,7 +22,7 @@ BAI_API_KEY = os.environ.get("OPENROUTER_API_KEY", "") or os.environ.get("BAI_AP
 MODEL_ID = os.environ.get("MODEL", "gpt-5-nano")
 if "/" in MODEL_ID:
     MODEL_ID = MODEL_ID.split("/", 1)[1]
-PROXY_PORT = int(os.environ.get("BAI_PROXY_PORT", "8085"))
+PROXY_PORT = int(os.environ.get("BAI_PROXY_PORT", "8088"))
 HTTP_TIMEOUT = int(os.environ.get("HTTP_READ_TIMEOUT", "300"))
 
 _parsed = urlparse(BAI_BASE_URL)
@@ -274,6 +274,8 @@ class ThreadedHTTPServer(http.server.ThreadingHTTPServer):
 
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else PROXY_PORT
+    if not BAI_API_KEY:
+        print(f"WARNING: BAI_API_KEY / OPENROUTER_API_KEY is empty! B.AI requests will fail.", flush=True)
     server = ThreadedHTTPServer(("127.0.0.1", port), ProxyHandler)
     print(f"bai-proxy listening on 127.0.0.1:{port}", flush=True)
     try:

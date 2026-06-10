@@ -84,6 +84,26 @@ get_current_api_key() {
             fi
             if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then echo "" ; else echo "$key" | xargs ; fi
             ;;
+        "DASHSCOPE")
+            local key="${DASHSCOPE_API_KEY:-}"
+            if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then
+                key=$(grep "^export DASHSCOPE_API_KEY=" "$HOME/.bashrc" 2>/dev/null | cut -d'"' -f2)
+            fi
+            if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then
+                key=$(grep "^export DASHSCOPE_API_KEY=" "$HOME/.zshrc" 2>/dev/null | cut -d'"' -f2)
+            fi
+            if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then echo "" ; else echo "$key" | xargs ; fi
+            ;;
+        "ALIYUN")
+            local key="${ALIYUN_API_KEY:-}"
+            if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then
+                key=$(grep "^export ALIYUN_API_KEY=" "$HOME/.bashrc" 2>/dev/null | cut -d'"' -f2)
+            fi
+            if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then
+                key=$(grep "^export ALIYUN_API_KEY=" "$HOME/.zshrc" 2>/dev/null | cut -d'"' -f2)
+            fi
+            if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then echo "" ; else echo "$key" | xargs ; fi
+            ;;
         *)
             echo ""
             ;;

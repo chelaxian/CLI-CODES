@@ -650,15 +650,21 @@ invoke_claude_cloud_profile() {
                 bai_model="$mid"
             fi
 
-            local bai_proxy_port="8085"
+            local bai_proxy_port="8088"
             local bai_proxy_script="$SCRIPT_DIR/bai-anthropic-proxy.py"
             local bai_proxy_log="$HOME/.qwen-local-setup/bai-proxy.log"
             mkdir -p "$HOME/.qwen-local-setup"
 
+            local bai_resolved_key="${BAI_API_KEY:-}"
+            if [ -z "$bai_resolved_key" ] || [ "$bai_resolved_key" = "__SET_ME__" ]; then
+                bai_resolved_key=$(get_current_api_key "BAI")
+            fi
+            export BAI_API_KEY="$bai_resolved_key"
+
             if ! (ss -tlnp 2>/dev/null | grep -q ":${bai_proxy_port} " || nc -z 127.0.0.1 "$bai_proxy_port" 2>/dev/null); then
                 printf "${CYAN}Запуск B.AI Anthropic proxy на порту ${bai_proxy_port}...${RESET}\n" >&3
-                BAI_API_KEY="${BAI_API_KEY:-}" \
-                OPENROUTER_API_KEY="${BAI_API_KEY:-}" \
+                BAI_API_KEY="$bai_resolved_key" \
+                OPENROUTER_API_KEY="$bai_resolved_key" \
                 OPENAI_BASE_URL="https://api.b.ai/v1" \
                 MODEL="$bai_model" \
                 HTTP_READ_TIMEOUT=300 \
