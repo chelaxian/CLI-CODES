@@ -847,7 +847,10 @@ invoke_custom_model_wizard() {
 if [ "${OPENCODE_LAUNCHER_QUICK:-0}" = "1" ]; then
     if state=$(get_launcher_state); then
         if resolved_id=$(resolve_profile_from_state "$state"); then
-            invoke_opencode_profile "$resolved_id"
+            if invoke_opencode_profile "$resolved_id" 2>/dev/null; then
+                exit 0
+            fi
+            invoke_opencode_dynamic_fallback "$resolved_id" 2>/dev/null
             exit $?
         fi
     fi
@@ -958,7 +961,9 @@ while true; do
             
             profile_id=$(echo "${group_items[$((sub_choice-1))]}" | cut -d'|' -f1)
             save_launcher_state "$profile_id"
-            invoke_opencode_profile "$profile_id"
+            if ! invoke_opencode_profile "$profile_id" 2>/dev/null; then
+                invoke_opencode_dynamic_fallback "$profile_id" || true
+            fi
             continue
             ;;
         "native-login")

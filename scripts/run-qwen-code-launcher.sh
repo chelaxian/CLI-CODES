@@ -637,7 +637,10 @@ invoke_qwen_dynamic_fallback() {
 if [ "${QWEN_CODE_LAUNCHER_QUICK:-0}" = "1" ]; then
     if state=$(get_launcher_state); then
         if resolved_id=$(resolve_profile_from_state "$state"); then
-            invoke_qwen_profile "$resolved_id"
+            if invoke_qwen_profile "$resolved_id" 2>/dev/null; then
+                exit 0
+            fi
+            invoke_qwen_dynamic_fallback "$resolved_id" 2>/dev/null
             exit $?
         fi
     fi
