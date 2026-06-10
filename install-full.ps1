@@ -1142,9 +1142,16 @@ try {
     $shortcutScript = Join-Path $scriptsDir "create-desktop-shortcuts.ps1"
     if (Test-Path -LiteralPath $shortcutScript) {
         $shortcutArgs = @("-RepoRoot", $InstallDir)
-        & $psExe -NoProfile -ExecutionPolicy Bypass -File $shortcutScript @shortcutArgs 2>$null
+        $scErr = & $psExe -NoProfile -ExecutionPolicy Bypass -File $shortcutScript @shortcutArgs 2>&1
+        $scFailed = $scErr | Where-Object { $_ -is [System.Management.Automation.ErrorRecord] }
+        if ($scFailed) {
+            Write-Status "  [WARN] create-desktop-shortcuts errors:" "Yellow"
+            foreach ($e in $scFailed) { Write-Status "    $e" "Red" }
+        }
     }
-} catch { }
+} catch {
+    Write-Status "  [WARN] Shortcut creation failed: $($_.Exception.Message)" "Yellow"
+}
 
 Write-Host ""
 Write-Status "======================================================================" "Cyan"

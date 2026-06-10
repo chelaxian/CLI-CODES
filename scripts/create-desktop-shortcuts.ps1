@@ -92,7 +92,7 @@ function New-LauncherShortcut {
     [string]$Name,
     [string]$ScriptFile
   )
-  $launcher = Join-Path $RepoRoot "scripts" $ScriptFile
+  $launcher = Join-Path (Join-Path $RepoRoot "scripts") $ScriptFile
   if (-not (Test-Path -LiteralPath $launcher)) { return }
 
   $cmdPath = Join-Path $cloudFolder "$Name.cmd"
