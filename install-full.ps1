@@ -7,6 +7,48 @@ try { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::
 
 $ErrorActionPreference = "Stop"
 
+function Get-RealUserProfilePath {
+    try {
+        $explorer = Get-Process -Name explorer -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($null -ne $explorer) {
+            $wmiProc = Get-WmiObject Win32_Process -Filter "ProcessId='$($explorer.Id)'" -ErrorAction SilentlyContinue
+            if ($wmiProc) {
+                $owner = $wmiProc.GetOwner()
+                if ($owner -and $owner.User -and $owner.Domain) {
+                    $acct = New-Object System.Security.Principal.NTAccount($owner.Domain, $owner.User)
+                    $sid = $acct.Translate([System.Security.Principal.SecurityIdentifier]).Value
+                    $profilePath = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\$sid" -ErrorAction SilentlyContinue).ProfileImagePath
+                    if ($profilePath -and (Test-Path -LiteralPath $profilePath)) { return $profilePath }
+                }
+            }
+        }
+    } catch {}
+    return $env:USERPROFILE
+}
+
+function Repair-ScriptEncoding {
+    param([string]$Dir)
+    if (-not (Test-Path -LiteralPath $Dir)) { return 0 }
+    $bomEnc = New-Object System.Text.UTF8Encoding($true)
+    $count = 0
+    Get-ChildItem -LiteralPath $Dir -Filter "*.ps1" -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
+        try {
+            $bytes = [System.IO.File]::ReadAllBytes($_.FullName)
+            if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) { return }
+            $content = [System.IO.File]::ReadAllText($_.FullName, (New-Object System.Text.UTF8Encoding($false)))
+            [System.IO.File]::WriteAllText($_.FullName, $content, $bomEnc)
+            $count++
+        } catch {}
+    }
+    return $count
+}
+
+function Get-PreferredPsExe {
+    $pwsh = Get-Command pwsh.exe -ErrorAction SilentlyContinue
+    if ($pwsh) { return $pwsh.Source }
+    return "powershell.exe"
+}
+
 if (-not $RepoUrl) { $RepoUrl = "https://github.com/chelaxian/CLI-CODES.git" }
 if (-not $InstallDir) { $InstallDir = "" }
 
@@ -17,7 +59,7 @@ function Write-Status($Text, $Color = "White") {
 }
 
 if (-not $InstallDir) {
-    $InstallDir = Join-Path $env:USERPROFILE "CLI-CODES"
+    $InstallDir = Join-Path (Get-RealUserProfilePath) "CLI-CODES"
 }
 
 try { Clear-Host } catch { }
@@ -131,8 +173,10 @@ if (Test-Path -LiteralPath (Join-Path $InstallDir ".git")) {
         $ErrorActionPreference = $prevEAP
 
         if ($code -eq 0) {
-            Write-Status "  [OK] Репозиторий обновлён" "Green"
-        } else {
+                Write-Status "  [OK] Репозиторий обновлён" "Green"
+                $fixedEnc = Repair-ScriptEncoding (Join-Path $InstallDir "scripts")
+                if ($fixedEnc -gt 0) { Write-Status "  [OK] UTF-8 BOM applied to $fixedEnc scripts" "DarkGray" }
+            } else {
             Write-Status "  [WARN] git pull failed (code $code). Using local files." "Yellow"
             if ($out) { Write-Host $out }
         }
@@ -164,6 +208,8 @@ if (Test-Path -LiteralPath (Join-Path $InstallDir ".git")) {
         return
     }
     Write-Status "  [OK] Репозиторий клонирован: $InstallDir" "Green"
+    $fixedEnc = Repair-ScriptEncoding (Join-Path $InstallDir "scripts")
+    if ($fixedEnc -gt 0) { Write-Status "  [OK] UTF-8 BOM applied to $fixedEnc scripts" "DarkGray" }
 }
 
 Write-Host ""
@@ -320,10 +366,13 @@ function Sync-LauncherShortcuts {
       [switch]$Force
     )
 
-    $desktop = [Environment]::GetFolderPath("Desktop")
-    if (-not $desktop -or -not (Test-Path -LiteralPath $desktop)) {
-      $desktop = Join-Path $env:USERPROFILE "Desktop"
-      if (-not (Test-Path -LiteralPath $desktop)) { $desktop = $env:USERPROFILE }
+    $_rp = Get-RealUserProfilePath
+    $desktop = Join-Path $_rp "Desktop"
+    if (-not (Test-Path -LiteralPath $desktop)) {
+      $desktop = [Environment]::GetFolderPath("Desktop")
+      if (-not $desktop -or -not (Test-Path -LiteralPath $desktop)) {
+        $desktop = Join-Path $env:USERPROFILE "Desktop"
+      }
     }
 
     $hiddenDir = Join-Path $desktop "Cloud Launchers"
@@ -356,8 +405,7 @@ function Sync-LauncherShortcuts {
     }
 
     $scriptsDir = Join-Path $RepoDir "scripts"
-    $psExe = (Get-Command powershell.exe -ErrorAction SilentlyContinue).Source
-    if (-not $psExe) { $psExe = "powershell.exe" }
+    $psExe = Get-PreferredPsExe
 
     function Test-CliInstalled([string]$CmdName) {
       $c = Get-Command $CmdName -ErrorAction SilentlyContinue
@@ -413,7 +461,7 @@ function Sync-LauncherShortcuts {
       $cmdPath = Join-Path $hiddenDir "$Name.cmd"
       $lnkPath = Join-Path $hiddenDir "$Name.lnk"
       $created = $false
-      $cmdContent = "@echo off`r`nchcp 65001 >nul 2>`&1`r`npowershell -NoProfile -ExecutionPolicy Bypass -Command `"& '$launcher'`"`r`nif ($LASTEXITCODE -ne 0) pause"
+      $cmdContent = "@echo off`r`nchcp 65001 >nul 2>`&1`r`nset `"PS=powershell`"`r`nwhere pwsh >nul 2>`&1 && set `"PS=pwsh`"`r`n%PS% -NoProfile -ExecutionPolicy Bypass -Command `"& '$launcher'`"`r`nif %ERRORLEVEL% neq 0 pause"
       if ($Force -or -not (Test-Path -LiteralPath $cmdPath)) {
         $ok = Write-CmdFile-Safe -Path $cmdPath -Content $cmdContent
         if ($ok) { $created = $true }
@@ -699,10 +747,13 @@ if ($installChoice -eq "9") {
     Write-Status "======================================================================" "Cyan"
     Write-Host ""
 
-    $desktop = [Environment]::GetFolderPath("Desktop")
-    if (-not $desktop -or -not (Test-Path -LiteralPath $desktop)) {
-      $desktop = Join-Path $env:USERPROFILE "Desktop"
-      if (-not (Test-Path -LiteralPath $desktop)) { $desktop = $env:USERPROFILE }
+    $_rp = Get-RealUserProfilePath
+    $desktop = Join-Path $_rp "Desktop"
+    if (-not (Test-Path -LiteralPath $desktop)) {
+      $desktop = [Environment]::GetFolderPath("Desktop")
+      if (-not $desktop -or -not (Test-Path -LiteralPath $desktop)) {
+        $desktop = Join-Path $env:USERPROFILE "Desktop"
+      }
     }
 
     $cloudFolder = Join-Path $desktop "Cloud Launchers"
@@ -790,8 +841,12 @@ if ($installChoice -eq "8") {
     }
 
     Write-Status "Удаляю ярлыки на рабочем столе..." "Cyan"
-    $desktop = [Environment]::GetFolderPath("Desktop")
-    if (-not $desktop) { $desktop = Join-Path $env:USERPROFILE "Desktop" }
+    $_rp = Get-RealUserProfilePath
+    $desktop = Join-Path $_rp "Desktop"
+    if (-not (Test-Path -LiteralPath $desktop)) {
+      $desktop = [Environment]::GetFolderPath("Desktop")
+      if (-not $desktop) { $desktop = Join-Path $env:USERPROFILE "Desktop" }
+    }
     foreach ($name in @("Qwen Code (cloud)", "Claude Code (cloud)", "OpenCode (cloud)", "Freebuff (cloud)", "OpenClaude (cloud)", "Claude Mem Start", "Claude Mem Viewer", "Claude Mem Clear", "Obsidian")) {
         foreach ($ext in @(".cmd", ".lnk")) {
             $f = Join-Path $desktop "$name$ext"
@@ -1080,8 +1135,7 @@ Write-Status "СОЗДАНИЕ ЯРЛЫКОВ НА РАБОЧЕМ СТОЛЕ" "M
 Write-Status "======================================================================" "Cyan"
 Write-Host ""
 
-$psExe = (Get-Command powershell.exe -ErrorAction SilentlyContinue).Source
-if (-not $psExe) { $psExe = "powershell.exe" }
+$psExe = Get-PreferredPsExe
 $scriptsDir = Join-Path $InstallDir "scripts"
 
 try {

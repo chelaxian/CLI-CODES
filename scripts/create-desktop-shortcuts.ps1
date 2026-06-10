@@ -15,11 +15,31 @@ if ([string]::IsNullOrWhiteSpace($RepoRoot)) {
   $RepoRoot = Split-Path -Parent $PSScriptRoot
 }
 if ([string]::IsNullOrWhiteSpace($DesktopPath)) {
-  $DesktopPath = [Environment]::GetFolderPath("Desktop")
+  try {
+    $explorer = Get-Process -Name explorer -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($null -ne $explorer) {
+      $wmiProc = Get-WmiObject Win32_Process -Filter "ProcessId='$($explorer.Id)'" -ErrorAction SilentlyContinue
+      if ($wmiProc) {
+        $owner = $wmiProc.GetOwner()
+        if ($owner -and $owner.User -and $owner.Domain) {
+          $acct = New-Object System.Security.Principal.NTAccount($owner.Domain, $owner.User)
+          $sid = $acct.Translate([System.Security.Principal.SecurityIdentifier]).Value
+          $profilePath = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\$sid" -ErrorAction SilentlyContinue).ProfileImagePath
+          if ($profilePath) { $DesktopPath = Join-Path $profilePath "Desktop" }
+        }
+      }
+    }
+  } catch {}
+  if (-not $DesktopPath -or -not (Test-Path -LiteralPath $DesktopPath)) {
+    $DesktopPath = [Environment]::GetFolderPath("Desktop")
+  }
+  if (-not $DesktopPath -or -not (Test-Path -LiteralPath $DesktopPath)) {
+    $DesktopPath = Join-Path $env:USERPROFILE "Desktop"
+  }
 }
 
 $cmdExe = (Get-Command cmd.exe -ErrorAction Stop).Source
-$psExe  = (Get-Command powershell.exe -ErrorAction Stop).Source
+$psExe  = if (Get-Command pwsh.exe -ErrorAction SilentlyContinue) { (Get-Command pwsh.exe -ErrorAction SilentlyContinue).Source } else { (Get-Command powershell.exe -ErrorAction Stop).Source }
 $ws = New-Object -ComObject WScript.Shell
 
 $launcherClaude = Join-Path $RepoRoot "scripts\run-claude-cloud-launcher.ps1"
@@ -76,7 +96,7 @@ function New-LauncherShortcut {
   if (-not (Test-Path -LiteralPath $launcher)) { return }
 
   $cmdPath = Join-Path $cloudFolder "$Name.cmd"
-  $cmdContent = "@echo off`r`nchcp 65001 >nul 2>`&1`r`npowershell -NoProfile -ExecutionPolicy Bypass -Command `"& '$launcher'`"`r`nif ($LASTEXITCODE -ne 0) pause"
+  $cmdContent = "@echo off`r`nchcp 65001 >nul 2>`&1`r`nset `"PS=powershell`"`r`nwhere pwsh >nul 2>`&1 && set `"PS=pwsh`"`r`n%PS% -NoProfile -ExecutionPolicy Bypass -Command `"& '$launcher'`"`r`nif %ERRORLEVEL% neq 0 pause"
   [System.IO.File]::WriteAllText($cmdPath, $cmdContent, (New-Object System.Text.UTF8Encoding($false)))
 
   $lnkPath = Join-Path $cloudFolder "$Name.lnk"

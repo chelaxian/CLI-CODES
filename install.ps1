@@ -15,11 +15,17 @@ $cacheBust = "?t=$([DateTime]::UtcTicks)"
 $localRepo = Join-Path $env:USERPROFILE "CLI-CODES"
 $localInstallFull = Join-Path $localRepo "install-full.ps1"
 
+$psExe = if (Get-Command pwsh.exe -ErrorAction SilentlyContinue) {
+    (Get-Command pwsh.exe -ErrorAction SilentlyContinue).Source
+} else {
+    "powershell.exe"
+}
+
 if (Test-Path -LiteralPath $localInstallFull) {
     # Local copy: always up-to-date after `git pull`. Safer than CDN.
     Write-Host ""
     Write-Host "  CLI-CODES :: запуск локального install-full.ps1" -ForegroundColor Cyan
-    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $localInstallFull
+    & $psExe -NoProfile -ExecutionPolicy Bypass -File $localInstallFull
     exit $LASTEXITCODE
 }
 
@@ -41,7 +47,7 @@ try {
     return
 }
 
-& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $tmpFile
+& $psExe -NoProfile -ExecutionPolicy Bypass -File $tmpFile
 $exitCode = $LASTEXITCODE
 Remove-Item -LiteralPath $tmpFile -Force -ErrorAction SilentlyContinue
 exit $exitCode
