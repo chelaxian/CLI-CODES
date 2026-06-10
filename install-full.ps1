@@ -1138,16 +1138,18 @@ Write-Host ""
 $psExe = Get-PreferredPsExe
 $scriptsDir = Join-Path $InstallDir "scripts"
 
+$_deskPath = Get-RealUserProfilePath
+if ($_deskPath) { $_deskPath = Join-Path $_deskPath "Desktop" }
+if (-not $_deskPath -or -not (Test-Path -LiteralPath $_deskPath)) {
+    $_deskPath = [Environment]::GetFolderPath("Desktop")
+}
+
 try {
     $shortcutScript = Join-Path $scriptsDir "create-desktop-shortcuts.ps1"
     if (Test-Path -LiteralPath $shortcutScript) {
         $shortcutArgs = @("-RepoRoot", $InstallDir)
-        $scErr = & $psExe -NoProfile -ExecutionPolicy Bypass -File $shortcutScript @shortcutArgs 2>&1
-        $scFailed = $scErr | Where-Object { $_ -is [System.Management.Automation.ErrorRecord] }
-        if ($scFailed) {
-            Write-Status "  [WARN] create-desktop-shortcuts errors:" "Yellow"
-            foreach ($e in $scFailed) { Write-Status "    $e" "Red" }
-        }
+        if ($_deskPath) { $shortcutArgs += @("-DesktopPath", $_deskPath) }
+        & $psExe -NoProfile -ExecutionPolicy Bypass -File $shortcutScript @shortcutArgs
     }
 } catch {
     Write-Status "  [WARN] Shortcut creation failed: $($_.Exception.Message)" "Yellow"
