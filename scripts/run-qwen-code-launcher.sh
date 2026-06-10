@@ -861,7 +861,7 @@ while true; do
     fi
     
     if ! invoke_qwen_profile "$profile_id" 2>/dev/null; then
-        invoke_qwen_dynamic_fallback "$profile_id"
+        invoke_qwen_dynamic_fallback "$profile_id" || true
     fi
     continue
 done
