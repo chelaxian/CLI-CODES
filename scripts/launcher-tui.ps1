@@ -1,4 +1,4 @@
-# TUI-меню для лаунчеров Qwen / Claude (рамки, прокрутка, баннер).
+﻿# TUI-меню для лаунчеров Qwen / Claude (рамки, прокрутка, баннер).
 
 function Set-LauncherTuiConsole {
   try {

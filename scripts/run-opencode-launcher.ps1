@@ -1,4 +1,4 @@
-
+﻿
 . (Join-Path $PSScriptRoot "ensure-streaming-friendly-terminal.ps1")
 . (Join-Path $PSScriptRoot "launcher-tui.ps1")
 . (Join-Path $PSScriptRoot "launcher-provider-models.ps1")

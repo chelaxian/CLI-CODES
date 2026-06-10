@@ -1,4 +1,4 @@
-# Создаёт ярлыки на рабочем столе: скрытая папка "Cloud Launchers" с техническими файлами,
+﻿# Создаёт ярлыки на рабочем столе: скрытая папка "Cloud Launchers" с техническими файлами,
 # и ровно 5 видимых ярлыков на рабочем столе (Qwen Code, Claude Code, OpenCode, Freebuff, OpenClaude).
 # При повторном запуске перемещает старые файлы проекта из корня рабочего стола в скрытую папку.
 # Запуск: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\create-desktop-shortcuts.ps1 -RepoRoot "D:\qwen-local-setup"

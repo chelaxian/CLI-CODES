@@ -1,4 +1,4 @@
-[CmdletBinding(DefaultParameterSetName = "Full")]
+﻿[CmdletBinding(DefaultParameterSetName = "Full")]
 param(
   [Parameter(ParameterSetName = "Full", Mandatory = $true)]
   [ValidateSet("zai", "nim", "nim-qwen", "openrouter", "bai")]
