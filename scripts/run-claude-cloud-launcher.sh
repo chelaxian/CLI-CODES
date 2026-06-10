@@ -481,6 +481,9 @@ invoke_claude_cloud_profile() {
                 return 1
             fi
             ;;
+        claude-zai-*)
+            model="${profile_id#claude-zai-}"
+            ;;
         claude-nim*|claude-openrouter*|claude-bai*|claude-groq*|custom-claude-nim|custom-claude-openrouter|custom-claude-bai|custom-claude-groq)
             # Model determined in env-vars block below (via proxy)
             ;;
@@ -533,6 +536,9 @@ invoke_claude_cloud_profile() {
                     local cm=$(echo "$st" | grep -o '"customNimModel":"[^"]*"' | cut -d'"' -f4)
                     if [ -n "$cm" ]; then fcc_model="nvidia_nim/$cm"; fi
                     ;;
+                *)
+                    fcc_model="nvidia_nim/${profile_id#claude-nim-}"
+                    ;;
             esac
             local proxy_port
             local nim_proxy_port="8082"
@@ -584,6 +590,9 @@ invoke_claude_cloud_profile() {
                     local st=$(get_launcher_state)
                     local cm=$(echo "$st" | grep -o '"customModelId":"[^"]*"' | cut -d'"' -f4)
                     if [ -n "$cm" ]; then fcc_model="open_router/$cm"; fi
+                    ;;
+                *)
+                    fcc_model="open_router/${profile_id#claude-openrouter-}"
                     ;;
             esac
             local proxy_port
