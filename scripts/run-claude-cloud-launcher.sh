@@ -303,10 +303,15 @@ ensure_fcc_proxy() {
 
     _write_env() {
         local nim_key="${NVIDIA_NIM_API_KEY:-}"
+        if [ -z "$nim_key" ] || [ "$nim_key" = "__SET_ME__" ]; then nim_key=$(get_current_api_key "NVIDIA_NIM"); fi
         local or_key="${OPENROUTER_API_KEY:-}"
+        if [ -z "$or_key" ] || [ "$or_key" = "__SET_ME__" ]; then or_key=$(get_current_api_key "OPENROUTER"); fi
         if [ "$provider" = "bai" ]; then
             or_key="${BAI_API_KEY:-}"
+            if [ -z "$or_key" ] || [ "$or_key" = "__SET_ME__" ]; then or_key=$(get_current_api_key "BAI"); fi
         fi
+        export NVIDIA_NIM_API_KEY="$nim_key"
+        export OPENROUTER_API_KEY="$or_key"
         cat > "$FCC_DIR/.env" << ENVEOF
 NVIDIA_NIM_API_KEY="${nim_key}"
 OPENROUTER_API_KEY="${or_key}"
@@ -494,7 +499,9 @@ invoke_claude_cloud_profile() {
     case "$profile_id" in
         claude-zai*|custom-claude-zai*|custom-claude-zai-general)
             local key="${ZAI_API_KEY:-}"
+            if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then key=$(get_current_api_key "ZAI"); fi
             if [ -z "$key" ] || [ "$key" = "__SET_ME__" ]; then key="${OPENAI_API_KEY:-}"; fi
+            export ZAI_API_KEY="$key"
             export ANTHROPIC_API_KEY="$key"
             unset ANTHROPIC_AUTH_TOKEN
             export ANTHROPIC_BASE_URL="https://api.z.ai/api/anthropic"
@@ -738,7 +745,10 @@ invoke_claude_cloud_profile() {
                 printf "${YELLOW}Логи: $FCC_DIR/fcc-${proxy_port}.log${RESET}\n" >&3
                 return 1
             fi
-            export OPENROUTER_API_KEY="${GROQ_API_KEY:-}"
+            local groq_key="${GROQ_API_KEY:-}"
+            if [ -z "$groq_key" ] || [ "$groq_key" = "__SET_ME__" ]; then groq_key=$(get_current_api_key "GROQ"); fi
+            export GROQ_API_KEY="$groq_key"
+            export OPENROUTER_API_KEY="$groq_key"
             export OPENAI_BASE_URL="https://api.groq.com/openai/v1"
             export ANTHROPIC_AUTH_TOKEN="freecc"
             unset ANTHROPIC_API_KEY
@@ -751,7 +761,7 @@ invoke_claude_cloud_profile() {
                 ANTHROPIC_AUTH_TOKEN "freecc" \
                 ANTHROPIC_BASE_URL "http://127.0.0.1:${proxy_port}" \
                 API_TIMEOUT_MS "3000000" \
-                OPENROUTER_API_KEY "${GROQ_API_KEY:-}" \
+                OPENROUTER_API_KEY "$groq_key" \
                 OPENAI_BASE_URL "https://api.groq.com/openai/v1" \
                 ANTHROPIC_API_KEY "__DELETE__" \
                 ANTHROPIC_DEFAULT_OPUS_MODEL "__DELETE__" \

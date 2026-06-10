@@ -618,6 +618,7 @@ invoke_opencode_profile() {
                 return 1
             fi
             local api_key="${GROQ_API_KEY:-}"
+            if [ -z "$api_key" ] || [ "$api_key" = "__SET_ME__" ]; then api_key=$(get_current_api_key "GROQ"); fi
             if [ -z "$api_key" ]; then
                 echo -e "${YELLOW}Groq API ключ не задан. Задайте GROQ_API_KEY.${RESET}" >&2
                 return 1
@@ -637,6 +638,7 @@ invoke_opencode_profile() {
                 return 1
             fi
             local api_key="${OPENROUTER_API_KEY:-}"
+            if [ -z "$api_key" ] || [ "$api_key" = "__SET_ME__" ]; then api_key=$(get_current_api_key "OPENROUTER"); fi
             if [ -z "$api_key" ]; then
                 echo -e "${YELLOW}OpenRouter API ключ не задан. Задайте OPENROUTER_API_KEY.${RESET}" >&2
                 return 1
