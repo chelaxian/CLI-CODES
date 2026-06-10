@@ -173,6 +173,17 @@ class ProxyHandler(http.server.BaseHTTPRequestHandler):
             self._send_json(404, {"error": "not found"})
 
     def do_POST(self):
+        try:
+            self._handle_post()
+        except Exception as e:
+            logging.exception(f"UNHANDLED in do_POST: {e}")
+            try:
+                self._send_json(500, {"type": "error", "error": {"type": "api_error", "message": f"proxy internal error: {e}"}})
+            except Exception:
+                pass
+
+    def _handle_post(self):
+        logging.info(f"POST {self.path}")
         if self.path not in ("/v1/messages", "/messages"):
             self._send_json(404, {"error": "not found"})
             return
@@ -209,6 +220,8 @@ class ProxyHandler(http.server.BaseHTTPRequestHandler):
                 err = json.loads(resp_body)
             except Exception:
                 err = {"error": resp_body}
+            if "type" not in err:
+                err = {"type": "error", "error": {"type": "api_error", "message": json.dumps(err)}}
             self._send_json(resp.status, err)
             conn.close()
             return
@@ -281,10 +294,10 @@ class ThreadedHTTPServer(http.server.ThreadingHTTPServer):
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else PROXY_PORT
     log_file = os.environ.get("BAI_PROXY_LOG", "")
+    handlers = [logging.StreamHandler(sys.stderr)]
     if log_file:
-        logging.basicConfig(filename=log_file, level=logging.DEBUG, format="%(asctime)s %(message)s")
-    else:
-        logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(message)s")
+        handlers.append(logging.FileHandler(log_file))
+    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(message)s", handlers=handlers)
     logging.info(f"bai-proxy starting on 127.0.0.1:{port} model={MODEL_ID} key={'***' if BAI_API_KEY else 'EMPTY'}")
     if not BAI_API_KEY:
         logging.warning("BAI_API_KEY / OPENROUTER_API_KEY is empty! B.AI requests will fail.")

@@ -663,29 +663,26 @@ if ($Provider -eq "bai") {
   $baiPort = 8088
   $baiProxyScript = Join-Path $PSScriptRoot "bai-anthropic-proxy.py"
 
-  $baiHttpCode = $null
-  try { $baiHttpCode = (Invoke-WebRequest -Uri "http://127.0.0.1:${baiPort}/v1/models" -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop).StatusCode } catch {}
-  if (-not $baiHttpCode) {
-    Write-Host "Запуск B.AI Anthropic proxy на порту ${baiPort}..." -ForegroundColor Cyan
-    $env:BAI_API_KEY = $baiKey
-    $env:OPENROUTER_API_KEY = $baiKey
-    $env:OPENAI_BASE_URL = "https://api.b.ai/v1"
-    $env:MODEL = $baiModel
-    $env:HTTP_READ_TIMEOUT = "300"
-    Start-Process -FilePath "python" -ArgumentList @($baiProxyScript, $baiPort) -WindowStyle Hidden
-    $tries = 0
-    while ($tries -lt 20) {
-      Start-Sleep -Milliseconds 500
-      try { $null = Invoke-WebRequest -Uri "http://127.0.0.1:${baiPort}/v1/models" -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop; break } catch {}
-      $tries++
-    }
-    if ($tries -ge 20) {
-      throw "B.AI proxy не запустился за 10 сек на порту $baiPort"
-    }
-    Write-Host "  [OK] B.AI proxy на порту ${baiPort}" -ForegroundColor Green
-  } else {
-    Write-Host "  [OK] Proxy уже работает на порту ${baiPort}" -ForegroundColor Green
+  Write-Host "Перезапуск B.AI proxy на порту ${baiPort}..." -ForegroundColor Cyan
+  Get-NetTCPConnection -LocalPort $baiPort -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }
+  Start-Sleep -Milliseconds 500
+
+  $env:BAI_API_KEY = $baiKey
+  $env:OPENROUTER_API_KEY = $baiKey
+  $env:OPENAI_BASE_URL = "https://api.b.ai/v1"
+  $env:MODEL = $baiModel
+  $env:HTTP_READ_TIMEOUT = "300"
+  Start-Process -FilePath "python" -ArgumentList @($baiProxyScript, $baiPort) -WindowStyle Hidden
+  $tries = 0
+  while ($tries -lt 20) {
+    Start-Sleep -Milliseconds 500
+    try { $null = Invoke-WebRequest -Uri "http://127.0.0.1:${baiPort}/v1/models" -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop; break } catch {}
+    $tries++
   }
+  if ($tries -ge 20) {
+    throw "B.AI proxy не запустился за 10 сек на порту $baiPort"
+  }
+  Write-Host "  [OK] B.AI proxy на порту ${baiPort}" -ForegroundColor Green
 
   $env:ANTHROPIC_AUTH_TOKEN = $ProxyAuthToken
   Remove-Item Env:ANTHROPIC_API_KEY -ErrorAction SilentlyContinue

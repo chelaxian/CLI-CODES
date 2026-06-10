@@ -668,33 +668,33 @@ invoke_claude_cloud_profile() {
             fi
             export BAI_API_KEY="$bai_resolved_key"
 
-            if ! (ss -tlnp 2>/dev/null | grep -q ":${bai_proxy_port} " || nc -z 127.0.0.1 "$bai_proxy_port" 2>/dev/null); then
-                printf "${CYAN}Запуск B.AI Anthropic proxy на порту ${bai_proxy_port}...${RESET}\n" >&3
-                BAI_API_KEY="$bai_resolved_key" \
-                OPENROUTER_API_KEY="$bai_resolved_key" \
-                OPENAI_BASE_URL="https://api.b.ai/v1" \
-                MODEL="$bai_model" \
-                HTTP_READ_TIMEOUT=300 \
-                BAI_PROXY_LOG="$bai_proxy_log" \
-                nohup python3 "$bai_proxy_script" "$bai_proxy_port" </dev/null >>"$bai_proxy_log" 2>&1 &
-                local bai_pid=$!
-                disown "$bai_pid" 2>/dev/null || true
-                local bai_tries=0
-                printf "${GRAY}  Ожидание TCP" >&3
-                while [ $bai_tries -lt 20 ]; do
-                    if nc -z 127.0.0.1 "$bai_proxy_port" 2>/dev/null; then
-                        printf " ✓${RESET}\n" >&3
-                        break
-                    fi
-                    printf "." >&3
-                    sleep 1
-                    bai_tries=$((bai_tries + 1))
-                done
-                if [ $bai_tries -ge 20 ]; then
-                    printf "${RED}B.AI proxy не запустился за 20 сек.${RESET}\n" >&3
-                    tail -20 "$bai_proxy_log" >&3 2>/dev/null || true
-                    return 1
+            printf "${CYAN}Перезапуск B.AI proxy на порту ${bai_proxy_port}...${RESET}\n" >&3
+            fuser -k "${bai_proxy_port}/tcp" 2>/dev/null || true
+            sleep 0.5
+            BAI_API_KEY="$bai_resolved_key" \
+            OPENROUTER_API_KEY="$bai_resolved_key" \
+            OPENAI_BASE_URL="https://api.b.ai/v1" \
+            MODEL="$bai_model" \
+            HTTP_READ_TIMEOUT=300 \
+            BAI_PROXY_LOG="$bai_proxy_log" \
+            nohup python3 "$bai_proxy_script" "$bai_proxy_port" </dev/null >>"$bai_proxy_log" 2>&1 &
+            local bai_pid=$!
+            disown "$bai_pid" 2>/dev/null || true
+            local bai_tries=0
+            printf "${GRAY}  Ожидание TCP" >&3
+            while [ $bai_tries -lt 20 ]; do
+                if nc -z 127.0.0.1 "$bai_proxy_port" 2>/dev/null; then
+                    printf " ✓${RESET}\n" >&3
+                    break
                 fi
+                printf "." >&3
+                sleep 1
+                bai_tries=$((bai_tries + 1))
+            done
+            if [ $bai_tries -ge 20 ]; then
+                printf "${RED}B.AI proxy не запустился за 20 сек.${RESET}\n" >&3
+                tail -20 "$bai_proxy_log" >&3 2>/dev/null || true
+                return 1
             fi
 
             local precheck_code
