@@ -632,10 +632,8 @@ invoke_claude_cloud_profile() {
                 OPENAI_MODEL "__DELETE__"
             ;;
         claude-bai-*|custom-claude-bai*)
-            # B.AI rides the open_router transport but routes to https://api.b.ai/v1 via OPENAI_BASE_URL.
-            # Wildcard: model_id (without claude-bai- prefix) is validated against BAI_MODEL_SPEC.
             local mid="${profile_id#claude-bai-}"
-            local fcc_model
+            local bai_model
             if [ "$profile_id" = "custom-claude-bai" ]; then
                 local st=$(get_launcher_state)
                 local cm=$(echo "$st" | grep -o '"customModelId":"[^"]*"' | cut -d'"' -f4)
@@ -643,48 +641,71 @@ invoke_claude_cloud_profile() {
                     printf "${RED}Нет customModelId. Выберите модель в «Другая модель».${RESET}\n" >&3
                     return 1
                 fi
-                fcc_model="open_router/$cm"
+                bai_model="$cm"
             else
                 if [ -z "${BAI_MODEL_SPEC[$mid]:-}" ]; then
                     printf "${RED}Неизвестная B.AI модель: $mid${RESET}\n" >&3
                     return 1
                 fi
-                fcc_model="open_router/$mid"
+                bai_model="$mid"
             fi
-            local bai_extra_env='OPENAI_BASE_URL="https://api.b.ai/v1"'
-            local proxy_port
-            proxy_port=$(ensure_fcc_proxy "bai" "$fcc_model" "8085" "$bai_extra_env") || {
-                printf "${RED}Не удалось запустить free-claude-code proxy.${RESET}\n" >&3
-                return 1
-            }
-            # Final HTTP sanity check before launching Claude Code
+
+            local bai_proxy_port="8085"
+            local bai_proxy_script="$SCRIPT_DIR/bai-anthropic-proxy.py"
+            local bai_proxy_log="$HOME/.qwen-local-setup/bai-proxy.log"
+            mkdir -p "$HOME/.qwen-local-setup"
+
+            if ! (ss -tlnp 2>/dev/null | grep -q ":${bai_proxy_port} " || nc -z 127.0.0.1 "$bai_proxy_port" 2>/dev/null); then
+                printf "${CYAN}Запуск B.AI Anthropic proxy на порту ${bai_proxy_port}...${RESET}\n" >&3
+                BAI_API_KEY="${BAI_API_KEY:-}" \
+                OPENROUTER_API_KEY="${BAI_API_KEY:-}" \
+                OPENAI_BASE_URL="https://api.b.ai/v1" \
+                MODEL="$bai_model" \
+                HTTP_READ_TIMEOUT=300 \
+                nohup python3 "$bai_proxy_script" "$bai_proxy_port" </dev/null >>"$bai_proxy_log" 2>&1 &
+                local bai_pid=$!
+                disown "$bai_pid" 2>/dev/null || true
+                local bai_tries=0
+                printf "${GRAY}  Ожидание TCP" >&3
+                while [ $bai_tries -lt 20 ]; do
+                    if nc -z 127.0.0.1 "$bai_proxy_port" 2>/dev/null; then
+                        printf " ✓${RESET}\n" >&3
+                        break
+                    fi
+                    printf "." >&3
+                    sleep 1
+                    bai_tries=$((bai_tries + 1))
+                done
+                if [ $bai_tries -ge 20 ]; then
+                    printf "${RED}B.AI proxy не запустился за 20 сек.${RESET}\n" >&3
+                    tail -20 "$bai_proxy_log" >&3 2>/dev/null || true
+                    return 1
+                fi
+            fi
+
             local precheck_code
-            precheck_code=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:${proxy_port}/v1/models" 2>/dev/null) || true
+            precheck_code=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:${bai_proxy_port}/v1/models" 2>/dev/null) || true
             if [ -z "$precheck_code" ] || [ "$precheck_code" = "000" ]; then
-                printf "${RED}Proxy на порту ${proxy_port} не отвечает на HTTP-запросы.${RESET}\n" >&3
-                printf "${YELLOW}Логи: $FCC_DIR/fcc-${proxy_port}.log${RESET}\n" >&3
+                printf "${RED}B.AI proxy на порту ${bai_proxy_port} не отвечает.${RESET}\n" >&3
+                printf "${YELLOW}Логи: ${bai_proxy_log}${RESET}\n" >&3
                 return 1
             fi
-            export OPENROUTER_API_KEY="${BAI_API_KEY:-}"
-            export OPENAI_BASE_URL="https://api.b.ai/v1"
+
             export ANTHROPIC_AUTH_TOKEN="freecc"
             unset ANTHROPIC_API_KEY
-            export ANTHROPIC_BASE_URL="http://127.0.0.1:${proxy_port}"
-            export ANTHROPIC_DEFAULT_OPUS_MODEL="$fcc_model"
-            export ANTHROPIC_DEFAULT_SONNET_MODEL="$fcc_model"
-            export ANTHROPIC_DEFAULT_HAIKU_MODEL="$fcc_model"
+            export ANTHROPIC_BASE_URL="http://127.0.0.1:${bai_proxy_port}"
             export API_TIMEOUT_MS="3000000"
             update_claude_settings_env "1" \
                 ANTHROPIC_AUTH_TOKEN "freecc" \
-                ANTHROPIC_BASE_URL "http://127.0.0.1:${proxy_port}" \
+                ANTHROPIC_BASE_URL "http://127.0.0.1:${bai_proxy_port}" \
                 API_TIMEOUT_MS "3000000" \
-                OPENROUTER_API_KEY "${BAI_API_KEY:-}" \
-                OPENAI_BASE_URL "https://api.b.ai/v1" \
                 ANTHROPIC_API_KEY "__DELETE__" \
                 ANTHROPIC_DEFAULT_OPUS_MODEL "__DELETE__" \
                 ANTHROPIC_DEFAULT_SONNET_MODEL "__DELETE__" \
                 ANTHROPIC_DEFAULT_HAIKU_MODEL "__DELETE__" \
+                OPENAI_BASE_URL "__DELETE__" \
                 OPENAI_API_KEY "__DELETE__" \
+                OPENROUTER_API_KEY "__DELETE__" \
                 CLAUDE_CODE_USE_OPENAI "__DELETE__" \
                 OPENAI_MODEL "__DELETE__" \
                 NVIDIA_NIM_API_KEY "__DELETE__" \
