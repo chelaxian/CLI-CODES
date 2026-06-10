@@ -166,6 +166,9 @@ fi
 if ! command -v npm >/dev/null 2>&1; then
     missing+=("npm (ставится вместе с Node.js)")
 fi
+if ! command -v python3 >/dev/null 2>&1; then
+    missing+=("python3 (Python 3.7+)")
+fi
 
 if [ ${#missing[@]} -gt 0 ]; then
     err "Отсутствуют необходимые инструменты:"
@@ -175,9 +178,9 @@ if [ ${#missing[@]} -gt 0 ]; then
     echo ""
     echo -e "${YELLOW}Установите их и запустите инсталлятор заново.${RESET}"
     echo ""
-    echo "  Ubuntu/Debian: sudo apt install git nodejs npm"
-    echo "  Fedora:        sudo dnf install git nodejs npm"
-    echo "  Arch:          sudo pacman -S git nodejs npm"
+    echo "  Ubuntu/Debian: sudo apt install git nodejs npm python3"
+    echo "  Fedora:        sudo dnf install git nodejs npm python3"
+    echo "  Arch:          sudo pacman -S git nodejs npm python3"
     echo ""
     read -p "Нажмите Enter для выхода…"
     exit 1
@@ -186,6 +189,7 @@ fi
 ok "git: $(git --version 2>&1 | head -1)"
 ok "node: $(node --version 2>&1)"
 ok "npm: $(npm --version 2>&1)"
+ok "python3: $(python3 --version 2>&1)"
 
 if ! ensure_node_lts; then
     err "Node.js >= ${MIN_NODE_MAJOR} не доступен. Некоторые пакеты могут не установиться."
@@ -288,7 +292,7 @@ install_system_dependencies() {
 
     local missing=()
     local node_needs_upgrade=false
-    for cmd in git node npm curl jq; do
+    for cmd in git node npm curl jq python3; do
         if command -v "$cmd" >/dev/null 2>&1; then
             local path="$(command -v "$cmd")"
             echo -e "  ${GREEN}[OK]${RESET}   $cmd → $path"
@@ -412,7 +416,7 @@ install_system_dependencies() {
     echo -e "${CYAN}Проверка после установки:${RESET}"
     hash -r 2>/dev/null || true
     export PATH="/usr/local/bin:/usr/bin:$HOME/.n/bin:$HOME/.local/bin:$PATH"
-    for cmd in git node npm curl jq; do
+    for cmd in git node npm curl jq python3; do
         if command -v "$cmd" >/dev/null 2>&1; then
             echo -e "  ${GREEN}[OK]${RESET}   $cmd → $(command -v "$cmd")"
         else
@@ -809,6 +813,12 @@ if $INSTALL_CLAUDE; then
         (cd "$FCC_DIR" && git pull origin main >/dev/null 2>&1) || true
         ok "free-claude-code: обновлён"
         (cd "$FCC_DIR" && uv sync &>/dev/null) || true
+    fi
+
+    if ! python3 -c "import aiohttp" 2>/dev/null; then
+        echo -e "${CYAN}Установка aiohttp для B.AI proxy…${RESET}"
+        pip3 install aiohttp 2>/dev/null || python3 -m pip install aiohttp 2>/dev/null || \
+            warn "Не удалось установить aiohttp. B.AI proxy может не работать."
     fi
 fi
 
