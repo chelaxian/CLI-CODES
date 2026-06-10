@@ -18,6 +18,61 @@ enter_claude_shared_dir() {
     cd "$CLAUDE_SESSION_ROOT"
 }
 
+update_claude_settings_env() {
+    local clear_top_model="${1:-0}"
+    shift
+
+    local sf="$HOME/.claude/settings.json"
+    mkdir -p "$HOME/.claude"
+
+    if ! command -v python3 &>/dev/null; then
+        return
+    fi
+
+    local pairs=""
+    while [ $# -gt 0 ]; do
+        [ -n "$pairs" ] && pairs+=","
+        local k=$(printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g')
+        local v=$(printf '%s' "$2" | sed 's/\\/\\\\/g; s/"/\\"/g')
+        pairs+="[\"${k}\",\"${v}\"]"
+        shift 2
+    done
+
+    _CL_SF="$sf" _CL_CM="$clear_top_model" _CL_PAIRS="[${pairs}]" python3 -c '
+import json, sys, os
+
+sf = os.environ["_CL_SF"]
+cm = os.environ["_CL_CM"]
+pairs = json.loads(os.environ["_CL_PAIRS"])
+
+try:
+    with open(sf, "r") as f:
+        d = json.load(f)
+except:
+    d = {}
+
+if "env" not in d or not isinstance(d.get("env"), dict):
+    d["env"] = {}
+
+if "CLAUDE_CODE_ATTRIBUTION_HEADER" not in d["env"]:
+    d["env"]["CLAUDE_CODE_ATTRIBUTION_HEADER"] = "0"
+if "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC" not in d["env"]:
+    d["env"]["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"] = "1"
+
+for k, v in pairs:
+    if v == "__DELETE__":
+        d["env"].pop(k, None)
+    else:
+        d["env"][k] = v
+
+if cm == "1" and "model" in d:
+    del d["model"]
+
+with open(sf, "w") as f:
+    json.dump(d, f, indent=2)
+' 2>/dev/null || true
+}
+
 # Top-level menu: provider groups + utility entries
 PROFILES=(
     "last|Запустить с последними настройками (быстрый старт)"
@@ -444,6 +499,21 @@ invoke_claude_cloud_profile() {
             export ANTHROPIC_DEFAULT_SONNET_MODEL="$model"
             export ANTHROPIC_DEFAULT_HAIKU_MODEL="$model"
             export API_TIMEOUT_MS="3000000"
+            update_claude_settings_env "0" \
+                ANTHROPIC_API_KEY "$key" \
+                ANTHROPIC_BASE_URL "https://api.z.ai/api/anthropic" \
+                ANTHROPIC_DEFAULT_OPUS_MODEL "$model" \
+                ANTHROPIC_DEFAULT_SONNET_MODEL "$model" \
+                ANTHROPIC_DEFAULT_HAIKU_MODEL "$model" \
+                API_TIMEOUT_MS "3000000" \
+                ANTHROPIC_AUTH_TOKEN "__DELETE__" \
+                OPENROUTER_API_KEY "__DELETE__" \
+                OPENAI_BASE_URL "__DELETE__" \
+                OPENAI_API_KEY "__DELETE__" \
+                NVIDIA_NIM_API_KEY "__DELETE__" \
+                BAI_API_KEY "__DELETE__" \
+                CLAUDE_CODE_USE_OPENAI "__DELETE__" \
+                OPENAI_MODEL "__DELETE__"
             ;;
         claude-nim*|custom-claude-nim*)
             local fcc_model="nvidia_nim/qwen/qwen3.5-122b-a10b"
@@ -486,6 +556,20 @@ invoke_claude_cloud_profile() {
             export ANTHROPIC_DEFAULT_SONNET_MODEL="$fcc_model"
             export ANTHROPIC_DEFAULT_HAIKU_MODEL="$fcc_model"
             export API_TIMEOUT_MS="3000000"
+            update_claude_settings_env "1" \
+                ANTHROPIC_AUTH_TOKEN "freecc" \
+                ANTHROPIC_BASE_URL "http://127.0.0.1:${proxy_port}" \
+                API_TIMEOUT_MS "3000000" \
+                ANTHROPIC_API_KEY "__DELETE__" \
+                ANTHROPIC_DEFAULT_OPUS_MODEL "__DELETE__" \
+                ANTHROPIC_DEFAULT_SONNET_MODEL "__DELETE__" \
+                ANTHROPIC_DEFAULT_HAIKU_MODEL "__DELETE__" \
+                OPENROUTER_API_KEY "__DELETE__" \
+                OPENAI_BASE_URL "__DELETE__" \
+                OPENAI_API_KEY "__DELETE__" \
+                BAI_API_KEY "__DELETE__" \
+                CLAUDE_CODE_USE_OPENAI "__DELETE__" \
+                OPENAI_MODEL "__DELETE__"
             ;;
         claude-openrouter*|custom-claude-openrouter*)
             # Keep main menu to working free tool-calling models; custom still supported.
@@ -522,6 +606,21 @@ invoke_claude_cloud_profile() {
             export ANTHROPIC_DEFAULT_SONNET_MODEL="$fcc_model"
             export ANTHROPIC_DEFAULT_HAIKU_MODEL="$fcc_model"
             export API_TIMEOUT_MS="3000000"
+            update_claude_settings_env "1" \
+                ANTHROPIC_AUTH_TOKEN "freecc" \
+                ANTHROPIC_BASE_URL "http://127.0.0.1:${proxy_port}" \
+                API_TIMEOUT_MS "3000000" \
+                OPENROUTER_API_KEY "${OPENROUTER_API_KEY:-}" \
+                ANTHROPIC_API_KEY "__DELETE__" \
+                ANTHROPIC_DEFAULT_OPUS_MODEL "__DELETE__" \
+                ANTHROPIC_DEFAULT_SONNET_MODEL "__DELETE__" \
+                ANTHROPIC_DEFAULT_HAIKU_MODEL "__DELETE__" \
+                OPENAI_BASE_URL "__DELETE__" \
+                OPENAI_API_KEY "__DELETE__" \
+                BAI_API_KEY "__DELETE__" \
+                NVIDIA_NIM_API_KEY "__DELETE__" \
+                CLAUDE_CODE_USE_OPENAI "__DELETE__" \
+                OPENAI_MODEL "__DELETE__"
             ;;
         claude-bai-*|custom-claude-bai*)
             # B.AI rides the open_router transport but routes to https://api.b.ai/v1 via OPENAI_BASE_URL.
@@ -566,6 +665,21 @@ invoke_claude_cloud_profile() {
             export ANTHROPIC_DEFAULT_SONNET_MODEL="$fcc_model"
             export ANTHROPIC_DEFAULT_HAIKU_MODEL="$fcc_model"
             export API_TIMEOUT_MS="3000000"
+            update_claude_settings_env "1" \
+                ANTHROPIC_AUTH_TOKEN "freecc" \
+                ANTHROPIC_BASE_URL "http://127.0.0.1:${proxy_port}" \
+                API_TIMEOUT_MS "3000000" \
+                OPENROUTER_API_KEY "${BAI_API_KEY:-}" \
+                OPENAI_BASE_URL "https://api.b.ai/v1" \
+                ANTHROPIC_API_KEY "__DELETE__" \
+                ANTHROPIC_DEFAULT_OPUS_MODEL "__DELETE__" \
+                ANTHROPIC_DEFAULT_SONNET_MODEL "__DELETE__" \
+                ANTHROPIC_DEFAULT_HAIKU_MODEL "__DELETE__" \
+                OPENAI_API_KEY "__DELETE__" \
+                CLAUDE_CODE_USE_OPENAI "__DELETE__" \
+                OPENAI_MODEL "__DELETE__" \
+                NVIDIA_NIM_API_KEY "__DELETE__" \
+                BAI_API_KEY "__DELETE__"
             ;;
         custom-claude-groq)
             local st=$(get_launcher_state)
@@ -597,29 +711,23 @@ invoke_claude_cloud_profile() {
             export ANTHROPIC_DEFAULT_SONNET_MODEL="$fcc_model"
             export ANTHROPIC_DEFAULT_HAIKU_MODEL="$fcc_model"
             export API_TIMEOUT_MS="3000000"
+            update_claude_settings_env "1" \
+                ANTHROPIC_AUTH_TOKEN "freecc" \
+                ANTHROPIC_BASE_URL "http://127.0.0.1:${proxy_port}" \
+                API_TIMEOUT_MS "3000000" \
+                OPENROUTER_API_KEY "${GROQ_API_KEY:-}" \
+                OPENAI_BASE_URL "https://api.groq.com/openai/v1" \
+                ANTHROPIC_API_KEY "__DELETE__" \
+                ANTHROPIC_DEFAULT_OPUS_MODEL "__DELETE__" \
+                ANTHROPIC_DEFAULT_SONNET_MODEL "__DELETE__" \
+                ANTHROPIC_DEFAULT_HAIKU_MODEL "__DELETE__" \
+                OPENAI_API_KEY "__DELETE__" \
+                CLAUDE_CODE_USE_OPENAI "__DELETE__" \
+                OPENAI_MODEL "__DELETE__" \
+                NVIDIA_NIM_API_KEY "__DELETE__" \
+                BAI_API_KEY "__DELETE__"
             ;;
     esac
-    
-    # Отключаем лишний трафик Claude Code
-    mkdir -p "$HOME/.claude"
-    local settings_file="$HOME/.claude/settings.json"
-    if [ -f "$settings_file" ]; then
-        # Обновляем существующий settings
-        if command -v python3 &>/dev/null; then
-            python3 -c "
-import json, sys
-try:
-    with open('$settings_file','r') as f: d=json.load(f)
-except: d={}
-if 'env' not in d: d['env']={}
-d['env']['CLAUDE_CODE_ATTRIBUTION_HEADER']='0'
-d['env']['CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC']='1'
-with open('$settings_file','w') as f: json.dump(d,f,indent=2)
-" 2>/dev/null || true
-        fi
-    else
-        echo '{"env":{"CLAUDE_CODE_ATTRIBUTION_HEADER":"0","CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC":"1"}}' > "$settings_file"
-    fi
     
     # Входим в shared session dir и запускаем claude
     enter_claude_shared_dir
@@ -630,8 +738,8 @@ with open('$settings_file','w') as f: json.dump(d,f,indent=2)
     printf "${GRAY}Директория сессий: $(pwd)${RESET}\n" >&3
     printf "\n" >&3
     
-    # exec: replace shell with claude so no parent waits / hangs
-    exec "$claude_exe"
+    # --bare: skip OAuth/keychain, use only ANTHROPIC_API_KEY (env or settings).
+    exec "$claude_exe" --bare
 }
 
 invoke_claude_dynamic_fallback() {
@@ -649,9 +757,17 @@ invoke_claude_dynamic_fallback() {
             export ANTHROPIC_DEFAULT_OPUS_MODEL="$raw_model"
             export ANTHROPIC_DEFAULT_SONNET_MODEL="$raw_model"
             export ANTHROPIC_DEFAULT_HAIKU_MODEL="$raw_model"
+            update_claude_settings_env "0" \
+                ANTHROPIC_API_KEY "$key" \
+                ANTHROPIC_BASE_URL "https://api.z.ai/api/anthropic" \
+                ANTHROPIC_DEFAULT_OPUS_MODEL "$raw_model" \
+                ANTHROPIC_DEFAULT_SONNET_MODEL "$raw_model" \
+                ANTHROPIC_DEFAULT_HAIKU_MODEL "$raw_model" \
+                API_TIMEOUT_MS "3000000" \
+                ANTHROPIC_AUTH_TOKEN "__DELETE__"
             local claude_exe
             if command -v claude &>/dev/null; then claude_exe="$(command -v claude)"; fi
-            if [ -n "$claude_exe" ]; then enter_claude_shared_dir; exec "$claude_exe"; fi
+            if [ -n "$claude_exe" ]; then enter_claude_shared_dir; exec "$claude_exe" --bare; fi
             return 1
             ;;
         claude-nim-*)
@@ -685,10 +801,18 @@ invoke_claude_dynamic_fallback() {
     export ANTHROPIC_DEFAULT_SONNET_MODEL="$fcc_model"
     export ANTHROPIC_DEFAULT_HAIKU_MODEL="$fcc_model"
     export API_TIMEOUT_MS="3000000"
+    update_claude_settings_env "1" \
+        ANTHROPIC_AUTH_TOKEN "freecc" \
+        ANTHROPIC_BASE_URL "http://127.0.0.1:${proxy_port}" \
+        API_TIMEOUT_MS "3000000" \
+        ANTHROPIC_API_KEY "__DELETE__" \
+        ANTHROPIC_DEFAULT_OPUS_MODEL "__DELETE__" \
+        ANTHROPIC_DEFAULT_SONNET_MODEL "__DELETE__" \
+        ANTHROPIC_DEFAULT_HAIKU_MODEL "__DELETE__"
 
     local claude_exe
     if command -v claude &>/dev/null; then claude_exe="$(command -v claude)"; fi
-    if [ -n "$claude_exe" ]; then enter_claude_shared_dir; exec "$claude_exe"; fi
+    if [ -n "$claude_exe" ]; then enter_claude_shared_dir; exec "$claude_exe" --bare; fi
     return 1
 }
 
