@@ -47,3 +47,5 @@ free-claude-code/
 # other local files
 test-parse-final.ps1
 docs/DEPLOY-FROM-SCRATCH.md
+CLI-CODES.code-workspace
+session-ses_152b.md
