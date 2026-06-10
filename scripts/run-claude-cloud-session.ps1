@@ -660,35 +660,33 @@ if ($Provider -eq "bai") {
     $baiModel = $ZaiAnthropicModelId.Trim()
   }
 
-  $fccModel = "open_router/$baiModel"
   $baiPort = 8088
+  $baiProxyScript = Join-Path $PSScriptRoot "bai-anthropic-proxy.py"
 
-  # Write .env for free-claude-code proxy (same as Linux ensure_fcc_proxy).
-  $envFile = Join-Path $FreeClaudeCodeDir ".env"
-  $envContent = @"
-NVIDIA_NIM_API_KEY=""
-OPENROUTER_API_KEY="$baiKey"
-MODEL="$fccModel"
-ANTHROPIC_AUTH_TOKEN="freecc"
-ENABLE_MODEL_THINKING=true
-PROVIDER_RATE_LIMIT=1
-PROVIDER_RATE_WINDOW=3
-PROVIDER_MAX_CONCURRENCY=5
-HTTP_READ_TIMEOUT=300
-MESSAGING_PLATFORM="none"
-ENABLE_WEB_SERVER_TOOLS=false
-OPENAI_BASE_URL="https://api.b.ai/v1"
-"@
-  [System.IO.File]::WriteAllText($envFile, $envContent, (New-Object System.Text.UTF8Encoding($false)))
-
-  Ensure-FreeClaudeCodeProxy -Dir $FreeClaudeCodeDir -Port $baiPort -NimKey $baiKey -Model $fccModel -AuthToken $ProxyAuthToken -ExtraEnv @{
-    OPENAI_BASE_URL    = "https://api.b.ai/v1"
-    OPENROUTER_API_KEY = $baiKey
+  $baiHttpCode = $null
+  try { $baiHttpCode = (Invoke-WebRequest -Uri "http://127.0.0.1:${baiPort}/v1/models" -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop).StatusCode } catch {}
+  if (-not $baiHttpCode) {
+    Write-Host "Запуск B.AI Anthropic proxy на порту ${baiPort}..." -ForegroundColor Cyan
+    $env:BAI_API_KEY = $baiKey
+    $env:OPENROUTER_API_KEY = $baiKey
+    $env:OPENAI_BASE_URL = "https://api.b.ai/v1"
+    $env:MODEL = $baiModel
+    $env:HTTP_READ_TIMEOUT = "300"
+    Start-Process -FilePath "python" -ArgumentList @($baiProxyScript, $baiPort) -WindowStyle Hidden
+    $tries = 0
+    while ($tries -lt 20) {
+      Start-Sleep -Milliseconds 500
+      try { $null = Invoke-WebRequest -Uri "http://127.0.0.1:${baiPort}/v1/models" -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop; break } catch {}
+      $tries++
+    }
+    if ($tries -ge 20) {
+      throw "B.AI proxy не запустился за 10 сек на порту $baiPort"
+    }
+    Write-Host "  [OK] B.AI proxy на порту ${baiPort}" -ForegroundColor Green
+  } else {
+    Write-Host "  [OK] Proxy уже работает на порту ${baiPort}" -ForegroundColor Green
   }
-  $baiPort = $script:ResolvedProxyPort
 
-  $env:OPENROUTER_API_KEY = $baiKey
-  $env:OPENAI_BASE_URL = "https://api.b.ai/v1"
   $env:ANTHROPIC_AUTH_TOKEN = $ProxyAuthToken
   Remove-Item Env:ANTHROPIC_API_KEY -ErrorAction SilentlyContinue
   $env:ANTHROPIC_BASE_URL = ("http://127.0.0.1:{0}" -f $baiPort)

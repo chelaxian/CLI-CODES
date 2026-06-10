@@ -9,6 +9,7 @@ Supports: streaming (SSE), non-streaming, tool calling.
 import http.client
 import http.server
 import json
+import logging
 import os
 import ssl
 import sys
@@ -185,7 +186,9 @@ class ProxyHandler(http.server.BaseHTTPRequestHandler):
 
         is_stream = body.get("stream", False)
         requested_model = body.get("model", MODEL_ID)
+        logging.info(f"POST model={requested_model} stream={is_stream} msgs={len(body.get('messages', []))}")
         openai_req = anthropic_to_openai(body)
+        logging.info(f"-> upstream model={openai_req.get('model')} msgs={len(openai_req.get('messages', []))}")
         req_body = json.dumps(openai_req).encode()
         headers = {"Authorization": f"Bearer {BAI_API_KEY}", "Content-Type": "application/json", "Content-Length": str(len(req_body)), "Host": _upstream_host}
 
@@ -193,12 +196,15 @@ class ProxyHandler(http.server.BaseHTTPRequestHandler):
             conn = _new_upstream_conn()
             conn.request("POST", f"{_upstream_path}/chat/completions", body=req_body, headers=headers)
             resp = conn.getresponse()
+            logging.info(f"<- upstream status={resp.status}")
         except Exception as e:
+            logging.error(f"upstream connection error: {e}")
             self._send_json(502, {"error": {"type": "api_error", "message": str(e)}})
             return
 
         if resp.status != 200:
             resp_body = resp.read().decode("utf-8", errors="replace")
+            logging.error(f"<- upstream error {resp.status}: {resp_body[:500]}")
             try:
                 err = json.loads(resp_body)
             except Exception:
@@ -274,8 +280,14 @@ class ThreadedHTTPServer(http.server.ThreadingHTTPServer):
 
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else PROXY_PORT
+    log_file = os.environ.get("BAI_PROXY_LOG", "")
+    if log_file:
+        logging.basicConfig(filename=log_file, level=logging.DEBUG, format="%(asctime)s %(message)s")
+    else:
+        logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(message)s")
+    logging.info(f"bai-proxy starting on 127.0.0.1:{port} model={MODEL_ID} key={'***' if BAI_API_KEY else 'EMPTY'}")
     if not BAI_API_KEY:
-        print(f"WARNING: BAI_API_KEY / OPENROUTER_API_KEY is empty! B.AI requests will fail.", flush=True)
+        logging.warning("BAI_API_KEY / OPENROUTER_API_KEY is empty! B.AI requests will fail.")
     server = ThreadedHTTPServer(("127.0.0.1", port), ProxyHandler)
     print(f"bai-proxy listening on 127.0.0.1:{port}", flush=True)
     try:

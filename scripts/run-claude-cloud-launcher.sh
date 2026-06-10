@@ -675,6 +675,7 @@ invoke_claude_cloud_profile() {
                 OPENAI_BASE_URL="https://api.b.ai/v1" \
                 MODEL="$bai_model" \
                 HTTP_READ_TIMEOUT=300 \
+                BAI_PROXY_LOG="$bai_proxy_log" \
                 nohup python3 "$bai_proxy_script" "$bai_proxy_port" </dev/null >>"$bai_proxy_log" 2>&1 &
                 local bai_pid=$!
                 disown "$bai_pid" 2>/dev/null || true
@@ -782,6 +783,7 @@ invoke_claude_cloud_profile() {
     printf "${CYAN}Запуск Claude Code…${RESET}\n" >&3
     printf "${GRAY}Провайдер: $profile_id   Модель: ${model:-default}${RESET}\n" >&3
     printf "${GRAY}Директория сессий: $(pwd)${RESET}\n" >&3
+    printf "${GRAY}ANTHROPIC_BASE_URL=${ANTHROPIC_BASE_URL:-<unset>}  ANTHROPIC_AUTH_TOKEN=${ANTHROPIC_AUTH_TOKEN:+set}  ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:+set}${RESET}\n" >&3
     printf "\n" >&3
     
     # --bare: skip OAuth/keychain, use only ANTHROPIC_API_KEY (env or settings).
