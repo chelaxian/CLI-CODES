@@ -288,7 +288,7 @@ install_system_dependencies() {
 
     local missing=()
     local node_needs_upgrade=false
-    for cmd in git node npm curl; do
+    for cmd in git node npm curl jq; do
         if command -v "$cmd" >/dev/null 2>&1; then
             local path="$(command -v "$cmd")"
             echo -e "  ${GREEN}[OK]${RESET}   $cmd → $path"
@@ -412,7 +412,7 @@ install_system_dependencies() {
     echo -e "${CYAN}Проверка после установки:${RESET}"
     hash -r 2>/dev/null || true
     export PATH="/usr/local/bin:/usr/bin:$HOME/.n/bin:$HOME/.local/bin:$PATH"
-    for cmd in git node npm curl; do
+    for cmd in git node npm curl jq; do
         if command -v "$cmd" >/dev/null 2>&1; then
             echo -e "  ${GREEN}[OK]${RESET}   $cmd → $(command -v "$cmd")"
         else
@@ -554,6 +554,8 @@ fi
 # --- Update ---
 if $DO_UPDATE; then
     step "ОБНОВЛЕНИЕ ВСЕХ КОМПОНЕНТОВ"
+
+    install_system_dependencies
 
     # Pull latest code (check if anything changed)
     if [ -d "$INSTALL_DIR/.git" ]; then
@@ -766,6 +768,8 @@ fi
 # ─── Установка CLI ───────────────────────────────────────────────────────────
 
 step "УСТАНОВКА CLI"
+
+install_system_dependencies
 
 if $INSTALL_QWEN; then
     echo -e "${CYAN}Установка/обновление Qwen Code CLI…${RESET}"
