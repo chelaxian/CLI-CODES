@@ -1,4 +1,4 @@
-﻿# CLI-CODES - 1-click Windows installer
+# CLI-CODES - 1-click Windows installer
 # Usage (PowerShell 5.1+):
 #   [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; irm https://raw.githubusercontent.com/chelaxian/CLI-CODES/main/install.ps1 | iex
 # If `irm` fails with "Базовое соединение закрыто", use the curl.exe fallback:
