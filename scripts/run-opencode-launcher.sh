@@ -665,6 +665,9 @@ invoke_opencode_profile() {
             echo -e "${CYAN}Запуск OpenCode (B.AI custom: $model_id)…${RESET}"
             "$opencode_exe"
             ;;
+        openrouter-*|zai-*|nim-*|bai-*)
+            return 1
+            ;;
         *)
             echo -e "${RED}Неизвестный профиль: $profile_id${RESET}"
             return 1

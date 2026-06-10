@@ -597,6 +597,9 @@ invoke_qwen_profile() {
             fi
             bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider bai -ModelId "$model_id"
             ;;
+        openrouter-*|zai-*|nim-*|bai-*|groq-*)
+            return 1
+            ;;
         *)
             echo -e "${RED}Неизвестный профиль: $profile_id${RESET}"
             return 1
