@@ -183,8 +183,9 @@ class ProxyHandler(http.server.BaseHTTPRequestHandler):
                 pass
 
     def _handle_post(self):
+        path = self.path.split("?")[0]
         logging.info(f"POST {self.path}")
-        if self.path not in ("/v1/messages", "/messages"):
+        if path not in ("/v1/messages", "/messages"):
             self._send_json(404, {"error": "not found"})
             return
 
