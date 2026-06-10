@@ -513,6 +513,18 @@ invoke_qwen_profile() {
         "zai-flash45")
             bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider zai -ModelId "glm-4.5-flash"
             ;;
+        "openrouter-deepseek-v4-flash")
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider openrouter -ModelId "deepseek/deepseek-chat-v3.1"
+            ;;
+        "openrouter-qwen3-coder")
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider openrouter -ModelId "qwen/qwen3-coder"
+            ;;
+        "openrouter-nemotron")
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider openrouter -ModelId "nvidia/nemotron-3-super-120b-a12b"
+            ;;
+        "openrouter-laguna")
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider openrouter -ModelId "poolside/laguna-m.1"
+            ;;
         bai-*)
             local mid="${profile_id#bai-}"
             local spec="${BAI_MODEL_SPEC[$mid]:-}"
@@ -600,10 +612,22 @@ invoke_qwen_dynamic_fallback() {
         zai-*) raw_model="${profile_id#zai-}"; provider="zai" ;;
         nim-*) raw_model="${profile_id#nim-}"; provider="nim" ;;
         openrouter-*) raw_model="${profile_id#openrouter-}"; provider="openrouter" ;;
+        bai-*) raw_model="${profile_id#bai-}"; provider="bai" ;;
         *) echo -e "${RED}Неизвестный профиль: $profile_id${RESET}"; return 1 ;;
     esac
 
-    bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider "$provider" -ModelId "$raw_model"
+    if [ "$provider" = "bai" ]; then
+        local spec="${BAI_MODEL_SPEC[$raw_model]:-}"
+        if [ -n "$spec" ]; then
+            local ctx="${spec%%:*}"
+            local max="${spec##*:}"
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider "$provider" -ModelId "$raw_model" --ctx-length "$ctx" --max-tokens "$max"
+        else
+            bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider "$provider" -ModelId "$raw_model"
+        fi
+    else
+        bash "$SCRIPT_DIR/run-qwen-code-dynamic.sh" -Provider "$provider" -ModelId "$raw_model"
+    fi
 }
 
 # Быстрый старт

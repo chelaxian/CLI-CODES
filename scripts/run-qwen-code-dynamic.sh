@@ -273,6 +273,34 @@ if [ -z "$QWEN_EXE" ]; then
   exit 1
 fi
 
+# ── Проверка версии Node.js ──
+NODE_VERSION=$(node -v 2>/dev/null | sed 's/^v//' | cut -d. -f1)
+if [ -z "$NODE_VERSION" ] || [ "$NODE_VERSION" -lt 20 ]; then
+  echo -e "\033[31m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+  echo -e "\033[31m  Node.js $(node -v 2>/dev/null || echo 'не найден') — требуется v20+ для RegExp 'v' flag\033[0m"
+  echo -e "\033[31m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+  echo ""
+  echo -e "\033[33m  Qwen Code требует Node.js >= 20. Текущая версия слишком старая.\033[0m"
+  echo ""
+  echo -e "\033[36m  Обновите Node.js:\033[0m"
+  echo ""
+  echo -e "  \033[37m# Вариант 1 — через nvm (рекомендуется):\033[0m"
+  echo -e "  \033[37m  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash\033[0m"
+  echo -e "  \033[37m  source ~/.bashrc\033[0m"
+  echo -e "  \033[37m  nvm install 22\033[0m"
+  echo -e "  \033[37m  nvm alias default 22\033[0m"
+  echo ""
+  echo -e "  \033[37m# Вариант 2 — через NodeSource (Debian/Ubuntu):\033[0m"
+  echo -e "  \033[37m  curl -fsSL https://deb.nodesource.com/setup_22.x | bash -\033[0m"
+  echo -e "  \033[37m  apt-get install -y nodejs\033[0m"
+  echo ""
+  echo -e "  \033[37m# После обновления переустановите qwen-code:\033[0m"
+  echo -e "  \033[37m  npm install -g @qwen-code/qwen-code@latest\033[0m"
+  echo ""
+  echo -e "\033[31m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"
+  exit 1
+fi
+
 echo -e "\033[36mQwen Code: $PROVIDER / модель $MODEL_ID → $SESSION_ROOT\033[0m"
 cd "$SESSION_ROOT"
 
