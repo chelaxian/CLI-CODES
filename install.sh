@@ -147,7 +147,7 @@ echo -e "${CYAN}  ╚██████╗███████╗██║     
 echo -e "${CYAN}   ╚═════╝╚══════╝╚═╝         ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝${RESET}"
 echo -e "${CYAN}${RESET}"
 echo -e "${YELLOW}              C L O U D   S E T U P  -  1-click install${RESET}"
-echo -e "${YELLOW}  Qwen Code + Claude Code + OpenCode + Freebuff + OpenClaude${RESET}"
+echo -e "${YELLOW}  Qwen Code + Claude Code + OpenCode + Freebuff + OpenClaude + MiMo Code${RESET}"
 echo -e "${CYAN}════════════════════════════════════════════════════════════════════════════════${RESET}"
 echo ""
 
@@ -223,6 +223,7 @@ INSTALL_CLAUDE=false
 INSTALL_OPENCODE=false
 INSTALL_FREEBUFF=false
 INSTALL_OPENCLAUDE=false
+INSTALL_MIMO=false
 DO_UNINSTALL=false
 DO_UPDATE=false
 DO_SYNC_SHORTCUTS=false
@@ -246,9 +247,10 @@ while true; do
     echo -e "  ${GREEN}[4]${RESET} Только OpenCode"
     echo -e "  ${GREEN}[5]${RESET} Только Freebuff"
     echo -e "  ${GREEN}[6]${RESET} Только OpenClaude"
-    echo -e "  ${YELLOW}[7]${RESET} Обновление ВСЕХ компонентов (проверяет актуальность)"
-    echo -e "  ${RED}[8]${RESET} Полное удаление проекта с ПК (uninstall)"
-    echo -e "  ${CYAN}[9]${RESET} Обновить ярлыки на рабочем столе (актуализация, скрытие скриптов)"
+    echo -e "  ${GREEN}[7]${RESET} Только MiMo Code"
+    echo -e "  ${YELLOW}[8]${RESET} Обновление ВСЕХ компонентов (проверяет актуальность)"
+    echo -e "  ${RED}[9]${RESET} Полное удаление проекта с ПК (uninstall)"
+    echo -e "  ${CYAN}[D]${RESET} Обновить ярлыки на рабочем столе (актуализация, скрытие скриптов)"
     echo -e "  ${GRAY}[X]${RESET} Выход из мастера установки"
     echo ""
 
@@ -261,6 +263,7 @@ while true; do
     INSTALL_OPENCODE=false
     INSTALL_FREEBUFF=false
     INSTALL_OPENCLAUDE=false
+    INSTALL_MIMO=false
     DO_UNINSTALL=false
     DO_UPDATE=false
     DO_SYNC_SHORTCUTS=false
@@ -268,15 +271,16 @@ while true; do
 
     case "$install_choice" in
         0) DO_INSTALL_DEPS=true; break ;;
-        1) INSTALL_QWEN=true; INSTALL_CLAUDE=true; INSTALL_OPENCODE=true; INSTALL_FREEBUFF=true; INSTALL_OPENCLAUDE=true; break ;;
+        1) INSTALL_QWEN=true; INSTALL_CLAUDE=true; INSTALL_OPENCODE=true; INSTALL_FREEBUFF=true; INSTALL_OPENCLAUDE=true; INSTALL_MIMO=true; break ;;
         2) INSTALL_QWEN=true; break ;;
         3) INSTALL_CLAUDE=true; break ;;
         4) INSTALL_OPENCODE=true; break ;;
         5) INSTALL_FREEBUFF=true; break ;;
         6) INSTALL_OPENCLAUDE=true; break ;;
-        7) DO_UPDATE=true; break ;;
-        8) DO_UNINSTALL=true; break ;;
-        9) DO_SYNC_SHORTCUTS=true; break ;;
+        7) INSTALL_MIMO=true; break ;;
+        8) DO_UPDATE=true; break ;;
+        9) DO_UNINSTALL=true; break ;;
+        D) DO_SYNC_SHORTCUTS=true; break ;;
         X|Q) echo -e "${YELLOW}Выход.${RESET}"; exit 0 ;;
         *) warn "Неверный выбор. Попробуйте снова." ;;
     esac
@@ -466,6 +470,7 @@ sync_launcher_shortcuts() {
         "opencode|OpenCode|opencode|$scripts_dir/run-opencode-launcher.sh"
         "freebuff|Freebuff|freebuff|$scripts_dir/run-freebuff-launcher.sh"
         "openclaude|OpenClaude|openclaude|$scripts_dir/run-openclaude-launcher.sh"
+        "mimo|MiMo Code|mimo|$scripts_dir/run-mimo-launcher.sh"
     )
 
     local added=0
@@ -604,7 +609,7 @@ if $DO_UPDATE; then
 
     pkg_updated=0
     pkg_skipped=0
-    for pkg_info in "qwen-code:@qwen-code/qwen-code" "claude-code:@anthropic-ai/claude-code" "opencode-ai:opencode-ai" "freebuff:freebuff" "openclaude:@gitlawb/openclaude"; do
+    for pkg_info in "qwen-code:@qwen-code/qwen-code" "claude-code:@anthropic-ai/claude-code" "opencode-ai:opencode-ai" "freebuff:freebuff" "openclaude:@gitlawb/openclaude" "mimo-code:@mimo-ai/cli"; do
         pkg_name="${pkg_info%%:*}"
         npm_name="${pkg_info##*:}"
 
@@ -680,9 +685,9 @@ if $DO_UNINSTALL; then
     echo -e "${RED}  - Все сессии (qwen/claude/opencode-sessions)${RESET}"
     echo -e "${RED}  - Конфиги CLI (~/.claude, ~/.qwen)${RESET}"
     echo -e "${RED}  - API ключи из ~/.bashrc и ~/.zshrc${RESET}"
-    echo -e "${RED}  - Лаунчеры ~/qwen-code.sh, ~/claude-code.sh, ~/opencode.sh, ~/freebuff.sh, ~/openclaude.sh${RESET}"
+    echo -e "${RED}  - Лаунчеры ~/qwen-code.sh, ~/claude-code.sh, ~/opencode.sh, ~/freebuff.sh, ~/openclaude.sh, ~/mimo.sh${RESET}"
     echo -e "${RED}  - Desktop ярлыки (.desktop)${RESET}"
-    echo -e "${RED}  - Глобальные npm пакеты (qwen-code, claude-code, opencode-ai, freebuff, openclaude)${RESET}"
+    echo -e "${RED}  - Глобальные npm пакеты (qwen-code, claude-code, opencode-ai, freebuff, openclaude, mimo-ai)${RESET}"
     echo ""
     echo -e "${YELLOW}Введите 'yes' для подтверждения удаления: ${RESET}"
     read -r confirm
@@ -728,8 +733,8 @@ if $DO_UNINSTALL; then
     done
 
     echo -e "${CYAN}Удаление лаунчеров...${RESET}"
-    for launcher in "$HOME/qwen-code.sh" "$HOME/claude-code.sh" "$HOME/opencode.sh" "$HOME/freebuff.sh" "$HOME/openclaude.sh" \
-                    "$HOME/qwen-code-cloud.sh" "$HOME/claude-code-cloud.sh" "$HOME/opencode-cloud.sh" "$HOME/freebuff-cloud.sh" "$HOME/openclaude-cloud.sh"; do
+    for launcher in "$HOME/qwen-code.sh" "$HOME/claude-code.sh" "$HOME/opencode.sh" "$HOME/freebuff.sh" "$HOME/openclaude.sh" "$HOME/mimo.sh" \
+                    "$HOME/qwen-code-cloud.sh" "$HOME/claude-code-cloud.sh" "$HOME/opencode-cloud.sh" "$HOME/freebuff-cloud.sh" "$HOME/openclaude-cloud.sh" "$HOME/mimo-cloud.sh"; do
         if [ -f "$launcher" ]; then
             rm -f "$launcher"
             ok "Удалён: $launcher"
@@ -739,8 +744,8 @@ if $DO_UNINSTALL; then
     echo -e "${CYAN}Удаление desktop ярлыков...${RESET}"
     for d in "$HOME/Desktop" "$HOME/Рабочий стол"; do
         if [ -d "$d" ]; then
-            for f in "$d/Qwen Code.desktop" "$d/Claude Code.desktop" "$d/OpenCode.desktop" "$d/Freebuff.desktop" "$d/OpenClaude.desktop" \
-                      "$d/Qwen Code (cloud).desktop" "$d/Claude Code (cloud).desktop" "$d/OpenCode (cloud).desktop" "$d/Freebuff (cloud).desktop" "$d/OpenClaude (cloud).desktop"; do
+            for f in "$d/Qwen Code.desktop" "$d/Claude Code.desktop" "$d/OpenCode.desktop" "$d/Freebuff.desktop" "$d/OpenClaude.desktop" "$d/MiMo Code.desktop" \
+                      "$d/Qwen Code (cloud).desktop" "$d/Claude Code (cloud).desktop" "$d/OpenCode (cloud).desktop" "$d/Freebuff (cloud).desktop" "$d/OpenClaude (cloud).desktop" "$d/MiMo Code (cloud).desktop"; do
                 if [ -f "$f" ]; then
                     rm -f "$f"
                     ok "Удалён: $f"
@@ -750,7 +755,7 @@ if $DO_UNINSTALL; then
     done
 
     echo -e "${CYAN}Удаление глобальных npm пакетов...${RESET}"
-    for pkg in @qwen-code/qwen-code @anthropic-ai/qwen-code @anthropic-ai/claude-code opencode-ai freebuff @gitlawb/openclaude; do
+    for pkg in @qwen-code/qwen-code @anthropic-ai/qwen-code @anthropic-ai/claude-code opencode-ai freebuff @gitlawb/openclaude @mimo-ai/cli; do
         if npm ls -g "$pkg" &>/dev/null; then
             npm uninstall -g "$pkg" 2>/dev/null && ok "Удалён npm: $pkg" || warn "Не удалось удалить: $pkg"
         else
@@ -846,6 +851,16 @@ if $INSTALL_OPENCLAUDE; then
         ok "OpenClaude CLI: $(which openclaude 2>/dev/null)"
     else
         warn "Не удалось установить OpenClaude CLI. Установите вручную: npm i -g @gitlawb/openclaude"
+    fi
+fi
+
+if $INSTALL_MIMO; then
+    echo -e "${CYAN}Установка/обновление MiMo Code CLI…${RESET}"
+    if npm install -g @mimo-ai/cli@latest 2>/dev/null; then
+        ok "MiMo Code CLI: $(which mimo 2>/dev/null)"
+    else
+        warn "Не удалось установить MiMo Code CLI. Установите вручную: npm i -g @mimo-ai/cli"
+        warn "Альтернатива: curl -fsSL https://mimo.xiaomi.com/install | bash"
     fi
 fi
 
@@ -1078,6 +1093,16 @@ if $INSTALL_OPENCLAUDE; then
     fi
 fi
 
+if $INSTALL_MIMO; then
+    LAUNCHER="$SCRIPTS_DIR/run-mimo-launcher.sh"
+    if [ -f "$LAUNCHER" ]; then
+        if [ -n "$DESKTOP" ]; then
+            make_desktop_entry "MiMo Code" "$LAUNCHER"
+        fi
+        make_sh_launcher "mimo" "$LAUNCHER"
+    fi
+fi
+
 # ─── Итоги ───────────────────────────────────────────────────────────────────
 
 echo ""
@@ -1093,6 +1118,7 @@ if $INSTALL_CLAUDE;   then echo -e "${GREEN}  ~/claude-code.sh${RESET}"; fi
 if $INSTALL_OPENCODE; then echo -e "${GREEN}  ~/opencode.sh${RESET}"; fi
 if $INSTALL_FREEBUFF; then echo -e "${GREEN}  ~/freebuff.sh${RESET}"; fi
 if $INSTALL_OPENCLAUDE; then echo -e "${GREEN}  ~/openclaude.sh${RESET}"; fi
+if $INSTALL_MIMO;     then echo -e "${GREEN}  ~/mimo.sh${RESET}"; fi
 echo ""
 echo -e "${YELLOW}Перезапустите терминал для применения API ключей. Запускайте через команды выше!${RESET}"
 echo ""

@@ -1,5 +1,5 @@
 ﻿# Creates desktop shortcuts: hidden "Cloud Launchers" folder with technical files,
-# and exactly 5 visible shortcuts on desktop (Qwen Code, Claude Code, OpenCode, Freebuff, OpenClaude).
+# and visible shortcuts on desktop (Qwen Code, Claude Code, OpenCode, Freebuff, OpenClaude, MiMo Code).
 # Usage: powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\create-desktop-shortcuts.ps1 -RepoRoot "D:\qwen-local-setup"
 
 [CmdletBinding()]
@@ -80,7 +80,7 @@ try {
   $fi.Attributes = $fi.Attributes -bor [System.IO.FileAttributes]::Hidden
 } catch {}
 
-$cloudBaseNames = @("Qwen Code (cloud)", "Claude Code (cloud)", "OpenCode (cloud)", "Freebuff (cloud)", "OpenClaude (cloud)")
+$cloudBaseNames = @("Qwen Code (cloud)", "Claude Code (cloud)", "OpenCode (cloud)", "Freebuff (cloud)", "OpenClaude (cloud)", "MiMo Code (cloud)")
 foreach ($baseName in $cloudBaseNames) {
   foreach ($ext in @(".cmd", ".lnk")) {
     $oldPath = Join-Path $DesktopPath "$baseName$ext"
@@ -105,7 +105,8 @@ $launchers = @(
   @{ Name = "Claude Code (cloud)"; Script = "run-claude-cloud-launcher.ps1";    DeskName = "Claude Code" },
   @{ Name = "OpenCode (cloud)";    Script = "run-opencode-launcher.ps1";        DeskName = "OpenCode" },
   @{ Name = "Freebuff (cloud)";    Script = "run-freebuff-launcher.ps1";        DeskName = "Freebuff" },
-  @{ Name = "OpenClaude (cloud)";  Script = "run-openclaude-launcher.ps1";      DeskName = "OpenClaude" }
+  @{ Name = "OpenClaude (cloud)";  Script = "run-openclaude-launcher.ps1";      DeskName = "OpenClaude" },
+  @{ Name = "MiMo Code (cloud)";   Script = "run-mimo-launcher.ps1";            DeskName = "MiMo Code" }
 )
 
 $okCount = 0

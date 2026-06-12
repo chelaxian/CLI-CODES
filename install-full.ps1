@@ -74,7 +74,7 @@ Write-Status "   ╚═════╝╚══════╝╚═╝         
 Write-Status "" "Cyan"
 Write-Status "              C L O U D   C O D E  -  1-click install" "Yellow"
 Write-Status "" "Cyan"
-Write-Status "  Qwen Code + Claude Code + OpenCode + Freebuff + OpenClaude" "Yellow"
+Write-Status "  Qwen Code + Claude Code + OpenCode + Freebuff + OpenClaude + MiMo Code" "Yellow"
 Write-Status "" "Cyan"
 Write-Status "======================================================================" "Cyan"
 Write-Host ""
@@ -219,6 +219,7 @@ $installClaude = $false
 $installOpenCode = $false
 $installFreebuff = $false
 $installOpenClaude = $false
+$installMimo = $false
 
 :menuLoop while ($true) {
     Write-Status "======================================================================" "Cyan"
@@ -232,9 +233,10 @@ $installOpenClaude = $false
     Write-Status "  [4] Только OpenCode" "Green"
     Write-Status "  [5] Только Freebuff" "Green"
     Write-Status "  [6] Только OpenClaude" "Green"
-    Write-Status "  [7] Обновление ВСЕХ компонентов (проверяет актуальность)" "Yellow"
-    Write-Status "  [8] Полное удаление проекта с ПК (uninstall)" "Red"
-    Write-Status "  [9] Обновить ярлыки на рабочем столе (актуализация, скрытие скриптов)" "Cyan"
+    Write-Status "  [7] Только MiMo Code" "Green"
+    Write-Status "  [8] Обновление ВСЕХ компонентов (проверяет актуальность)" "Yellow"
+    Write-Status "  [9] Полное удаление проекта с ПК (uninstall)" "Red"
+    Write-Status "  [D] Обновить ярлыки на рабочем столе (актуализация, скрытие скриптов)" "Cyan"
     Write-Status "  [X] Выход из мастера установки" "Gray"
     Write-Host ""
 
@@ -247,18 +249,20 @@ $installOpenClaude = $false
     $installOpenCode = $false
     $installFreebuff = $false
     $installOpenClaude = $false
+    $installMimo = $false
 
     switch ($installChoice) {
         "0" { break menuLoop }
-        "1" { $installQwen = $true; $installClaude = $true; $installOpenCode = $true; $installFreebuff = $true; $installOpenClaude = $true; break menuLoop }
+        "1" { $installQwen = $true; $installClaude = $true; $installOpenCode = $true; $installFreebuff = $true; $installOpenClaude = $true; $installMimo = $true; break menuLoop }
         "2" { $installQwen = $true; break menuLoop }
         "3" { $installClaude = $true; break menuLoop }
         "4" { $installOpenCode = $true; break menuLoop }
         "5" { $installFreebuff = $true; break menuLoop }
         "6" { $installOpenClaude = $true; break menuLoop }
-        "7" { break menuLoop }
+        "7" { $installMimo = $true; break menuLoop }
         "8" { break menuLoop }
         "9" { break menuLoop }
+        "D" { break menuLoop }
         "X" { Write-Status "Выход." "Yellow"; return }
         default { Write-Status "Неверный выбор. Попробуйте снова." "Yellow" }
     }
@@ -385,7 +389,7 @@ function Sync-LauncherShortcuts {
     }
 
     # Migrate ALL cloud-related files from desktop root to hidden folder
-    $cloudBaseNames = @("Qwen Code (cloud)", "Claude Code (cloud)", "OpenCode (cloud)", "Freebuff (cloud)", "OpenClaude (cloud)")
+    $cloudBaseNames = @("Qwen Code (cloud)", "Claude Code (cloud)", "OpenCode (cloud)", "Freebuff (cloud)", "OpenClaude (cloud)", "MiMo Code (cloud)")
     foreach ($baseName in $cloudBaseNames) {
       foreach ($ext in @(".cmd", ".lnk")) {
         $oldPath = Join-Path $desktop "$baseName$ext"
@@ -507,6 +511,7 @@ function Sync-LauncherShortcuts {
       @{ Cli = "opencode";   Name = "OpenCode (cloud)";    Script = "run-opencode-launcher.ps1";     ShortName = "OpenCode" }
       @{ Cli = "freebuff";   Name = "Freebuff (cloud)";    Script = "run-freebuff-launcher.ps1";     ShortName = "Freebuff" }
       @{ Cli = "openclaude"; Name = "OpenClaude (cloud)";  Script = "run-openclaude-launcher.ps1";   ShortName = "OpenClaude" }
+      @{ Cli = "mimo";       Name = "MiMo Code (cloud)";   Script = "run-mimo-launcher.ps1";         ShortName = "MiMo Code" }
     )
 
     $added = 0
@@ -546,7 +551,7 @@ function Sync-LauncherShortcuts {
 }
 
 # --- Update all components ---
-if ($installChoice -eq "7") {
+if ($installChoice -eq "8") {
     Write-Host ""
     Write-Status "======================================================================" "Cyan"
     Write-Status "ОБНОВЛЕНИЕ ВСЕХ КОМПОНЕНТОВ" "Magenta"
@@ -648,7 +653,8 @@ if ($installChoice -eq "7") {
         @{ Name = "claude-code"; NpmPkg = "@anthropic-ai/claude-code"; Fallback = $null;                     Cmd = "claude" },
         @{ Name = "opencode-ai"; NpmPkg = "opencode-ai";               Fallback = $null;                     Cmd = "opencode" },
         @{ Name = "freebuff";    NpmPkg = "freebuff";                  Fallback = $null;                     Cmd = "freebuff" },
-        @{ Name = "openclaude";  NpmPkg = "@gitlawb/openclaude";       Fallback = $null;                     Cmd = "openclaude" }
+        @{ Name = "openclaude";  NpmPkg = "@gitlawb/openclaude";       Fallback = $null;                     Cmd = "openclaude" },
+        @{ Name = "mimo-code";   NpmPkg = "@mimo-ai/cli";              Fallback = $null;                     Cmd = "mimo" }
     )
 
     foreach ($pkg in $pkgs) {
@@ -724,7 +730,7 @@ if ($installChoice -eq "7") {
 
     $ErrorActionPreference = $prevEAP
 
-    # Синхронизация ярлыков: в [7] update всегда переписываем .cmd/.lnk,
+    # Синхронизация ярлыков: в [8] update всегда переписываем .cmd/.lnk,
     # чтобы в .cmd обновились пути к launcher скриптам после git pull.
     Write-Host ""
     Write-Status "Обновление ярлыков на рабочем столе..." "Cyan"
@@ -739,8 +745,8 @@ if ($installChoice -eq "7") {
     return
 }
 
-# --- Reorder desktop shortcuts: hide cloud files, keep only 5 launchers visible ---
-if ($installChoice -eq "9") {
+# --- Reorder desktop shortcuts: hide cloud files, keep only launchers visible ---
+if ($installChoice -eq "D") {
     Write-Host ""
     Write-Status "======================================================================" "Cyan"
     Write-Status "УПОРЯДОЧЕНИЕ ЯРЛЫКОВ НА РАБОЧЕМ СТОЛЕ" "Magenta"
@@ -784,7 +790,7 @@ if ($installChoice -eq "9") {
     Write-Status "Готово." "Green"
     Write-Status "  - Папка Cloud Launchers скрыта" "DarkGray"
     Write-Status "  - .cmd файлы в папке скрыты" "DarkGray"
-    Write-Status "  - На рабочем столе остались только 5 ярлыков: Qwen Code, Claude Code, OpenCode, Freebuff, OpenClaude" "DarkGray"
+    Write-Status "  - На рабочем столе остались только ярлыки: Qwen Code, Claude Code, OpenCode, Freebuff, OpenClaude, MiMo Code" "DarkGray"
     Write-Host ""
     Read-Host "Нажмите Enter для выхода"
     return
@@ -805,7 +811,7 @@ if ($installChoice -eq "8") {
     Write-Host "  - uv (Python package manager, ~/.local/bin/uv)" -ForegroundColor Red
     Write-Host "  - API keys (user environment variables)" -ForegroundColor Red
     Write-Host "  - Desktop shortcuts (.cmd, .lnk)" -ForegroundColor Red
-    Write-Host "  - Global npm packages (qwen-code, claude-code, opencode-ai, freebuff, openclaude)" -ForegroundColor Red
+    Write-Host "  - Global npm packages (qwen-code, claude-code, opencode-ai, freebuff, openclaude, mimo-ai)" -ForegroundColor Red
     Write-Host ""
     $confirm = Read-Host "Введите 'yes' для подтверждения удаления"
     if ($confirm -ne "yes") {
@@ -847,7 +853,7 @@ if ($installChoice -eq "8") {
       $desktop = [Environment]::GetFolderPath("Desktop")
       if (-not $desktop) { $desktop = Join-Path $env:USERPROFILE "Desktop" }
     }
-    foreach ($name in @("Qwen Code (cloud)", "Claude Code (cloud)", "OpenCode (cloud)", "Freebuff (cloud)", "OpenClaude (cloud)", "Claude Mem Start", "Claude Mem Viewer", "Claude Mem Clear", "Obsidian")) {
+    foreach ($name in @("Qwen Code (cloud)", "Claude Code (cloud)", "OpenCode (cloud)", "Freebuff (cloud)", "OpenClaude (cloud)", "MiMo Code (cloud)", "Claude Mem Start", "Claude Mem Viewer", "Claude Mem Clear", "Obsidian")) {
         foreach ($ext in @(".cmd", ".lnk")) {
             $f = Join-Path $desktop "$name$ext"
             if (Test-Path -LiteralPath $f) {
@@ -859,7 +865,7 @@ if ($installChoice -eq "8") {
 
     Write-Status "Удаление глобальных npm пакетов..." "Cyan"
     $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
-    foreach ($pkg in @("@qwen-code/qwen-code", "@anthropic-ai/qwen-code", "@anthropic-ai/claude-code", "opencode-ai", "freebuff", "@gitlawb/openclaude")) {
+    foreach ($pkg in @("@qwen-code/qwen-code", "@anthropic-ai/qwen-code", "@anthropic-ai/claude-code", "opencode-ai", "freebuff", "@gitlawb/openclaude", "@mimo-ai/cli")) {
         & npm.cmd uninstall -g $pkg 2>$null
         Write-Status "  [OK] Uninstalled: $pkg" "Green"
     }
@@ -1027,6 +1033,20 @@ if ($installOpenClaude) {
     }
 }
 
+if ($installMimo) {
+    Write-Status "Установка MiMo Code CLI..." "Cyan"
+    $prevEAP = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+    & npm.cmd install -g @mimo-ai/cli@latest 2>$null
+    $ErrorActionPreference = $prevEAP
+    $mimoCmd = Get-Command mimo -ErrorAction SilentlyContinue
+    if ($mimoCmd) {
+        Write-Status "  [OK] MiMo Code CLI: $($mimoCmd.Source)" "Green"
+    } else {
+        Write-Status "  [WARN] MiMo Code CLI not found. Install manually:" "Yellow"
+        Write-Status "         npm i -g @mimo-ai/cli" "Yellow"
+    }
+}
+
 Write-Host ""
 Write-Status "======================================================================" "Cyan"
 Write-Status "НАСТРОЙКА API КЛЮЧЕЙ" "Magenta"
@@ -1168,6 +1188,7 @@ if ($installClaude) { Write-Status "  * Claude Code (cloud)" "Green" }
 if ($installOpenCode) { Write-Status "  * OpenCode (cloud)" "Green" }
 if ($installFreebuff) { Write-Status "  * Freebuff (cloud)" "Green" }
 if ($installOpenClaude) { Write-Status "  * OpenClaude (cloud)" "Green" }
+if ($installMimo) { Write-Status "  * MiMo Code (cloud)" "Green" }
 Write-Host ""
 Write-Status "Перезапустите терминал, чтобы API ключи применились. Запускайте через ярлыки!" "Yellow"
 Write-Host ""
