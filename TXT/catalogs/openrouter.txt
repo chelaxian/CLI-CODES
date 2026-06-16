@@ -1,0 +1,9 @@
+# openrouter.txt -- каталог моделей OpenRouter (бесплатные agentic).
+#
+# Формат:  internal-id|api-model-id|label|context-tokens|max-output-tokens
+# Для OpenRouter поля ctx/max не используются -- 0.
+
+deepseek-v4-flash|deepseek/deepseek-v4-flash:free|DeepSeek V4 Flash (free, tool calling)|0|0
+qwen3-coder|qwen/qwen3-coder:free|Qwen3 Coder (free, tool calling)|0|0
+nemotron|nvidia/nemotron-3-super-120b-a12b:free|Nemotron 3 Super 120B (free, tool calling)|0|0
+laguna|poolside/laguna-m.1:free|Poolside Laguna M.1 (free, tool calling, coding)|0|0

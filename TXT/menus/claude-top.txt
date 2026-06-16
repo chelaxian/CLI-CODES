@@ -1,0 +1,17 @@
+# menus/claude-top.txt -- заголовки и подзаголовки верхнеуровневого меню
+# Claude Code launcher'а.
+#
+# Формат:  key | text
+#
+# Используется в Show-TuiFramedMenu - параметры -Title и -Subtitle.
+
+TITLE_MAIN|Claude Code - провайдер
+SUBTITLE_MAIN|Z.AI · NIM · B.AI · OpenRouter (через free-claude-code)
+
+TITLE_ZAI|Claude Code - ZAI
+TITLE_NIM|Claude Code - NIM
+TITLE_BAI|Claude Code - BAI
+TITLE_OPENROUTER|Claude Code - OPENROUTER
+
+TITLE_NATIVE_LOGIN|Нативный логин Claude Code
+SUBTITLE_NATIVE_LOGIN|Anthropic авторизация

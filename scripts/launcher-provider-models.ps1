@@ -163,9 +163,48 @@ function Get-ZaiCodingModelIdsFromApi {
     "https://api.z.ai/api/coding/paas/v4/models",
     "https://api.z.ai/api/paas/v4/models"
   )
+
+  # PS 7+: parallel fetch both endpoints via ForEach-Object -Parallel. The faster one wins.
+  # Eliminates up to ~8s of serial latency when the first endpoint is geo-blocked.
+  # PS 5.1: keep sequential fallback with shorter 8s timeout (down from 20s).
+  if ($PSVersionTable.PSVersion.Major -ge 7) {
+    $bag = [System.Collections.Concurrent.ConcurrentBag[string]]::new()
+    $apiKey = $ApiKey.Trim()
+    try {
+      $uris | ForEach-Object -Parallel -ThrottleLimit 2 {
+        $uri = $_
+        try {
+          $iwr = Get-Command Invoke-WebRequest -ErrorAction Stop
+          $useBasic = $iwr.Parameters.ContainsKey("UseBasicParsing")
+          $params = @{
+            Uri         = $uri
+            Method      = "Get"
+            TimeoutSec  = 8
+            ErrorAction = "Stop"
+            Headers     = @{ Authorization = "Bearer $using:apiKey" }
+          }
+          if ($useBasic) { $params.UseBasicParsing = $true }
+          $resp = Invoke-WebRequest @params
+          $j = $resp.Content | ConvertFrom-Json
+          if ($j.data) {
+            foreach ($row in @($j.data)) {
+              $id = [string]$row.id
+              if (-not [string]::IsNullOrWhiteSpace($id)) { ($using:bag).Add($id.Trim()) | Out-Null }
+            }
+          }
+        } catch {}
+      }
+    } catch {}
+    $out = @($bag) | Sort-Object -Unique
+    if ($out.Count -gt 0) { return $out }
+    return @()
+  }
+
+  # PS 5.1 sequential fallback (12s -- enough for slow 4G / DNS delays without
+  # being as generous as legacy 20s which made cold-start feel sluggish).
   foreach ($u in $uris) {
     try {
-      $j = Invoke-LauncherJsonGet -Uri $u -Headers $h -TimeoutSec 20
+      $j = Invoke-LauncherJsonGet -Uri $u -Headers $h -TimeoutSec 12
       if ($j.data) {
         $ids = [System.Collections.Generic.List[string]]::new()
         foreach ($row in @($j.data)) {

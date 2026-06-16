@@ -54,6 +54,44 @@ if (-not $InstallDir) { $InstallDir = "" }
 
 Write-Host "CLI-CODES :: starting..." -ForegroundColor Cyan
 
+# -- TXT/ labels для пунктов меню установщика. Если TXT/menus/installer.txt
+#    содержит соответствующие ключи -- они переопределяют дефолты ниже.
+#    Если TXT/ отсутствует или файла нет -- используются инлайн-default'ы.
+. (Join-Path $PSScriptRoot "scripts\launcher-text-resolver.ps1")
+$script:IM = @{
+  "0" = "Установка системных зависимостей (git, node, npm, curl)"
+  "1" = "Установка сразу ВСЕХ агентов  ← рекомендуется"
+  "2" = "Только Qwen Code"
+  "3" = "Только Claude Code"
+  "4" = "Только OpenCode"
+  "5" = "Только Freebuff"
+  "6" = "Только OpenClaude"
+  "7" = "Только MiMo Code"
+  "8" = "Обновление ВСЕХ компонентов (проверяет актуальность)"
+  "9" = "Полное удаление проекта с ПК (uninstall)"
+  "D" = "Обновить ярлыки на рабочем столе (актуализация, скрытие скриптов)"
+  "X" = "Выход из мастера установки"
+}
+$script:InstallerMenuTitle    = "ЧТО УСТАНАВЛИВАЕМ?"
+$script:InstallerMenuSubtitle = "Qwen Code + Claude Code + OpenCode + Freebuff + OpenClaude + MiMo Code"
+$script:InstallerMenuColor = @{
+  "0" = "Cyan";  "1" = "Yellow"; "2" = "Green";  "3" = "Green"; "4" = "Green";
+  "5" = "Green"; "6" = "Green";  "7" = "Green";  "8" = "Yellow"; "9" = "Red";
+  "D" = "Cyan";  "X" = "Gray"
+}
+$txtInstallerMenu = Get-TextMenuMap -FileKey "menu-installer"
+if ($txtInstallerMenu) {
+  foreach ($k in $txtInstallerMenu.Keys) {
+    $vv = [string]$txtInstallerMenu[$k]
+    if (-not [string]::IsNullOrWhiteSpace($vv)) { $script:IM[$k] = $vv }
+  }
+  if ($txtInstallerMenu.ContainsKey("TITLE")    -and -not [string]::IsNullOrWhiteSpace([string]$txtInstallerMenu["TITLE"]))    { $script:InstallerMenuTitle    = [string]$txtInstallerMenu["TITLE"] }
+  if ($txtInstallerMenu.ContainsKey("SUBTITLE") -and -not [string]::IsNullOrWhiteSpace([string]$txtInstallerMenu["SUBTITLE"])) { $script:InstallerMenuSubtitle = [string]$txtInstallerMenu["SUBTITLE"] }
+}
+function Write-InstallerMenuLine([string]$Key) {
+  Write-Status ("  [{0}] {1}" -f $Key, $script:IM[$Key]) $script:InstallerMenuColor[$Key]
+}
+
 function Write-Status($Text, $Color = "White") {
     Write-Host $Text -ForegroundColor $Color
 }
@@ -174,8 +212,6 @@ if (Test-Path -LiteralPath (Join-Path $InstallDir ".git")) {
 
         if ($code -eq 0) {
                 Write-Status "  [OK] Репозиторий обновлён" "Green"
-                $fixedEnc = Repair-ScriptEncoding (Join-Path $InstallDir "scripts")
-                if ($fixedEnc -gt 0) { Write-Status "  [OK] UTF-8 BOM applied to $fixedEnc scripts" "DarkGray" }
             } else {
             Write-Status "  [WARN] git pull failed (code $code). Using local files." "Yellow"
             if ($out) { Write-Host $out }
@@ -208,6 +244,7 @@ if (Test-Path -LiteralPath (Join-Path $InstallDir ".git")) {
         return
     }
     Write-Status "  [OK] Репозиторий клонирован: $InstallDir" "Green"
+    # Починить encoding первый раз после clone (последующие обновления не нужны - файлы уже с BOM)
     $fixedEnc = Repair-ScriptEncoding (Join-Path $InstallDir "scripts")
     if ($fixedEnc -gt 0) { Write-Status "  [OK] UTF-8 BOM applied to $fixedEnc scripts" "DarkGray" }
 }
@@ -223,21 +260,14 @@ $installMimo = $false
 
 :menuLoop while ($true) {
     Write-Status "======================================================================" "Cyan"
-    Write-Status "ЧТО УСТАНАВЛИВАЕМ?" "Magenta"
+    Write-Status $script:InstallerMenuTitle "Magenta"
     Write-Status "======================================================================" "Cyan"
     Write-Host ""
-    Write-Status "  [0] Установка системных зависимостей (git, node, npm, curl)" "Cyan"
-    Write-Status "  [1] Установка сразу ВСЕХ агентов  ← рекомендуется" "Yellow"
-    Write-Status "  [2] Только Qwen Code" "Green"
-    Write-Status "  [3] Только Claude Code" "Green"
-    Write-Status "  [4] Только OpenCode" "Green"
-    Write-Status "  [5] Только Freebuff" "Green"
-    Write-Status "  [6] Только OpenClaude" "Green"
-    Write-Status "  [7] Только MiMo Code" "Green"
-    Write-Status "  [8] Обновление ВСЕХ компонентов (проверяет актуальность)" "Yellow"
-    Write-Status "  [9] Полное удаление проекта с ПК (uninstall)" "Red"
-    Write-Status "  [D] Обновить ярлыки на рабочем столе (актуализация, скрытие скриптов)" "Cyan"
-    Write-Status "  [X] Выход из мастера установки" "Gray"
+    foreach ($k in @("0","1","2","3","4","5","6","7","8","9","D","X")) {
+      Write-InstallerMenuLine $k
+    }
+    Write-Host ""
+    Write-Status "  $($script:InstallerMenuSubtitle)" "Yellow"
     Write-Host ""
 
     $installChoice = Read-Host "Ваш выбор [1]"
@@ -797,7 +827,7 @@ if ($installChoice -eq "D") {
 }
 
 # --- Uninstall ---
-if ($installChoice -eq "8") {
+if ($installChoice -eq "9") {
     Write-Host ""
     Write-Status "======================================================================" "Red"
     Write-Status "ПОЛНОЕ УДАЛЕНИЕ" "Red"

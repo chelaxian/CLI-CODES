@@ -1,0 +1,13 @@
+# menus/subtitles.txt -- подзаголовки в подменю провайдеров.
+#
+# Формат:  provider-key | subtitle-text
+#
+# provider-key: zai | nim | bai | openrouter
+#
+# Используется в Claude launcher (`Show-TuiFramedMenu -Subtitle ...`) и
+# в Qwen launcher ('$subTitle = ...').
+
+zai|Z.AI Coding (paid) + GLM-4.7-Flash (free)
+nim|NVIDIA NIM - бесплатные agentic модели
+bai|B.AI - https://api.b.ai/v1 (OpenAI-compatible)
+openrouter|OpenRouter - бесплатные agentic модели

@@ -1,4 +1,9 @@
 ﻿# TUI-меню для лаунчеров Qwen / Claude (рамки, прокрутка, баннер).
+# Баннеры читаются из TXT/logos/<brand>.txt если файл существует;
+# в противном случае используются инлайн-fallback (ASCII ниже).
+# Смотри TXT/README.txt и scripts/launcher-text-resolver.ps1.
+
+. (Join-Path $PSScriptRoot "launcher-text-resolver.ps1")
 
 function Set-LauncherTuiConsole {
   try {
@@ -41,9 +46,27 @@ function Write-TuiRow {
   Write-Host ($b.V + $Text + $b.V) -ForegroundColor $Fg
 }
 
+# Render an array of banner lines through Write-TuiRow with a single color.
+# Used by all 7 Write-TuiBanner* wrappers (and after TXT/logos fallback).
+function Render-TuiBannerLines {
+  param(
+    [Parameter(Mandatory = $true)][int]$InnerWidth,
+    [Parameter(Mandatory = $true)][string[]]$Lines,
+    [System.ConsoleColor]$Fg = "Gray"
+  )
+  foreach ($ln in $Lines) {
+    Write-TuiRow -Text $ln -InnerWidth $InnerWidth -Fg $Fg
+  }
+}
+
 function Write-TuiBannerQwen {
   param([int]$InnerWidth)
-  # Тот же визуальный язык, что и у Claude (FIGlet «ANSI Shadow»), по центру как CLAUDE (ширина 59).
+  $txt = Get-TextLogo -Brand "qwen"
+  if ($txt) {
+    Render-TuiBannerLines -InnerWidth $InnerWidth -Lines $txt -Fg DarkCyan
+    return
+  }
+  # Inline fallback — FIGlet «ANSI Shadow», центрируется вокруг $bannerW=59.
   $raw = @(
     " ██████╗ ██╗    ██╗███████╗███╗   ██╗"
     "██╔═══██╗██║    ██║██╔════╝████╗  ██║"
@@ -53,6 +76,7 @@ function Write-TuiBannerQwen {
     " ╚══▀▀═╝  ╚══╝╚══╝ ╚══════╝╚═╝  ╚═══╝"
   )
   $bannerW = 59
+  $centered = @()
   foreach ($ln in $raw) {
     $len = $ln.Length
     if ($len -ge $bannerW) {
@@ -62,12 +86,18 @@ function Write-TuiBannerQwen {
       $padR = $bannerW - $len - $padL
       $row = ((" " * $padL) + $ln + (" " * $padR))
     }
-    Write-TuiRow -Text $row -InnerWidth $InnerWidth -Fg DarkCyan
+    $centered += $row
   }
+  Render-TuiBannerLines -InnerWidth $InnerWidth -Lines $centered -Fg DarkCyan
 }
 
 function Write-TuiBannerClaude {
   param([int]$InnerWidth)
+  $txt = Get-TextLogo -Brand "claude"
+  if ($txt) {
+    Render-TuiBannerLines -InnerWidth $InnerWidth -Lines $txt -Fg DarkMagenta
+    return
+  }
   $lines = @(
     "   ██████╗██╗      █████╗ ██╗   ██╗██████╗ ███████╗",
     "  ██╔════╝██║     ██╔══██╗██║   ██║██╔══██╗██╔════╝",
@@ -76,13 +106,16 @@ function Write-TuiBannerClaude {
     "  ╚██████╗███████╗██║  ██║╚██████╔╝██████╔╝███████╗",
     "   ╚═════╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚══════╝"
   )
-  foreach ($ln in $lines) {
-    Write-TuiRow -Text $ln -InnerWidth $InnerWidth -Fg DarkMagenta
-  }
+  Render-TuiBannerLines -InnerWidth $InnerWidth -Lines $lines -Fg DarkMagenta
 }
 
 function Write-TuiBannerLlamaCpp {
   param([int]$InnerWidth)
+  $txt = Get-TextLogo -Brand "llamacpp"
+  if ($txt) {
+    Render-TuiBannerLines -InnerWidth $InnerWidth -Lines $txt -Fg DarkGreen
+    return
+  }
   # Ширина баннера ~59, как у Claude/Qwen
   $lines = @(
     " ██╗     ██╗      █████╗ ███╗   ███╗ █████╗      ██████╗██████╗ ██████╗ "
@@ -92,13 +125,16 @@ function Write-TuiBannerLlamaCpp {
     " ███████╗███████╗██║  ██║██║ ╚═╝ ██║██║  ██║    ╚██████╗██║     ██║     "
     " ╚══════╝╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝     ╚═════╝╚═╝     ╚═╝     "
   )
-  foreach ($ln in $lines) {
-    Write-TuiRow -Text $ln -InnerWidth $InnerWidth -Fg DarkGreen
-  }
+  Render-TuiBannerLines -InnerWidth $InnerWidth -Lines $lines -Fg DarkGreen
 }
 
 function Write-TuiBannerLMStudio {
   param([int]$InnerWidth)
+  $txt = Get-TextLogo -Brand "lmstudio"
+  if ($txt) {
+    Render-TuiBannerLines -InnerWidth $InnerWidth -Lines $txt -Fg DarkCyan
+    return
+  }
   $lines = @(
     " ██╗     ███╗   ███╗    ███████╗████████╗██╗   ██╗██████╗ ██╗ ██████╗ "
     " ██║     ████╗ ████║    ██╔════╝╚══██╔══╝██║   ██║██╔══██╗██║██╔═══██╗"
@@ -107,13 +143,16 @@ function Write-TuiBannerLMStudio {
     " ███████╗██║ ╚═╝ ██║    ███████║   ██║   ╚██████╔╝██████╔╝██║╚██████╔╝"
     " ╚══════╝╚═╝     ╚═╝    ╚══════╝   ╚═╝    ╚═════╝ ╚═════╝ ╚═╝ ╚═════╝ "
   )
-  foreach ($ln in $lines) {
-    Write-TuiRow -Text $ln -InnerWidth $InnerWidth -Fg DarkCyan
-  }
+  Render-TuiBannerLines -InnerWidth $InnerWidth -Lines $lines -Fg DarkCyan
 }
 
 function Write-TuiBannerOpenCode {
   param([int]$InnerWidth)
+  $txt = Get-TextLogo -Brand "opencode"
+  if ($txt) {
+    Render-TuiBannerLines -InnerWidth $InnerWidth -Lines $txt -Fg DarkGreen
+    return
+  }
   $lines = @(
     " ██████╗ ██████╗ ███████╗███╗   ██╗ ██████╗ ██████╗ ██████╗ ███████╗"
     "██╔═══██╗██╔══██╗██╔════╝████╗  ██║██╔════╝██╔═══██╗██╔══██╗██╔════╝"
@@ -122,13 +161,16 @@ function Write-TuiBannerOpenCode {
     "╚██████╔╝██║     ███████╗██║ ╚████║╚██████╗╚██████╔╝██████╔╝███████╗"
     " ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝ ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝"
   )
-  foreach ($ln in $lines) {
-    Write-TuiRow -Text $ln -InnerWidth $InnerWidth -Fg DarkGreen
-  }
+  Render-TuiBannerLines -InnerWidth $InnerWidth -Lines $lines -Fg DarkGreen
 }
 
 function Write-TuiBannerFreebuff {
   param([int]$InnerWidth)
+  $txt = Get-TextLogo -Brand "freebuff"
+  if ($txt) {
+    Render-TuiBannerLines -InnerWidth $InnerWidth -Lines $txt -Fg White
+    return
+  }
   $lines = @(
     "███████╗██████╗ ███████╗███████╗██████╗ ██╗   ██╗███████╗███████╗",
     "██╔════╝██╔══██╗██╔════╝██╔════╝██╔══██╗██║   ██║██╔════╝██╔════╝",
@@ -137,13 +179,16 @@ function Write-TuiBannerFreebuff {
     "██║     ██║  ██║███████╗███████╗██████╔╝╚██████╔╝██║     ██║     ",
     "╚═╝     ╚═╝  ╚═╝╚══════╝╚══════╝╚═════╝  ╚═════╝ ╚═╝     ╚═╝     "
   )
-  foreach ($ln in $lines) {
-    Write-TuiRow -Text $ln -InnerWidth $InnerWidth -Fg White
-  }
+  Render-TuiBannerLines -InnerWidth $InnerWidth -Lines $lines -Fg White
 }
 
 function Write-TuiBannerOpenClaude {
   param([int]$InnerWidth)
+  $txt = Get-TextLogo -Brand "openclaude"
+  if ($txt) {
+    Render-TuiBannerLines -InnerWidth $InnerWidth -Lines $txt -Fg DarkGreen
+    return
+  }
   # Однострок: OPEN + CLAUDE side-by-side (compact ANSI Shadow).
   $lines = @(
     " ██████╗ ██████╗ ███████╗███╗   ██╗   ██████╗██╗      █████╗ ██╗   ██╗██████╗ ███████╗",
@@ -153,9 +198,7 @@ function Write-TuiBannerOpenClaude {
     "╚██████╔╝██║     ███████╗██║ ╚████║  ╚██████╗███████╗██║  ██║╚██████╔╝██████╔╝███████╗",
     " ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝   ╚═════╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚══════╝"
   )
-  foreach ($ln in $lines) {
-    Write-TuiRow -Text $ln -InnerWidth $InnerWidth -Fg DarkGreen
-  }
+  Render-TuiBannerLines -InnerWidth $InnerWidth -Lines $lines -Fg DarkGreen
 }
 
 function Show-TuiFramedMenu {
@@ -374,11 +417,65 @@ function Invoke-ChildCliCatchCtrlC {
 # Checks for updates to: (1) the CLI-CODES repo scripts, (2) the agent binary.
 # Returns a string (update hint) or "" if no updates / check failed.
 # Non-blocking: any failure is silently ignored.
+#
+# Performance: result is cached on disk in <repoRoot>/.update-cache.json with
+# 1-hour TTL. Repeat launcher launches within ~1h skip both the GitHub API call
+# and the npm view child-process spawn. Saves 2-10s per launch on warm cache.
+$script:LauncherUpdateCachePath = $null
+if ($PSScriptRoot) {
+  $root = Split-Path $PSScriptRoot -Parent
+  if ($root) { $script:LauncherUpdateCachePath = Join-Path $root ".update-cache.json" }
+}
+$script:LauncherUpdateCacheTTLSec = 3600
+
+function Get-CachedLauncherUpdateHint {
+  param([string]$Key)
+  if (-not $script:LauncherUpdateCachePath) { return $null }
+  if (-not (Test-Path -LiteralPath $script:LauncherUpdateCachePath)) { return $null }
+  try {
+    $obj = Get-Content -LiteralPath $script:LauncherUpdateCachePath -Raw -Encoding UTF8 | ConvertFrom-Json
+    if (-not $obj -or -not $obj.PSObject.Properties[$Key]) { return $null }
+    $entry = $obj.PSObject.Properties[$Key].Value
+    if (-not $entry.checkedAt) { return $null }
+    $age = ([DateTime]::UtcNow - [DateTime]::Parse(
+      $entry.checkedAt,
+      [System.Globalization.CultureInfo]::InvariantCulture,
+      [System.Globalization.DateTimeStyles]::RoundtripKind
+    )).TotalSeconds
+    if ($age -ge $script:LauncherUpdateCacheTTLSec) { return $null }
+    return [string]$entry.hint
+  } catch { return $null }
+}
+
+function Set-CachedLauncherUpdateHint {
+  param([string]$Key, [string]$Hint)
+  if (-not $script:LauncherUpdateCachePath) { return }
+  try {
+    $obj = $null
+    if (Test-Path -LiteralPath $script:LauncherUpdateCachePath) {
+      try { $obj = Get-Content -LiteralPath $script:LauncherUpdateCachePath -Raw -Encoding UTF8 | ConvertFrom-Json } catch { $obj = $null }
+    }
+    if (-not $obj) { $obj = [pscustomobject]@{} }
+    $entry = [pscustomobject]@{ checkedAt = (Get-Date).ToUniversalTime().ToString("o"); hint = $Hint }
+    if ($obj.PSObject.Properties[$Key]) {
+      $obj.PSObject.Properties[$Key].Value = $entry
+    } else {
+      $obj | Add-Member -NotePropertyName $Key -NotePropertyValue $entry -Force
+    }
+    ($obj | ConvertTo-Json -Compress) | Set-Content -LiteralPath $script:LauncherUpdateCachePath -Encoding UTF8 -NoNewline
+  } catch {}
+}
+
 function Test-LauncherUpdates {
   param(
     [string]$AgentNpmPackage = "",
     [string]$AgentDisplayName = ""
   )
+
+  # TTL cache short-circuit. Cache key distinguishes "repo-only" from "<pkg>+repo".
+  $cacheKey = if ([string]::IsNullOrWhiteSpace($AgentNpmPackage)) { "repocheck" } else { ("npm+" + $AgentNpmPackage) }
+  $cached = Get-CachedLauncherUpdateHint -Key $cacheKey
+  if ($null -ne $cached) { return $cached }
 
   $hints = @()
   $prevEAP = $ErrorActionPreference
@@ -436,7 +533,14 @@ function Test-LauncherUpdates {
     $ProgressPreference = $prevProgress
   }
 
-  return ($hints -join " | ")
+  $result = ($hints -join " | ")
+  # Only cache non-empty hints: if there's nothing to report, we want the next
+  # launch to re-check the registry/npm so users who manually ran `[8] Update`
+  # (git pull + npm update) get fresh results, not a stale "no updates".
+  if (-not [string]::IsNullOrWhiteSpace($result)) {
+    Set-CachedLauncherUpdateHint -Key $cacheKey -Hint $result
+  }
+  return $result
 }
 
 # ─── Resolve-CommandOrInstall ─────────────────────────────────────────────────

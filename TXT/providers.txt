@@ -1,0 +1,16 @@
+# providers.txt -- метаданные провайдеров для лаунчеров.
+#
+# Формат:  provider-key|display-name|get-api-key-url|env-var-name
+#
+# provider-key     -- канонический ключ: zai | nim | bai | openrouter
+# display-name     -- как показывать в TUI (обычно "Z.AI", "B.AI" и т.д.)
+# get-api-key-url  -- где пользователь получает API-ключ
+# env-var-name     -- имя переменной окружения User scope
+#
+# Можно менять отображаемые имена и URL-ы -- код автоматически подхватит.
+# НЕ менять provider-key / env-var-name: они захардкожены в скриптах!
+
+zai|Z.AI|https://z.ai/manage-apikey/apikey-create|ZAI_API_KEY
+nim|NIM|https://build.nvidia.com/settings/secrets|NVIDIA_NIM_API_KEY
+bai|B.AI|https://api.b.ai|BAI_API_KEY
+openrouter|OpenRouter|https://openrouter.ai/keys|OPENROUTER_API_KEY

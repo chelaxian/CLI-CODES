@@ -14,6 +14,7 @@ $PSNativeCommandUseErrorActionPreference = $false
 . (Join-Path $PSScriptRoot "launcher-provider-models.ps1")
 . (Join-Path $PSScriptRoot "launcher-custom-model-wizard.ps1")
 . (Join-Path $PSScriptRoot "launcher-api-keys.ps1")
+. (Join-Path $PSScriptRoot "launcher-catalog.ps1")   # SSoT моделей (заменяет inline-массивы ниже)
 
 function Resolve-ApiKeyOrPrompt {
   param(
@@ -87,91 +88,32 @@ $script:Profiles = @(
   }
 )
 
-# Характеристики B.AI моделей (context window, max_tokens). Только agentic-модели.
-$script:BaiModelSpec = @{
-  "gpt-5-nano"        = @{ Ctx = 128000;  Max = 16384 }
-  "gpt-5-mini"        = @{ Ctx = 128000;  Max = 16384 }
-  "gpt-5.2"           = @{ Ctx = 200000;  Max = 16384 }
-  "gpt-5.4-nano"      = @{ Ctx = 200000;  Max = 16384 }
-  "gpt-5.4-mini"      = @{ Ctx = 200000;  Max = 16384 }
-  "gpt-5.4"           = @{ Ctx = 200000;  Max = 16384 }
-  "gpt-5.4-pro"       = @{ Ctx = 200000;  Max = 16384 }
-  "gpt-5.5"           = @{ Ctx = 200000;  Max = 16384 }
-  "gpt-5.5-instant"   = @{ Ctx = 200000;  Max = 16384 }
-  "claude-haiku-4.5"  = @{ Ctx = 200000;  Max = 8192 }
-  "claude-sonnet-4.5" = @{ Ctx = 200000;  Max = 8192 }
-  "claude-sonnet-4.6" = @{ Ctx = 200000;  Max = 8192 }
-  "claude-opus-4.5"   = @{ Ctx = 200000;  Max = 8192 }
-  "claude-opus-4.6"   = @{ Ctx = 200000;  Max = 8192 }
-  "claude-opus-4.7"   = @{ Ctx = 200000;  Max = 8192 }
-  "claude-opus-4.8"   = @{ Ctx = 200000;  Max = 8192 }
-  "deepseek-v3.2"     = @{ Ctx = 131072;  Max = 8192 }
-  "deepseek-v4-pro"   = @{ Ctx = 131072;  Max = 8192 }
-  "deepseek-v4-flash" = @{ Ctx = 131072;  Max = 8192 }
-  "gemini-3-flash"    = @{ Ctx = 1000000; Max = 8192 }
-  "gemini-3.1-pro"    = @{ Ctx = 1000000; Max = 8192 }
-  "gemini-3.5-flash"  = @{ Ctx = 1000000; Max = 8192 }
-  "glm-5"             = @{ Ctx = 128000;  Max = 8192 }
-  "glm-5.1"           = @{ Ctx = 128000;  Max = 8192 }
-  "kimi-k2.5"         = @{ Ctx = 131072;  Max = 8192 }
-  "minimax-m2.5"      = @{ Ctx = 1000000; Max = 8192 }
-  "minimax-m2.7"      = @{ Ctx = 1000000; Max = 8192 }
-  "minimax-m3"        = @{ Ctx = 1000000; Max = 8192 }
-}
+# Характеристики B.AI моделей (context window, max_tokens) теперь живут в launcher-catalog.ps1.
+# Используйте Get-CatalogBaiSpec -InternalId <id> вместо $script:BaiModelSpec.
 
-# Подменю для каждой группы провайдера
+# Подменю для каждой группы провайдера (SSoT: launcher-catalog.ps1)
 $script:GroupMenus = @{
-  zai = @(
-    @{ Id = "claude-zai-glm51";   Label = "Z.AI - GLM-5.1 (paid, tool calling)" }
-    @{ Id = "claude-zai";         Label = "Z.AI - GLM-4.7 (paid, tool calling)" }
-    @{ Id = "claude-zai-flash47"; Label = "Z.AI - GLM-4.7-Flash (free)" }
-  )
-  nim = @(
-    @{ Id = "claude-nim-mistral-medium";   Label = "NIM - Mistral Medium 3.5 128B (free, tool calling)" }
-    @{ Id = "claude-nim-glm51";            Label = "NIM - Z.AI GLM-5.1 (free, tool calling)" }
-    @{ Id = "claude-nim-step-3.5-flash";   Label = "NIM - Step 3.5 Flash (free, tool calling)" }
-    @{ Id = "claude-nim-mistral-large-3";  Label = "NIM - Mistral Large 3 675B (free, tool calling)" }
-    @{ Id = "claude-nim-deepseek-v4-flash"; Label = "NIM - DeepSeek V4 Flash 284B MoE (free)" }
-    @{ Id = "claude-nim-gemma-4-31b";      Label = "NIM - Google Gemma-4 31B (free)" }
-    @{ Id = "claude-nim-qwen3.5-397b";     Label = "NIM - Qwen 3.5 397B A17B (free)" }
-    @{ Id = "claude-nim-qwen3-next-80b";   Label = "NIM - Qwen 3 Next 80B A3B (free)" }
-    @{ Id = "claude-nim-qwen3-coder-480b"; Label = "NIM - Qwen 3 Coder 480B A35B (free)" }
-  )
-  bai = @(
-    @{ Id = "claude-bai-gpt-5-nano";        Label = "B.AI - GPT-5 Nano (OpenAI, agentic)" }
-    @{ Id = "claude-bai-gpt-5-mini";        Label = "B.AI - GPT-5 Mini (OpenAI, agentic)" }
-    @{ Id = "claude-bai-gpt-5.2";           Label = "B.AI - GPT-5.2 (OpenAI, agentic)" }
-    @{ Id = "claude-bai-gpt-5.4-nano";      Label = "B.AI - GPT-5.4 Nano (OpenAI, agentic)" }
-    @{ Id = "claude-bai-gpt-5.4-mini";      Label = "B.AI - GPT-5.4 Mini (OpenAI, agentic)" }
-    @{ Id = "claude-bai-gpt-5.4";           Label = "B.AI - GPT-5.4 (OpenAI, agentic)" }
-    @{ Id = "claude-bai-gpt-5.4-pro";       Label = "B.AI - GPT-5.4 Pro (OpenAI, agentic)" }
-    @{ Id = "claude-bai-gpt-5.5";           Label = "B.AI - GPT-5.5 (OpenAI, agentic)" }
-    @{ Id = "claude-bai-gpt-5.5-instant";   Label = "B.AI - GPT-5.5 Instant (OpenAI, agentic)" }
-    @{ Id = "claude-bai-claude-haiku-4.5";  Label = "B.AI - Claude Haiku 4.5 (Anthropic, agentic)" }
-    @{ Id = "claude-bai-claude-sonnet-4.5"; Label = "B.AI - Claude Sonnet 4.5 (Anthropic, agentic)" }
-    @{ Id = "claude-bai-claude-sonnet-4.6"; Label = "B.AI - Claude Sonnet 4.6 (Anthropic, agentic)" }
-    @{ Id = "claude-bai-claude-opus-4.5";   Label = "B.AI - Claude Opus 4.5 (Anthropic, agentic)" }
-    @{ Id = "claude-bai-claude-opus-4.6";   Label = "B.AI - Claude Opus 4.6 (Anthropic, agentic)" }
-    @{ Id = "claude-bai-claude-opus-4.7";   Label = "B.AI - Claude Opus 4.7 (Anthropic, agentic)" }
-    @{ Id = "claude-bai-claude-opus-4.8";   Label = "B.AI - Claude Opus 4.8 (Anthropic, agentic)" }
-    @{ Id = "claude-bai-deepseek-v4-pro";   Label = "B.AI - DeepSeek V4 Pro (agentic)" }
-    @{ Id = "claude-bai-deepseek-v4-flash"; Label = "B.AI - DeepSeek V4 Flash (agentic)" }
-    @{ Id = "claude-bai-gemini-3.1-pro";    Label = "B.AI - Gemini 3.1 Pro (Google, agentic)" }
-    @{ Id = "claude-bai-gemini-3.5-flash";  Label = "B.AI - Gemini 3.5 Flash (Google, agentic)" }
-    @{ Id = "claude-bai-glm-5";             Label = "B.AI - GLM-5 (Z.AI)" }
-    @{ Id = "claude-bai-glm-5.1";           Label = "B.AI - GLM-5.1 (Z.AI)" }
-    @{ Id = "claude-bai-kimi-k2.5";         Label = "B.AI - Kimi K2.5 (Moonshot)" }
-    @{ Id = "claude-bai-kimi-k2.6";         Label = "B.AI - Kimi K2.6 (Moonshot)" }
-    @{ Id = "claude-bai-minimax-m3";        Label = "B.AI - MiniMax M3 (agentic)" }
-    @{ Id = "claude-bai-minimax-m2.7";      Label = "B.AI - MiniMax M2.7 (fast)" }
-  )
-  openrouter = @(
-    @{ Id = "claude-openrouter-deepseek-v4-flash"; Label = "OpenRouter - DeepSeek V4 Flash (free, text-only)" }
-    @{ Id = "claude-openrouter-qwen3-coder";       Label = "OpenRouter - Qwen3 Coder (free, text-only)" }
-    @{ Id = "claude-openrouter-nemotron";          Label = "OpenRouter - Nemotron 3 Super 120B (free, text-only)" }
-    @{ Id = "claude-openrouter-laguna";            Label = "OpenRouter - Poolside Laguna M.1 (free, coding, text-only)" }
-  )
+  zai        = Get-CatalogMenuItems -Provider zai        -Brand Claude
+  nim        = Get-CatalogMenuItems -Provider nim        -Brand Claude
+  bai        = Get-CatalogMenuItems -Provider bai        -Brand Claude
+  openrouter = Get-CatalogMenuItems -Provider openrouter -Brand Claude
 }
+# Совместимость со старым кодом: $script:BaiModelSpec через ресолвер из каталога.
+# (если в коде остались обращения к $script:BaiModelSpec[..] — работают через Get-CatalogBaiSpec)
+function script:Get-CatalogBaiModelSpecCompat { param($id)
+  $r = Get-CatalogBaiSpec -InternalId $id
+  if ($r) { $r } else { @{ Ctx = 131072; Max = 8192 } }
+}
+# Байт-совместимая обёртка (TZ-style accessor):
+$script:BaiModelSpec = @{}
+foreach ($e in $script:CatalogBai) {
+  $script:BaiModelSpec[$e.InternalId] = @{ Ctx = $e.Ctx; Max = $e.Max }
+}
+# Раньше тут были подменю для каждой группы провайдера как inline-массивы.
+# Подменю для каждой группы провайдера.
+# УБРАНО ДУБЛИРОВАНИЕ в этой сессии: второй inline-массив был больше не нужен потому что
+# $script:GroupMenus уже инициализируется через Get-CatalogMenuItems выше.
+# (см. # Подменю для каждой группы провайдера (SSoT: launcher-catalog.ps1) ~line 95)
 
 function Get-LauncherState {
   if (-not (Test-Path -LiteralPath $StatePath)) { return $null }
@@ -458,34 +400,10 @@ $nimMapCC = @{ "mistralai/mistral-medium-3.5-128b" = "claude-nim-mistral-medium"
 $nimResCC = Build-GroupMenuItems -Provider "nim" -StaticItems $staticNimCC -ApiKeyEnv "NVIDIA_NIM_API_KEY" -FetchScript "Get-NvidiaNimModelIdsFromApi" -AgenticOnly -IdPrefix "claude-nim-" -ApiIdToPresetId $nimMapCC
 $orMapCC = @{ "deepseek/deepseek-v4-flash:free" = "claude-openrouter-deepseek-v4-flash"; "qwen/qwen3-coder:free" = "claude-openrouter-qwen3-coder"; "nvidia/nemotron-3-super-120b-a12b:free" = "claude-openrouter-nemotron"; "poolside/laguna-m1:free" = "claude-openrouter-laguna" }
 $orResCC = Build-GroupMenuItems -Provider "openrouter" -StaticItems $staticOrCC -ApiKeyEnv "OPENROUTER_API_KEY" -FetchScript "Get-OpenRouterFreeModelIdsFromApi" -IdPrefix "claude-openrouter-" -ApiIdToPresetId $orMapCC
-$staticBaiCC = @(
-  @{ Id = "claude-bai-gpt-5-nano";        Label = "B.AI - GPT-5 Nano (OpenAI, agentic)" }
-  @{ Id = "claude-bai-gpt-5-mini";        Label = "B.AI - GPT-5 Mini (OpenAI, agentic)" }
-  @{ Id = "claude-bai-gpt-5.2";           Label = "B.AI - GPT-5.2 (OpenAI, agentic)" }
-  @{ Id = "claude-bai-gpt-5.4-nano";      Label = "B.AI - GPT-5.4 Nano (OpenAI, agentic)" }
-  @{ Id = "claude-bai-gpt-5.4-mini";      Label = "B.AI - GPT-5.4 Mini (OpenAI, agentic)" }
-  @{ Id = "claude-bai-gpt-5.4";           Label = "B.AI - GPT-5.4 (OpenAI, agentic)" }
-  @{ Id = "claude-bai-gpt-5.4-pro";       Label = "B.AI - GPT-5.4 Pro (OpenAI, agentic)" }
-  @{ Id = "claude-bai-gpt-5.5";           Label = "B.AI - GPT-5.5 (OpenAI, agentic)" }
-  @{ Id = "claude-bai-gpt-5.5-instant";   Label = "B.AI - GPT-5.5 Instant (OpenAI, agentic)" }
-  @{ Id = "claude-bai-claude-haiku-4.5";  Label = "B.AI - Claude Haiku 4.5 (Anthropic, agentic)" }
-  @{ Id = "claude-bai-claude-sonnet-4.5"; Label = "B.AI - Claude Sonnet 4.5 (Anthropic, agentic)" }
-  @{ Id = "claude-bai-claude-sonnet-4.6"; Label = "B.AI - Claude Sonnet 4.6 (Anthropic, agentic)" }
-  @{ Id = "claude-bai-claude-opus-4.5";   Label = "B.AI - Claude Opus 4.5 (Anthropic, agentic)" }
-  @{ Id = "claude-bai-claude-opus-4.6";   Label = "B.AI - Claude Opus 4.6 (Anthropic, agentic)" }
-  @{ Id = "claude-bai-claude-opus-4.7";   Label = "B.AI - Claude Opus 4.7 (Anthropic, agentic)" }
-  @{ Id = "claude-bai-claude-opus-4.8";   Label = "B.AI - Claude Opus 4.8 (Anthropic, agentic)" }
-  @{ Id = "claude-bai-deepseek-v4-pro";   Label = "B.AI - DeepSeek V4 Pro (agentic)" }
-  @{ Id = "claude-bai-deepseek-v4-flash"; Label = "B.AI - DeepSeek V4 Flash (agentic)" }
-  @{ Id = "claude-bai-gemini-3.1-pro";    Label = "B.AI - Gemini 3.1 Pro (Google, agentic)" }
-  @{ Id = "claude-bai-gemini-3.5-flash";  Label = "B.AI - Gemini 3.5 Flash (Google, agentic)" }
-  @{ Id = "claude-bai-glm-5";             Label = "B.AI - GLM-5 (Z.AI)" }
-  @{ Id = "claude-bai-glm-5.1";           Label = "B.AI - GLM-5.1 (Z.AI)" }
-  @{ Id = "claude-bai-kimi-k2.5";         Label = "B.AI - Kimi K2.5 (Moonshot)" }
-  @{ Id = "claude-bai-kimi-k2.6";         Label = "B.AI - Kimi K2.6 (Moonshot)" }
-  @{ Id = "claude-bai-minimax-m3";        Label = "B.AI - MiniMax M3 (agentic)" }
-  @{ Id = "claude-bai-minimax-m2.7";      Label = "B.AI - MiniMax M2.7 (fast)" }
-)
+# Дубль $staticBaiCC - канонический список живёт в $script:GroupMenus.bai (объявлен выше).
+# Раньше здесь было второе объявление того же массива (26 идентичных элементов) - источник
+# рассинхрона и 800 байт дублей. Используем единый SSoT.
+$staticBaiCC = $script:GroupMenus.bai
 $baiMapCC = @{}
 $baiResCC = Build-GroupMenuItems -Provider "bai" -StaticItems $staticBaiCC -ApiKeyEnv "BAI_API_KEY" -FetchScript "Get-BaiNonPremiumModelIds" -IdPrefix "claude-bai-" -ApiIdToPresetId $baiMapCC
 $groupHintsCC = @()

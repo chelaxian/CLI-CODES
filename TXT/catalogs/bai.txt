@@ -1,0 +1,35 @@
+# bai.txt -- каталог моделей B.AI (26 agentic моделей, OpenAI-compatible).
+#
+# Формат:  internal-id|api-model-id|label|context-tokens|max-output-tokens
+# Здесь ctx/max ВАЖНЫ -- они используются для адаптации прокси и потолка
+# max_tokens в HTTP-запросе.
+#
+# Источник истины для всех launcher'ов (Qwen + Claude). Меняйте здесь --
+# подменю в обоих лаунчерах обновятся автоматически.
+
+gpt-5-nano|gpt-5-nano|GPT-5 Nano (OpenAI, agentic)|128000|16384
+gpt-5-mini|gpt-5-mini|GPT-5 Mini (OpenAI, agentic)|128000|16384
+gpt-5.2|gpt-5.2|GPT-5.2 (OpenAI, agentic)|200000|16384
+gpt-5.4-nano|gpt-5.4-nano|GPT-5.4 Nano (OpenAI, agentic)|200000|16384
+gpt-5.4-mini|gpt-5.4-mini|GPT-5.4 Mini (OpenAI, agentic)|200000|16384
+gpt-5.4|gpt-5.4|GPT-5.4 (OpenAI, agentic)|200000|16384
+gpt-5.4-pro|gpt-5.4-pro|GPT-5.4 Pro (OpenAI, agentic)|200000|16384
+gpt-5.5|gpt-5.5|GPT-5.5 (OpenAI, agentic)|200000|16384
+gpt-5.5-instant|gpt-5.5-instant|GPT-5.5 Instant (OpenAI, agentic)|200000|16384
+claude-haiku-4.5|claude-haiku-4.5|Claude Haiku 4.5 (Anthropic, agentic)|200000|8192
+claude-sonnet-4.5|claude-sonnet-4.5|Claude Sonnet 4.5 (Anthropic, agentic)|200000|8192
+claude-sonnet-4.6|claude-sonnet-4.6|Claude Sonnet 4.6 (Anthropic, agentic)|200000|8192
+claude-opus-4.5|claude-opus-4.5|Claude Opus 4.5 (Anthropic, agentic)|200000|8192
+claude-opus-4.6|claude-opus-4.6|Claude Opus 4.6 (Anthropic, agentic)|200000|8192
+claude-opus-4.7|claude-opus-4.7|Claude Opus 4.7 (Anthropic, agentic)|200000|8192
+claude-opus-4.8|claude-opus-4.8|Claude Opus 4.8 (Anthropic, agentic)|200000|8192
+deepseek-v4-pro|deepseek-v4-pro|DeepSeek V4 Pro (agentic)|131072|8192
+deepseek-v4-flash|deepseek-v4-flash|DeepSeek V4 Flash (agentic)|131072|8192
+gemini-3.1-pro|gemini-3.1-pro|Gemini 3.1 Pro (Google, agentic)|1000000|8192
+gemini-3.5-flash|gemini-3.5-flash|Gemini 3.5 Flash (Google, agentic)|1000000|8192
+glm-5|glm-5|GLM-5 (Z.AI)|128000|8192
+glm-5.1|glm-5.1|GLM-5.1 (Z.AI)|128000|8192
+kimi-k2.5|kimi-k2.5|Kimi K2.5 (Moonshot)|131072|8192
+kimi-k2.6|kimi-k2.6|Kimi K2.6 (Moonshot)|131072|8192
+minimax-m3|minimax-m3|MiniMax M3 (agentic)|1000000|8192
+minimax-m2.7|minimax-m2.7|MiniMax M2.7 (fast)|1000000|8192
