@@ -890,7 +890,7 @@ read_key_stars() {
             printf '*'
         fi
     done < /dev/tty
-    eval "$var_name=\"\$key\""
+    printf -v "$var_name" '%s' "$key"
 }
 
 echo -e "${YELLOW}Оставьте пустым, чтобы пропустить. Ключи можно изменить позже через меню лаунчера.${RESET}"
