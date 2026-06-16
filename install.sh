@@ -890,6 +890,8 @@ read_key_stars() {
             printf '*'
         fi
     done < /dev/tty
+    # printf -v is a safe eval-replacement for indirect variable assignment.
+    # Unlike eval, it does NOT re-interpret shell metacharacters in $key as code.
     printf -v "$var_name" '%s' "$key"
 }
 
