@@ -53,3 +53,8 @@ session-ses_152b.md
 
 # cli-codes.cmd генерируется инсталлятором
 bin/
+
+# Конфиги сессий классических лаунчеров (генерируются при запуске, раньше содержали API-ключи)
+scripts/opencode-sessions/
+opencode-sessions/
+claude-sessions/
