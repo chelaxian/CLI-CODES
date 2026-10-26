@@ -81,12 +81,13 @@ function Select-CcProvider($Agent) {
   $provs = @($script:CcProviders | Where-Object { Test-CcAdapterSupports $Agent.Adapter $_ })
   if (-not $provs) { return $null }
   $labels = @($provs | ForEach-Object {
-    $status = switch ($_.Auth) {
+    $p = $_  # внутри switch переменная $_ — это уже значение switch ($p.Auth), а не провайдер
+    $status = switch ($p.Auth) {
       "none"     { "без ключа" }
       "optional" { "ключ не обязателен" }
-      default    { if (Test-CcProviderReady $_) { "✓ ключ" } else { "нет ключа" } }
+      default    { if (Test-CcProviderReady $p) { "✓ ключ" } else { "нет ключа" } }
     }
-    "{0} [{1}] · {2} — {3}" -f $_.Name, (Get-CcTierBadge $_.Tier), $status, $_.Note
+    "{0} [{1}] · {2} — {3}" -f $p.Name, (Get-CcTierBadge $p.Tier), $status, $p.Note
   })
   $sub = "Бесплатные и с бесплатной квотой — вверху списка"
   if ($Agent.Adapter -eq "codex") { $sub = "Codex работает только с провайдерами, поддерживающими Responses API" }
