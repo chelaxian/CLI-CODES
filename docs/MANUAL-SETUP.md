@@ -1,4 +1,45 @@
-# Ручная установка: пошаговое руководство
+# Ручная установка
+
+## Новая версия (cli-codes) — ручная установка за 4 шага
+
+Инсталлятор делает ровно это; можно повторить руками, если автоматизация не подходит.
+
+1. **Зависимости:** git, Node.js ≥ 20; Python 3 — только для Claude Code с провайдерами без Anthropic API.
+2. **Репозиторий:** `git clone https://github.com/chelaxian/CLI-CODES.git ~/CLI-CODES`
+3. **Агенты:** любой агент из `TXT/agents.txt` ставится командой из колонки install, например
+   `npm i -g @anthropic-ai/claude-code @openai/codex @google/gemini-cli` или `uv tool install aider-chat`.
+   Либо: `~/CLI-CODES/scripts/run-agent.sh install claude codex gemini`.
+4. **Команда и ключи:**
+   - Linux/macOS: `ln -s ~/CLI-CODES/scripts/run-agent.sh ~/.local/bin/cli-codes`, затем `cli-codes keys`;
+   - Windows: `powershell -File %USERPROFILE%\CLI-CODES\scripts\create-desktop-shortcuts.ps1` (ярлыки + `cli-codes.cmd` в PATH).
+
+Ключи хранятся в `~/.config/cli-codes/keys.env` (Linux/macOS) или в пользовательских переменных среды (Windows),
+имена переменных — колонка `env-var` в `TXT/providers.txt`.
+
+### Как подключить провайдера к агенту без лаунчера
+
+```bash
+# Claude Code + провайдер с Anthropic API (колонка anthropic-url)
+ANTHROPIC_BASE_URL=https://api.z.ai/api/anthropic ANTHROPIC_AUTH_TOKEN=$ZAI_API_KEY ANTHROPIC_MODEL=glm-5.3 claude
+
+# Claude Code + любой OpenAI-совместимый провайдер через встроенный прокси
+UPSTREAM_BASE_URL=https://integrate.api.nvidia.com/v1 UPSTREAM_API_KEY=$NVIDIA_NIM_API_KEY UPSTREAM_MODEL=z-ai/glm-5.3   python3 ~/CLI-CODES/scripts/lib/anthropic-proxy.py 8082 &
+ANTHROPIC_BASE_URL=http://127.0.0.1:8082 ANTHROPIC_AUTH_TOKEN=x ANTHROPIC_MODEL=z-ai/glm-5.3 claude
+
+# Qwen Code
+OPENAI_API_KEY=$OPENROUTER_API_KEY qwen --auth-type openai --openai-base-url https://openrouter.ai/api/v1 -m openrouter/free
+
+# Codex CLI (только провайдеры с Responses API)
+CC_KEY=$OPENROUTER_API_KEY codex -c "model_provider='cc'"   -c "model_providers.cc={ name = 'OpenRouter', base_url = 'https://openrouter.ai/api/v1', env_key = 'CC_KEY', wire_api = 'responses' }"   -m z-ai/glm-5.3
+```
+
+---
+
+## Классические лаунчеры (прошлые версии)
+
+Ниже — руководство по классическим лаунчерам Qwen Code / Claude Code / OpenCode / OpenClaude / Freebuff
+(пункт «Классический лаунчер» в меню `cli-codes`). Они сохранены для совместимости; их пресеты моделей
+не обновляются — актуальные модели доступны в `cli-codes` через динамические каталоги.
 
 Полная инструкция для ручного развёртывания **Qwen Code**, **Claude Code**, **OpenCode**, **Freebuff** и **OpenClaude** с облачными провайдерами **NVIDIA NIM**, **Z.AI**, **B.AI**, **Groq** и **OpenRouter** на **Windows** и **Linux**.
 

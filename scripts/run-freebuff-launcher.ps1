@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param()
 
 # Freebuff launcher — прямой запуск без TUI-меню.

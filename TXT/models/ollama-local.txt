@@ -1,0 +1,6 @@
+# ollama-local.txt -- статический каталог (fallback + «рекомендуемые» вверху списка).
+# Формат: model-id|label. Полный список подгружается динамически через API провайдера.
+
+qwen3.8:27b|Qwen 3.8 27B
+gpt-oss:20b|gpt-oss 20B
+gemma4:31b|Gemma 4 31B

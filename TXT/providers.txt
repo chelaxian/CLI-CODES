@@ -1,16 +1,62 @@
-# providers.txt -- метаданные провайдеров для лаунчеров.
+# providers.txt -- реестр провайдеров моделей (OpenAI-совместимые API).
 #
-# Формат:  provider-key|display-name|get-api-key-url|env-var-name
+# Формат (разделитель |, пустое поле = "-"):
+#   key | name | get-key-url | env-var | base-url | models-url | auth | tier | anthropic-url | responses | note
 #
-# provider-key     -- канонический ключ: zai | nim | bai | openrouter
-# display-name     -- как показывать в TUI (обычно "Z.AI", "B.AI" и т.д.)
-# get-api-key-url  -- где пользователь получает API-ключ
-# env-var-name     -- имя переменной окружения User scope
+# key            -- канонический ключ (имя файла статического каталога TXT/models/<key>.txt)
+# env-var        -- переменная окружения с ключом (хранится в ~/.config/cli-codes/keys.env
+#                   на Linux/macOS и в пользовательских переменных среды на Windows)
+# base-url       -- OpenAI-совместимый base URL (без /chat/completions)
+# models-url     -- откуда динамически брать список моделей:
+#                     -     = <base-url>/models
+#                     none  = только статический каталог TXT/models/<key>.txt
+#                     <url> = свой адрес (например, публичный каталог)
+# auth           -- key (ключ обязателен) | optional (работает и без ключа) | none (локальный сервер)
+# tier           -- free (бесплатно) | freemium (бесплатная квота/лимиты) | paid | local
+# anthropic-url  -- нативный Anthropic-совместимый endpoint (для Claude Code без прокси), "-" если нет
+# responses      -- yes, если есть OpenAI Responses API (нужно для Codex CLI)
 #
-# Можно менять отображаемые имена и URL-ы -- код автоматически подхватит.
-# НЕ менять provider-key / env-var-name: они захардкожены в скриптах!
+# Первые 4 колонки совместимы со старым форматом (scripts/launcher-text-resolver.ps1).
+# Порядок строк = порядок в меню: сначала бесплатные/с бесплатной квотой.
 
-zai|Z.AI|https://z.ai/manage-apikey/apikey-create|ZAI_API_KEY
-nim|NIM|https://build.nvidia.com/settings/secrets|NVIDIA_NIM_API_KEY
-bai|B.AI|https://api.b.ai|BAI_API_KEY
-openrouter|OpenRouter|https://openrouter.ai/keys|OPENROUTER_API_KEY
+# ── Бесплатные и с бесплатной квотой ──────────────────────────────────────────
+openrouter|OpenRouter|https://openrouter.ai/settings/keys|OPENROUTER_API_KEY|https://openrouter.ai/api/v1|-|key|freemium|https://openrouter.ai/api|yes|Модели :free (50 запросов/день, 1000 при балансе от $10) + 400+ платных
+nim|NVIDIA NIM|https://build.nvidia.com/settings/api-keys|NVIDIA_NIM_API_KEY|https://integrate.api.nvidia.com/v1|-|key|free|-|no|Бесплатно ~40 запросов/мин: GLM, Kimi, DeepSeek, MiniMax, Nemotron
+gemini|Google AI Studio (Gemini)|https://aistudio.google.com/apikey|GEMINI_API_KEY|https://generativelanguage.googleapis.com/v1beta/openai|-|key|freemium|-|no|Бесплатный tier Gemini Flash / Gemma
+zen|OpenCode Zen|https://opencode.ai/auth|OPENCODE_API_KEY|https://opencode.ai/zen/v1|-|key|freemium|https://opencode.ai/zen|yes|Бесплатные модели *-free и big-pickle + платные топ-модели
+ollama|Ollama Cloud|https://ollama.com/settings/keys|OLLAMA_API_KEY|https://ollama.com/v1|-|key|freemium|https://ollama.com|yes|Бесплатный план: облачные Kimi/GLM/DeepSeek/MiniMax/gpt-oss
+groq|Groq|https://console.groq.com/keys|GROQ_API_KEY|https://api.groq.com/openai/v1|-|key|freemium|-|yes|Очень быстрый инференс, бесплатный tier с лимитами TPM
+cerebras|Cerebras|https://cloud.cerebras.ai/platform|CEREBRAS_API_KEY|https://api.cerebras.ai/v1|-|key|freemium|-|no|Бесплатно до 1M токенов/день, >1000 ток/с
+mistral|Mistral La Plateforme|https://console.mistral.ai/api-keys|MISTRAL_API_KEY|https://api.mistral.ai/v1|-|key|freemium|-|no|Бесплатный план Experiment: Devstral, Codestral, Mistral Large
+github|GitHub Models|https://github.com/settings/personal-access-tokens|GITHUB_MODELS_TOKEN|https://models.github.ai/inference|https://models.github.ai/catalog/models|key|free|-|no|Бесплатно с GitHub-аккаунтом (PAT с правом models:read)
+hf|Hugging Face Inference|https://huggingface.co/settings/tokens|HF_TOKEN|https://router.huggingface.co/v1|-|key|freemium|-|yes|Ежемесячные бесплатные кредиты, сотни open-source моделей
+chutes|Chutes|https://chutes.ai/app/api|CHUTES_API_KEY|https://llm.chutes.ai/v1|-|key|freemium|-|no|Децентрализованный инференс: Kimi, GLM, DeepSeek, Qwen
+modelscope|ModelScope|https://modelscope.cn/my/myaccesstoken|MODELSCOPE_API_KEY|https://api-inference.modelscope.cn/v1|-|key|free|https://api-inference.modelscope.cn|no|Бесплатно 2000 запросов/день: Qwen, DeepSeek, GLM, MiniMax
+sambanova|SambaNova Cloud|https://cloud.sambanova.ai/apis|SAMBANOVA_API_KEY|https://api.sambanova.ai/v1|-|key|freemium|-|no|Бесплатный tier, быстрый инференс
+llm7|LLM7.io|https://token.llm7.io|LLM7_API_KEY|https://api.llm7.io/v1|-|optional|free|https://api.llm7.io|yes|Работает даже без ключа (с ключом лимиты выше)
+pollinations|Pollinations|https://enter.pollinations.ai|POLLINATIONS_API_KEY|https://gen.pollinations.ai/v1|-|optional|free|-|no|Бесплатный open-source шлюз, ключ повышает лимиты
+ovh|OVHcloud AI Endpoints|https://endpoints.ai.cloud.ovh.net|OVH_AI_ENDPOINTS_ACCESS_TOKEN|https://oai.endpoints.kepler.ai.cloud.ovh.net/v1|-|optional|free|-|no|Анонимный доступ с лимитами, gpt-oss / Qwen
+vercel|Vercel AI Gateway|https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai%2Fapi-keys|AI_GATEWAY_API_KEY|https://ai-gateway.vercel.sh/v1|-|key|freemium|https://ai-gateway.vercel.sh|yes|$5 бесплатных кредитов каждый месяц, все топ-модели
+zai|Z.AI (GLM)|https://z.ai/manage-apikey/apikey-create|ZAI_API_KEY|https://api.z.ai/api/paas/v4|-|key|freemium|https://api.z.ai/api/anthropic|no|GLM-*-Flash бесплатно; оплата по токенам
+zai-coding|Z.AI GLM Coding Plan|https://z.ai/subscribe|ZAI_API_KEY|https://api.z.ai/api/coding/paas/v4|-|key|paid|https://api.z.ai/api/anthropic|no|Подписка GLM Coding Plan (дёшево, большие лимиты)
+dashscope|Alibaba Model Studio (Qwen)|https://modelstudio.console.alibabacloud.com/?tab=playground#/api-key|DASHSCOPE_API_KEY|https://dashscope-intl.aliyuncs.com/compatible-mode/v1|-|key|freemium|https://dashscope-intl.aliyuncs.com/apps/anthropic|no|Бесплатная квота токенов для новых аккаунтов
+siliconflow|SiliconFlow|https://cloud.siliconflow.com/account/ak|SILICONFLOW_API_KEY|https://api.siliconflow.com/v1|-|key|freemium|https://api.siliconflow.com|no|Часть моделей бесплатна
+longcat|LongCat (Meituan)|https://longcat.chat/platform/api_keys|LONGCAT_API_KEY|https://api.longcat.chat/openai/v1|-|key|freemium|https://api.longcat.chat/anthropic|no|Бесплатная дневная квота токенов
+mimo|Xiaomi MiMo|https://platform.xiaomimimo.com|MIMO_API_KEY|https://api.xiaomimimo.com/v1|-|key|freemium|https://api.xiaomimimo.com/anthropic|no|Модели MiMo, пробная квота
+bai|B.AI|https://chat.b.ai/key|BAI_API_KEY|https://api.b.ai/v1|-|key|freemium|-|no|GPT / Claude / Gemini / DeepSeek / Kimi через один ключ
+
+# ── Платные (прямые API разработчиков моделей) ────────────────────────────────
+deepseek|DeepSeek|https://platform.deepseek.com/api_keys|DEEPSEEK_API_KEY|https://api.deepseek.com/v1|-|key|paid|https://api.deepseek.com/anthropic|no|Очень дешёвые DeepSeek V4
+moonshot|Moonshot (Kimi)|https://platform.moonshot.ai/console/api-keys|MOONSHOT_API_KEY|https://api.moonshot.ai/v1|-|key|paid|https://api.moonshot.ai/anthropic|no|Kimi K3 / K2.x
+minimax|MiniMax|https://platform.minimax.io/user-center/basic-information/interface-key|MINIMAX_API_KEY|https://api.minimax.io/v1|-|key|paid|https://api.minimax.io/anthropic|no|MiniMax M3
+stepfun|StepFun|https://platform.stepfun.ai/interface-key|STEPFUN_API_KEY|https://api.stepfun.ai/v1|-|key|paid|https://api.stepfun.ai|no|Step 5 / Step 3.7
+openai|OpenAI|https://platform.openai.com/api-keys|OPENAI_API_KEY|https://api.openai.com/v1|-|key|paid|-|yes|GPT / o-серия
+anthropic|Anthropic|https://console.anthropic.com/settings/keys|ANTHROPIC_API_KEY|https://api.anthropic.com/v1|none|key|paid|https://api.anthropic.com|no|Claude Fable / Opus / Sonnet / Haiku
+xai|xAI (Grok)|https://console.x.ai|XAI_API_KEY|https://api.x.ai/v1|-|key|paid|-|yes|Grok 4.x
+together|Together AI|https://api.together.ai/settings/api-keys|TOGETHER_API_KEY|https://api.together.xyz/v1|-|key|paid|-|no|Open-source модели
+fireworks|Fireworks AI|https://fireworks.ai/account/api-keys|FIREWORKS_API_KEY|https://api.fireworks.ai/inference/v1|-|key|paid|-|no|Быстрые open-source модели
+novita|Novita AI|https://novita.ai/settings/key-management|NOVITA_API_KEY|https://api.novita.ai/v3/openai|-|key|paid|-|no|Пробный кредит при регистрации
+
+# ── Локальные ─────────────────────────────────────────────────────────────────
+ollama-local|Ollama (локально)|https://ollama.com/download|-|http://localhost:11434/v1|-|none|local|http://localhost:11434|yes|Локальные модели, нужен запущенный ollama serve
+lmstudio|LM Studio (локально)|https://lmstudio.ai|-|http://localhost:1234/v1|-|none|local|http://localhost:1234|yes|Локальные модели, нужен запущенный сервер LM Studio

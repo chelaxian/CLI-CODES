@@ -1,0 +1,5 @@
+# lmstudio.txt -- статический каталог (fallback + «рекомендуемые» вверху списка).
+# Формат: model-id|label. Полный список подгружается динамически через API провайдера.
+
+qwen/qwen3.8-27b|Qwen 3.8 27B
+openai/gpt-oss-20b|gpt-oss 20B

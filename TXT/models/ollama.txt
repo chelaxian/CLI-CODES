@@ -1,0 +1,11 @@
+# ollama.txt -- статический каталог (fallback + «рекомендуемые» вверху списка).
+# Формат: model-id|label. Полный список подгружается динамически через API провайдера.
+
+kimi-k3|Kimi K3
+glm-5.3|GLM-5.3
+deepseek-v4.1-flash|DeepSeek V4.1 Flash
+minimax-m3|MiniMax M3
+kimi-k2.7-code|Kimi K2.7 Code
+mistral-large-4|Mistral Large 4
+nemotron-3-ultra|Nemotron 3 Ultra
+gpt-oss:120b|gpt-oss 120B

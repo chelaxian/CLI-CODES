@@ -1,0 +1,7 @@
+# ovh.txt -- статический каталог (fallback + «рекомендуемые» вверху списка).
+# Формат: model-id|label. Полный список подгружается динамически через API провайдера.
+
+gpt-oss-120b|gpt-oss 120B (free)
+Qwen3.8-27B|Qwen 3.8 27B (free)
+Qwen3.5-397B-A17B|Qwen 3.5 397B (free)
+Meta-Llama-3_3-70B-Instruct|Llama 3.3 70B (free)

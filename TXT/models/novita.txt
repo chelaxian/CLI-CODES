@@ -1,0 +1,7 @@
+# novita.txt -- статический каталог (fallback + «рекомендуемые» вверху списка).
+# Формат: model-id|label. Полный список подгружается динамически через API провайдера.
+
+moonshotai/kimi-k3|Kimi K3
+zai-org/glm-5.3|GLM-5.3
+deepseek/deepseek-v4.1-flash|DeepSeek V4.1 Flash
+minimax/minimax-m3|MiniMax M3

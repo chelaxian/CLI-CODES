@@ -1,0 +1,59 @@
+# agents.txt -- реестр CLI-харнессов (AI-агентов), которые умеет ставить CLI-CODES.
+#
+# Формат (разделитель |, пустое поле = "-"):
+#   key | name | command | linux-install | windows-install | adapter | legacy-launcher | homepage | description
+#
+# key              -- канонический ключ (используется в cli-codes <key>, ярлыках, state)
+# command          -- имя исполняемого файла в PATH (проверка "установлен ли")
+# linux-install /
+# windows-install  -- способ установки:
+#                       npm:<package>     npm install -g <package>@latest
+#                       uv:<package>      uv tool install <package>   (uv ставится автоматически)
+#                       sh:<url>          curl -fsSL <url> | bash      (только Linux/macOS)
+#                       ps:<url>          irm <url> | iex              (только Windows)
+#                       -                 не поддерживается на этой ОС
+# adapter          -- как лаунчер подключает выбранного провайдера/модель:
+#                       claude      ANTHROPIC_BASE_URL (нативно или через scripts/lib/anthropic-proxy.py)
+#                       openclaude  CLAUDE_CODE_USE_OPENAI + OPENAI_*
+#                       qwen        --auth-type openai --openai-base-url -m
+#                       opencode    сгенерированный opencode.json (OPENCODE_CONFIG)
+#                       codex       -c model_providers.* (только провайдеры с Responses API)
+#                       gemini      GEMINI_API_KEY + -m (только Google AI Studio)
+#                       aider       --openai-api-base --model openai/<id>
+#                       goose       GOOSE_PROVIDER=openai + OPENAI_HOST/OPENAI_BASE_PATH
+#                       env         провайдер не выбирается: агент использует свой логин/конфиг,
+#                                   лаунчер лишь экспортирует сохранённые API-ключи в окружение
+# legacy-launcher  -- старый специализированный лаунчер (scripts/<name>.sh|.ps1), "-" если нет
+#
+# Порядок строк = порядок в меню установщика и лаунчера.
+
+claude|Claude Code|claude|npm:@anthropic-ai/claude-code|npm:@anthropic-ai/claude-code|claude|run-claude-cloud-launcher|https://claude.com/claude-code|Anthropic: эталонный агент, любые модели через Anthropic-совместимые API
+codex|Codex CLI|codex|npm:@openai/codex|npm:@openai/codex|codex|-|https://github.com/openai/codex|OpenAI: ChatGPT-логин или любой провайдер с Responses API
+gemini|Gemini CLI|gemini|npm:@google/gemini-cli|npm:@google/gemini-cli|gemini|-|https://github.com/google-gemini/gemini-cli|Google: бесплатно с Google-аккаунтом или ключом AI Studio
+qwen|Qwen Code|qwen|npm:@qwen-code/qwen-code|npm:@qwen-code/qwen-code|qwen|run-qwen-code-launcher|https://github.com/QwenLM/qwen-code|Alibaba: любой OpenAI-совместимый провайдер
+opencode|OpenCode|opencode|npm:opencode-ai|npm:opencode-ai|opencode|run-opencode-launcher|https://opencode.ai|Open-source агент, 75+ провайдеров, бесплатные модели Zen
+crush|Crush|crush|npm:@charmland/crush|npm:@charmland/crush|env|-|https://github.com/charmbracelet/crush|Charm: красивый TUI-агент, подхватывает ключи из окружения
+copilot|GitHub Copilot CLI|copilot|npm:@github/copilot|npm:@github/copilot|env|-|https://github.com/github/copilot-cli|GitHub Copilot в терминале (есть бесплатный план)
+kilo|Kilo Code CLI|kilo|npm:@kilocode/cli|npm:@kilocode/cli|env|-|https://kilo.ai/cli|Kilo: 500+ моделей, бесплатные модели в шлюзе Kilo
+cline|Cline CLI|cline|npm:cline|npm:cline|env|-|https://cline.bot|Cline: автономный агент, свои провайдеры
+openclaude|OpenClaude|openclaude|npm:@gitlawb/openclaude|npm:@gitlawb/openclaude|openclaude|run-openclaude-launcher|https://github.com/Gitlawb/openclaude|Форк Claude Code с OpenAI-совместимыми провайдерами
+amp|Amp|amp|npm:@ampcode/cli|npm:@ampcode/cli|env|-|https://ampcode.com|Sourcegraph Amp (есть бесплатный ad-supported режим)
+cursor|Cursor CLI|cursor-agent|sh:https://cursor.com/install|ps:https://cursor.com/install?win32=true|env|-|https://cursor.com/cli|Cursor Agent в терминале
+droid|Factory Droid|droid|npm:droid|npm:droid|env|-|https://factory.ai|Factory: агент Droid
+auggie|Augment Auggie|auggie|npm:@augmentcode/auggie|npm:@augmentcode/auggie|env|-|https://augmentcode.com|Augment Code: агент с контекстным движком
+kimi|Kimi Code|kimi|npm:@moonshot-ai/kimi-code|npm:@moonshot-ai/kimi-code|env|-|https://code.kimi.com|Moonshot AI: агент на моделях Kimi
+qoder|Qoder CLI|qodercli|npm:@qoder-ai/qodercli|npm:@qoder-ai/qodercli|env|-|https://qoder.com/cli|Alibaba Qoder: агент с бесплатной квотой
+codebuddy|CodeBuddy Code|codebuddy|npm:@tencent-ai/codebuddy-code|npm:@tencent-ai/codebuddy-code|env|-|https://www.codebuddy.ai|Tencent CodeBuddy
+pi|Pi|pi|npm:@earendil-works/pi-coding-agent|npm:@earendil-works/pi-coding-agent|env|-|https://github.com/earendil-works/pi|Минималистичный расширяемый агент
+letta|Letta Code|letta|npm:@letta-ai/letta-code|npm:@letta-ai/letta-code|env|-|https://letta.com|Stateful-агент с долговременной памятью
+junie|Junie CLI|junie|npm:@jetbrains/junie|npm:@jetbrains/junie|env|-|https://junie.jetbrains.com|JetBrains Junie
+goose|Goose|goose|sh:https://github.com/block/goose/releases/download/stable/download_cli.sh|-|goose|-|https://block.github.io/goose|Block: open-source агент с MCP-расширениями
+aider|Aider|aider|uv:aider-chat|uv:aider-chat|aider|-|https://aider.chat|Классический AI pair programming, git-коммиты
+vibe|Mistral Vibe|vibe|uv:mistral-vibe|uv:mistral-vibe|env|-|https://mistral.ai/products/vibe|Mistral: агент на Devstral (бесплатный ключ La Plateforme)
+openhands|OpenHands CLI|openhands|uv:openhands|uv:openhands|env|-|https://openhands.dev|OpenHands: open-source автономный агент
+hermes|Hermes Agent|hermes|sh:https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh|ps:https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.ps1|env|-|https://github.com/NousResearch/hermes-agent|Nous Research: самообучающийся агент со скиллами
+openclaw|OpenClaw|openclaw|npm:openclaw|npm:openclaw|env|-|https://openclaw.ai|Персональный AI-ассистент/шлюз (Telegram, Discord и др.)
+kiro|Kiro CLI|kiro-cli|sh:https://cli.kiro.dev/install|-|env|-|https://kiro.dev/cli|AWS Kiro: spec-driven агент
+codebuff|Codebuff|codebuff|npm:codebuff|npm:codebuff|env|-|https://codebuff.com|Codebuff: мульти-агентный кодинг
+freebuff|Freebuff|freebuff|npm:freebuff|npm:freebuff|env|run-freebuff-launcher|https://freebuff.com|Бесплатная версия Codebuff
+mimo|MiMo Code|mimo|npm:@mimo-ai/cli|npm:@mimo-ai/cli|env|run-mimo-launcher|https://mimo.xiaomi.com|Xiaomi MiMo Code

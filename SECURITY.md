@@ -1,21 +1,25 @@
-# Security Policy
+# Безопасность
 
-## Supported Versions
+## Где хранятся API-ключи
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+| ОС | Хранилище | Доступ |
+|----|-----------|--------|
+| Linux / macOS | `~/.config/cli-codes/keys.env` | `chmod 600`, подключается из `~/.bashrc` / `~/.zshrc` |
+| Windows | пользовательские переменные среды (User scope) | только текущий пользователь |
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
+- Ключи **не пишутся** в конфиги агентов: для OpenCode используется подстановка `{env:CC_OPENCODE_API_KEY}`,
+  для Codex — `env_key`, остальным агентам ключ передаётся через переменные окружения процесса.
+- Ключи не передаются в аргументах командной строки (их видно в списке процессов).
+- Локальный прокси `scripts/lib/anthropic-proxy.py` слушает только `127.0.0.1`, принимает запросы
+  только с одноразовым токеном сессии (`PROXY_TOKEN`) и только `Content-Type: application/json`
+  (защита от CSRF из браузера). Ключ провайдера получает только процесс прокси — агент видит лишь токен.
+- При загрузке списка моделей ключ передаётся `curl` через stdin (`--config -`), а не в аргументах.
+- Без терминала (неинтерактивная установка) `sudo` не вызывается с запросом пароля — используется
+  rootless-установка Node.js в `~/.n`.
+- Ключи старых версий (строки `export X=...` в `~/.bashrc`) читаются для совместимости и удаляются
+  оттуда при первом сохранении ключа через `cli-codes keys`.
 
-## Reporting a Vulnerability
+## Сообщить об уязвимости
 
-Use this section to tell people how to report a vulnerability.
-
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+Откройте [приватный security advisory](https://github.com/chelaxian/CLI-CODES/security/advisories/new)
+или issue без технических деталей эксплуатации — свяжемся для уточнений.

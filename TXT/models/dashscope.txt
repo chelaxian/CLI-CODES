@@ -1,0 +1,7 @@
+# dashscope.txt -- статический каталог (fallback + «рекомендуемые» вверху списка).
+# Формат: model-id|label. Полный список подгружается динамически через API провайдера.
+
+qwen3.8-max|Qwen 3.8 Max
+qwen3.8-flash|Qwen 3.8 Flash
+qwen3.7-plus|Qwen 3.7 Plus
+qwen3-coder-plus|Qwen3 Coder Plus

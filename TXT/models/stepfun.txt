@@ -1,0 +1,5 @@
+# stepfun.txt -- статический каталог (fallback + «рекомендуемые» вверху списка).
+# Формат: model-id|label. Полный список подгружается динамически через API провайдера.
+
+step-5-preview|Step 5 Preview
+step-3.7-flash|Step 3.7 Flash

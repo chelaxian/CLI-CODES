@@ -20,25 +20,14 @@ TXT/ содержит ТОЛЬКО то, что человек может мен
 ----------------------------------------------------------------------------
 TXT/
 ├── README.txt                  ← этот файл
-├── providers.txt               ← метаданные провайдеров (имя, ключ, URL)
-├── catalogs/
-│   ├── zai.txt                 ← модели Z.AI
-│   ├── nim.txt                 ← модели NVIDIA NIM
-│   ├── bai.txt                 ← модели B.AI
-│   └── openrouter.txt          ← модели OpenRouter
-├── logos/
-│   ├── qwen.txt                ← ASCII-баннер Qwen Code
-│   ├── claude.txt              ← ASCII-баннер Claude Code
-│   ├── opencode.txt            ← ASCII-баннер OpenCode
-│   ├── freebuff.txt            ← ASCII-баннер Freebuff
-│   ├── openclaude.txt          ← ASCII-баннер OpenClaude
-│   ├── llamacpp.txt            ← ASCII-баннер Llama.cpp
-│   ├── lmstudio.txt            ← ASCII-баннер LM Studio
-│   └── installer.txt           ← ASCII-баннер установщика
-└── menus/
-    ├── installer.txt           ← пункты меню мастера установки
-    ├── subtitles.txt           ← подзаголовки в подменю провайдеров
-    └── claude-top.txt          ← заголовки/подзаголовки Claude TUI
+├── agents.txt                  ← РЕЕСТР АГЕНТОВ (инсталлятор + cli-codes)
+├── providers.txt               ← РЕЕСТР ПРОВАЙДЕРОВ (base URL, тарифы, Anthropic/Responses API)
+├── models/<provider>.txt       ← статические каталоги моделей для cli-codes
+│                                 (fallback, если API недоступно, + «★ рекомендуемые»)
+├── catalogs/                   ← каталоги КЛАССИЧЕСКИХ лаунчеров (zai/nim/bai/openrouter)
+├── logos/<brand>.txt           ← ASCII-баннеры: <имя-агента>.txt или <первое-слово>.txt
+│                                 (например claude-code.txt или claude.txt)
+└── menus/                      ← подзаголовки классических лаунчеров
 
 ----------------------------------------------------------------------------
 Форматы файлов (ВАЖНО)
@@ -57,6 +46,28 @@ TXT/
   • Символ-разделитель `|` НЕ должен встречаться ВНУТРИ полей.
     Все поля разделены `|`. Если в label нужна вертикальная черта -- 
     перефразируйте label (например, "слэш" вместо "a | b").
+
+agents.txt -- реестр агентов
+────────────────────────────
+Формат:  key | name | command | linux-install | windows-install | adapter | legacy | homepage | description
+
+  • *-install: npm:<pkg> | uv:<pkg> | sh:<url> (curl|bash) | ps:<url> (irm|iex) | -
+  • adapter:   claude | openclaude | qwen | opencode | codex | gemini | aider | goose | env
+  Новый агент = новая строка. Меню инсталлятора, cli-codes и ярлыки подхватят его сами.
+
+providers.txt -- реестр провайдеров
+───────────────────────────────────
+Формат:  key | name | key-url | env-var | base-url | models-url | auth | tier | anthropic-url | responses | note
+
+  • models-url: "-" = <base-url>/models, none = только TXT/models/<key>.txt
+  • auth: key | optional | none        • tier: free | freemium | paid | local
+  Новый провайдер = строка здесь + файл models/<key>.txt (хотя бы одна модель).
+
+models/<provider>.txt -- рекомендуемые модели
+─────────────────────────────────────────────
+Формат:  model-id | label
+  Показываются первыми со звёздочкой ★; если API провайдера доступно и модели
+  там больше нет -- строка автоматически скрывается.
 
 catalogs/*.txt -- списки моделей
 ─────────────────────────────────
@@ -85,12 +96,10 @@ menus/*.txt -- пункты меню и подзаголовки
 ─────────────────────────────────────────
 Формат:  key | value
 
-  Пример (menus/installer.txt):
-    1|Установка сразу ВСЕХ агентов  ← рекомендуется
-    9|Полное удаление проекта с ПК (uninstall)
-    X|Выход из мастера установки
+  Пример (menus/claude-top.txt):
+    TITLE_MAIN|Claude Code - провайдер
 
-Ключи (1, 9, X) НЕ менять! Они привязаны к коду.
+
 
 ----------------------------------------------------------------------------
 Как работает fallback
@@ -120,12 +129,12 @@ TXT/ НЕ содержит:
 Пример типичной правки
 ----------------------------------------------------------------------------
 
-  Задача:    в меню установщика убрать «OpenClaude» под номером [6].
-  Решение:   НЕ редактировать install-full.ps1!
-             Вместо этого: TXT/menus/installer.txt строки [6] не трогать,
-             а в install-full.ps1 убрать `$installOpenClaude = $true` ветку.
-             (или, если хочется скрыть UI, временно)
-             Изменить `6|Только OpenClaude` на `6|— ` (пусто).
+  Задача:    добавить нового агента в инсталлятор.
+  Решение:   одна строка в TXT/agents.txt, например
+             myagent|My Agent|myagent|npm:my-agent-cli|npm:my-agent-cli|env|-|https://example.com|Описание
+
+  Задача:    добавить бесплатного провайдера.
+  Решение:   строка в TXT/providers.txt + файл TXT/models/<key>.txt.
 
   Задача:    добавить новую модель в B.AI.
   Решение:   открыть TXT/catalogs/bai.txt и добавить строку

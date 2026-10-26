@@ -1,0 +1,11 @@
+# vercel.txt -- статический каталог (fallback + «рекомендуемые» вверху списка).
+# Формат: model-id|label. Полный список подгружается динамически через API провайдера.
+
+anthropic/claude-sonnet-5.5|Claude Sonnet 5.5
+openai/gpt-6.1-sol|GPT-6.1 Sol
+google/gemini-3.8-flash|Gemini 3.8 Flash
+zai/glm-5.3|GLM-5.3
+moonshotai/kimi-k3|Kimi K3
+deepseek/deepseek-v4.1-flash|DeepSeek V4.1 Flash
+minimax/minimax-m3|MiniMax M3
+spacexai/grok-4.7|Grok 4.7

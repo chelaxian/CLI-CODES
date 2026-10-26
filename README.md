@@ -1,199 +1,116 @@
 # CLI-CODES
 
-**1-click развёртывание Qwen Code, Claude Code, OpenCode, OpenClaude и Freebuff с облачными моделями (NVIDIA NIM, Z.AI, B.AI, OpenRouter, Groq)**
+**1-click установка 30 популярных AI-агентов для терминала и запуск любого из них с 36 провайдерами моделей — включая бесплатные.**
 
-Работает на Windows и Linux. Устанавливается одной командой в терминале.
+Claude Code · Codex CLI · Gemini CLI · Qwen Code · OpenCode · Crush · GitHub Copilot CLI · Kilo Code · Cline · OpenClaude · Amp · Cursor CLI · Factory Droid · Augment Auggie · Kimi Code · Qoder · CodeBuddy · Pi · Letta Code · Junie · Goose · Aider · Mistral Vibe · OpenHands · Hermes Agent · OpenClaw · Kiro · Codebuff · Freebuff · MiMo Code
 
-<img width="1600" height="800" alt="ezgif-4dd52e4654358b8a" src="https://github.com/user-attachments/assets/45e2e8f6-040f-49e0-987c-ac0e11b1d9ed" />
+Работает на Windows, Linux и macOS.
+
+<img width="1600" height="800" alt="CLI-CODES" src="https://github.com/user-attachments/assets/45e2e8f6-040f-49e0-987c-ac0e11b1d9ed" />
 
 ---
 
 ## Быстрая установка
 
-### Windows (PowerShell)
+**Windows (PowerShell):**
 
 ```powershell
 irm https://raw.githubusercontent.com/chelaxian/CLI-CODES/main/install.ps1 | iex
 ```
 
-### Linux / macOS
+**Linux / macOS:**
 
 ```bash
-sudo curl -fsSL https://raw.githubusercontent.com/chelaxian/CLI-CODES/main/bootstrap.sh | bash
+curl -fsSL https://raw.githubusercontent.com/chelaxian/CLI-CODES/main/bootstrap.sh | bash
 ```
 
-Или вручную:
+Инсталлятор сам поставит git / Node.js LTS (через winget, apt, dnf, pacman, zypper, apk или brew), склонирует репозиторий и предложит:
+
+| Пункт | Что делает |
+|-------|------------|
+| **[1] Рекомендуемый набор** | Claude Code, Codex, Gemini CLI, Qwen Code, OpenCode, Crush, Copilot CLI, Kilo, OpenClaude |
+| **[2] Все агенты** | все 30 из [`TXT/agents.txt`](TXT/agents.txt) |
+| **[3] Выбрать вручную** | номера через пробел или диапазоны: `1 2 5`, `1-6` |
+| **[4] Обновить** | репозиторий и все уже установленные агенты |
+| **[5] API-ключи** | ключи провайдеров (все можно пропустить) |
+| **[6] Ярлыки** | ярлыки на рабочем столе и команда `cli-codes` |
+| **[9] Удаление** | агенты, ключи, ярлыки, репозиторий (конфиги самих агентов не трогает) |
+
+Без меню: `./install.sh --agents claude,codex,gemini`, `--all`, `--update` (Windows: `install-full.ps1 -Agents claude,codex -All -Update`).
+
+---
+
+## Запуск: `cli-codes`
+
+После установки у каждого агента есть ярлык на рабочем столе, а в терминале — команда `cli-codes`:
 
 ```bash
-git clone https://github.com/chelaxian/CLI-CODES.git
-cd CLI-CODES
-./install.sh          # Linux
-.\install.ps1         # Windows
+cli-codes                    # меню: выбрать агента
+cli-codes claude             # меню агента: провайдер → модель → запуск
+cli-codes claude --last      # сразу с последними провайдером и моделью
+cli-codes keys               # API-ключи провайдеров
+cli-codes list               # какие агенты установлены и их версии
+cli-codes providers          # провайдеры и наличие ключей
+cli-codes models openrouter  # живой список моделей провайдера
+cli-codes install aider vibe # поставить/обновить конкретных агентов
 ```
 
----
+Меню агента:
 
-## Что делает инсталлятор
-
-- **Проверяет зависимости** — git, Node.js, npm (автоустановка через winget/choco/scoop на Windows)
-- **Спрашивает** что установить: Qwen Code, Claude Code, OpenCode, OpenClaude, Freebuff или все инструменты
-- **Устанавливает CLI** через npm (если не установлен)
-- **Запрашивает API ключи** (все можно пропустить):
-   - NVIDIA NIM, Z.AI, Groq, OpenRouter, B.AI
-- **Создаёт ярлыки** на рабочем столе (Windows) / в `~` (Linux)
-- **Настраивает профили сессий** для `/resume`
-
-Дополнительные пункты меню:
-
-- **[7] Обновление всех компонентов** — обновляет npm-пакеты и **синхронизирует ярлыки**
-- **[8] Удаление** — полная очистка (репозиторий, npm-пакеты, конфиги, ключи, ярлыки)
-- **[9] Добавить недостающие ярлыки** — просканирует установленные CLI и дополнит ярлыки
-
-<img width="1159" height="956" alt="image" src="https://github.com/user-attachments/assets/17702687-fdd0-44ee-8c71-895b8680d97d" />
+- **▶ Быстрый старт** — последний провайдер и модель;
+- **Выбрать провайдера и модель…** — провайдеры, совместимые с этим агентом; у бесплатных пометка `FREE` / `FREE-квота`. Список моделей грузится **динамически из API провайдера** (кэш 6 ч), сверху — рекомендуемые `★`. Есть фильтр по названию, ручной ввод ID и обновление списка;
+- **Нативный запуск** — агент со своим логином (подписка Claude, ChatGPT, Google, GitHub Copilot…);
+- **Классический лаунчер** — пресеты прошлых версий для Qwen, Claude, OpenCode, OpenClaude, Freebuff, MiMo;
+- **Рабочая папка** — где запускать агента (по умолчанию текущая папка терминала).
 
 ---
 
-## Документация
+## Провайдеры
 
-| Документ | Описание |
-|----------|----------|
-| [docs/MANUAL-SETUP.md](docs/MANUAL-SETUP.md) | Полное пошаговое руководство по ручной установке (Windows + Linux) |
+Все провайдеры OpenAI-совместимые и описаны в [`TXT/providers.txt`](TXT/providers.txt). Модели подгружаются из `/models` провайдера; если API недоступно, используется статический каталог из `TXT/models/<провайдер>.txt`.
 
----
+### Бесплатные и с бесплатной квотой
 
-## Поддерживаемые CLI
+| Провайдер | Что бесплатно | Ключ |
+|-----------|---------------|------|
+| **OpenRouter** | модели `:free` (50 запросов/день, 1000 при балансе от $10) | [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys) |
+| **NVIDIA NIM** | ~40 запросов/мин: GLM, Kimi, DeepSeek, MiniMax, Nemotron | [build.nvidia.com](https://build.nvidia.com/settings/api-keys) |
+| **Google AI Studio** | Gemini Flash / Gemma | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
+| **OpenCode Zen** | `big-pickle`, модели `*-free` | [opencode.ai/auth](https://opencode.ai/auth) |
+| **Ollama Cloud** | облачные Kimi / GLM / DeepSeek / MiniMax | [ollama.com/settings/keys](https://ollama.com/settings/keys) |
+| **Groq** | быстрый инференс с лимитами TPM | [console.groq.com/keys](https://console.groq.com/keys) |
+| **Cerebras** | до 1M токенов/день | [cloud.cerebras.ai](https://cloud.cerebras.ai/platform) |
+| **Mistral** | план Experiment: Devstral, Codestral | [console.mistral.ai](https://console.mistral.ai/api-keys) |
+| **GitHub Models** | бесплатно с GitHub-аккаунтом | [PAT с `models:read`](https://github.com/settings/personal-access-tokens) |
+| **Hugging Face** | ежемесячные кредиты | [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) |
+| **ModelScope** | 2000 запросов/день | [modelscope.cn](https://modelscope.cn/my/myaccesstoken) |
+| **Chutes**, **SambaNova** | бесплатный tier | [chutes.ai](https://chutes.ai/app/api), [sambanova.ai](https://cloud.sambanova.ai/apis) |
+| **LLM7.io**, **Pollinations**, **OVHcloud** | работают **без ключа** (ключ повышает лимиты) | — |
+| **Vercel AI Gateway** | $5 кредитов в месяц | [vercel.com](https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai%2Fapi-keys) |
+| **Z.AI** | GLM-*-Flash | [z.ai](https://z.ai/manage-apikey/apikey-create) |
+| **Alibaba Model Studio**, **SiliconFlow**, **LongCat**, **Xiaomi MiMo**, **B.AI** | стартовая квота / часть моделей | см. `cli-codes keys` |
 
-| CLI | npm-пакет | Описание |
-|-----|-----------|----------|
-| **Qwen Code** | `qwen-code` | Coding agent от Alibaba |
-| **Claude Code** | `@anthropic-ai/claude-code` | Официальный Anthropic CLI |
-| **OpenCode** | `opencode-ai` | Open-source coding agent |
-| **OpenClaude** | `@gitlawb/openclaude` | Форк Claude Code с provider profiles |
-| **Freebuff** | `freebuff` | Coding agent от Codebuff (собственный TUI) |
+### Платные и локальные
 
-Все CLI, кроме Freebuff, запускаются через единообразное **TUI-меню** с псевдографикой, навигацией стрелками и динамической загрузкой каталогов моделей. Freebuff запускается напрямую.
-
----
-
-## Провайдеры и модели
-
-Все модели доступны из главного меню лаунчера. Каталоги обновляются динамически через API провайдера (с static fallback при отсутствии ключа).
-
-### Z.AI (paid + free flash, tool calling)
-
-| Модель | Qwen | Claude | OpenCode | OpenClaude |
-|--------|------|--------|----------|------------|
-| GLM-5.1 | + | + | + | + |
-| GLM-4.7 | + | + | + | + |
-| GLM-4.7-Flash (free) | + | + | + | + |
-
-### NVIDIA NIM (free, 9 agentic моделей)
-
-| Модель | Qwen | Claude | OpenCode | OpenClaude |
-|--------|------|--------|----------|------------|
-| Mistral Medium 3.5 128B | + | + | + | + |
-| GLM-5.1 | + | + | + | + |
-| Step 3.5 Flash | + | + | + | + |
-| Mistral Large 3 675B | + | + | + | + |
-| DeepSeek V4 Flash 284B MoE | + | + | + | + |
-| Gemma-4 31B | + | + | + | + |
-| Qwen 3.5 397B A17B | + | + | + | + |
-| Qwen 3 Next 80B A3B | + | + | + | + |
-| Qwen 3 Coder 480B A35B | + | + | + | + |
-
-### B.AI (26 agentic моделей, OpenAI-compatible)
-
-В подменю B.AI модели с поддержкой tool/function calling:
-
-**OpenAI GPT-5 (9):** Nano, Mini, 5.2, 5.4 Nano/Mini/Pro, 5.5, 5.5 Instant
-
-**Anthropic Claude (7):** Haiku 4.5, Sonnet 4.5/4.6, Opus 4.5/4.6/4.7/4.8
-
-**Другие agentic (10):** DeepSeek V4 Pro/Flash, Gemini 3.1 Pro/3.5 Flash, GLM-5/5.1, Kimi K2.5/K2.6, MiniMax M3/M2.7
-
-> Полный каталог B.AI (28 моделей, включая DeepSeek V3.2 и Gemini 3 Flash) доступен через **«Другая модель» → B.AI**.
-
-### OpenRouter (free, tool calling)
-
-| Модель | Qwen | Claude | OpenCode | OpenClaude |
-|--------|------|--------|----------|------------|
-| DeepSeek V4 Flash | + | + | + | + |
-| Qwen3 Coder | + | + | + | + |
-| Nemotron 3 Super 120B | + | + | + | + |
-| Poolside Laguna M.1 | + | + | + | + |
-
-### Groq (paid, через «Другая модель»)
-
-> Free Tier Groq ограничен TPM 6000/8000 — недостаточно для coding agent. Требуется Paid подписка.
+DeepSeek, Moonshot (Kimi), MiniMax, StepFun, Z.AI Coding Plan, OpenAI, Anthropic, xAI, Together, Fireworks, Novita, а также **Ollama** и **LM Studio** на локальной машине.
 
 ---
 
-## Где взять API ключи
+## Как агенты подключаются к провайдерам
 
-| Провайдер | URL | Тип |
-|-----------|-----|-----|
-| **NVIDIA NIM** | [build.nvidia.com](https://build.nvidia.com/) | Free |
-| **Z.AI** | [console.z.ai](https://console.z.ai/) / [open.bigmodel.cn](https://open.bigmodel.cn/) | Paid |
-| **B.AI** | [chat.b.ai/key](https://chat.b.ai/key) | Free/Paid |
-| **OpenRouter** | [openrouter.ai](https://openrouter.ai/) | Free/Paid |
-| **Groq** | [console.groq.com](https://console.groq.com/) | Free (limited) |
+| Агент | Механизм | Ограничения |
+|-------|----------|-------------|
+| Claude Code | `ANTHROPIC_BASE_URL` → нативный Anthropic API провайдера (Z.AI, DeepSeek, Kimi, MiniMax, OpenRouter, Ollama, Zen…) или встроенный прокси `scripts/lib/anthropic-proxy.py` | для прокси нужен Python 3 |
+| Codex CLI | `-c model_providers.*`, `wire_api = "responses"` | только провайдеры с Responses API: OpenAI, OpenRouter, Groq, Ollama, Zen, HF, Vercel, xAI, LLM7, локальные |
+| Qwen Code | `--auth-type openai --openai-base-url -m` | — |
+| OpenCode | сгенерированный `opencode.json` (`OPENCODE_CONFIG`) | — |
+| OpenClaude | `CLAUDE_CODE_USE_OPENAI` + `OPENAI_*` | — |
+| Gemini CLI | `GEMINI_API_KEY` + `-m` | только Google AI Studio |
+| Aider | `--openai-api-base --model openai/<id>` | — |
+| Goose | `GOOSE_PROVIDER=openai` + `OPENAI_HOST` | Linux/macOS |
+| Остальные | свой логин / конфиг; сохранённые ключи экспортируются в окружение (Crush, Kilo, Pi и др. подхватывают их сами) | — |
 
----
-
-## После установки
-
-### Запуск
-
-**Windows** — дважды кликните на ярлык на рабочем столе:
-
-- **Qwen Code** — меню выбора модели/провайдера
-- **Claude Code** — меню выбора провайдера
-- **OpenCode** — меню выбора провайдера
-- **OpenClaude** — меню выбора провайдера
-- **Freebuff** — прямой запуск (собственный TUI)
-
-**Linux** — запуск через `.sh` файлы в `~/`:
-
-```bash
-~/openclaude-cloud.sh
-~/claude-cloud.sh
-~/qwen-code-cloud.sh
-~/opencode-cloud.sh
-~/freebuff-cloud.sh
-```
-
-### Быстрый старт
-
-Каждый лаунчер запоминает последний выбранный профиль. При повторном запуске выбирайте **«Запустить с последними настройками»** — модель и провайдер подхватятся автоматически.
-
-### Смена API ключей
-
-В меню лаунчера: **«Сменить ключ API провайдера»** → выберите провайдера → введите новый ключ.
-
-### Нативный логин (OAuth)
-
-| CLI | Способ |
-|-----|--------|
-| **Qwen Code** | Qwen OAuth или Alibaba Cloud Coding Plan |
-| **Claude Code** | Claude подписка (OAuth) или Anthropic Console |
-| **OpenCode** | `opencode providers login` |
-| **OpenClaude** | Vanilla / Opengateway |
-
-### Другая модель
-
-Пункт **«Другая модель…»** позволяет выбрать любую модель из полного каталога провайдера (загружается через API по вашему ключу). Для NIM есть фильтр **«только Agentic модели»**. Для OpenRouter — **только бесплатные**.
-
----
-
-## Архитектура подключения
-
-| CLI | Z.AI | NIM | B.AI | OpenRouter | Groq |
-|-----|------|-----|------|------------|------|
-| **Claude Code** | Anthropic-compat | free-claude-code proxy | free-claude-code proxy | free-claude-code proxy | — |
-| **Qwen Code** | OpenAI-compat | Node-прокси / LiteLLM | OpenAI-compat | OpenAI-compat | OpenAI-compat |
-| **OpenCode** | opencode.json | opencode.json | opencode.json | opencode.json | opencode.json |
-| **OpenClaude** | Provider profiles | Provider profiles | Provider profiles | Provider profiles | — |
-| **Freebuff** | — | — | — | — | — |
+Встроенный прокси переводит Anthropic Messages API в OpenAI Chat Completions, включая стриминг и tool calling (`tool_use` ↔ `tool_calls`, `tool_result` ↔ `role: tool`), слушает только `127.0.0.1` и живёт, пока работает агент.
 
 ---
 
@@ -201,79 +118,55 @@ cd CLI-CODES
 
 ```
 CLI-CODES/
-├── install.ps1                # Windows thin installer
-├── install-full.ps1           # Windows полный инсталлятор
-├── install.sh                 # Linux инсталлятор
-├── bootstrap.sh               # curl | bash entrypoint
-├── README.md
+├── install.sh / install.ps1 / install-full.ps1 / bootstrap.sh   # инсталляторы
+├── TXT/
+│   ├── agents.txt          # реестр агентов: команда, способ установки (npm/uv/curl/irm), адаптер
+│   ├── providers.txt       # реестр провайдеров: base URL, /models, тариф, Anthropic API, Responses API
+│   ├── models/<key>.txt    # статические каталоги моделей (fallback + «★ рекомендуемые»)
+│   ├── catalogs/, logos/, menus/   # данные классических лаунчеров
 ├── scripts/
-│   ├── launcher-tui.ps1       # TUI-движок (Windows)
-│   ├── launcher-tui.sh        # TUI-движок (Linux)
-│   ├── launcher-api-keys.ps1  # Управление API ключами (Windows)
-│   ├── launcher-api-keys.sh   # Управление API ключами (Linux)
-│   ├── launcher-provider-models.ps1   # Каталоги моделей
-│   ├── launcher-custom-model-wizard.ps1  # Мастер «Другая модель»
-│   ├── create-desktop-shortcuts.ps1   # Ярлыки на рабочем столе
-│   ├── run-qwen-code-launcher.ps1     # Qwen Code (Windows)
-│   ├── run-qwen-code-launcher.sh      # Qwen Code (Linux)
-│   ├── run-claude-cloud-launcher.ps1  # Claude Code (Windows)
-│   ├── run-claude-cloud-launcher.sh   # Claude Code (Linux)
-│   ├── run-opencode-launcher.ps1      # OpenCode (Windows)
-│   ├── run-opencode-launcher.sh       # OpenCode (Linux)
-│   ├── run-openclaude-launcher.ps1    # OpenClaude (Windows)
-│   ├── run-openclaude-launcher.sh     # OpenClaude (Linux)
-│   ├── run-freebuff-launcher.ps1      # Freebuff (Windows)
-│   ├── run-freebuff-launcher.sh       # Freebuff (Linux)
-│   └── ...
-├── qwen-sessions/             # Профили сессий Qwen Code
-└── docs/
-    └── MANUAL-SETUP.md        # Ручная установка
+│   ├── run-agent.sh / .ps1         # универсальный лаунчер = команда cli-codes
+│   ├── lib/clicodes.sh / .ps1      # ядро: реестры, ключи, модели, установка, адаптеры
+│   ├── lib/models.py               # нормализация ответов /models
+│   ├── lib/anthropic-proxy.py      # прокси Anthropic → OpenAI (stdlib, без зависимостей)
+│   ├── create-desktop-shortcuts.ps1
+│   └── run-*-launcher.*            # классические лаунчеры прошлых версий
+├── tests/test_core.py              # офлайн-тесты прокси, парсера и реестров
+└── docs/MANUAL-SETUP.md
 ```
 
+**Добавить агента или провайдера** — одна строка в `TXT/agents.txt` / `TXT/providers.txt` (+ файл `TXT/models/<key>.txt`). Код менять не нужно: меню инсталлятора, лаунчер и ярлыки строятся из реестров.
+
 ---
+
+## Хранение ключей
+
+- **Linux / macOS:** `~/.config/cli-codes/keys.env` (`chmod 600`), подключается из `~/.bashrc` / `~/.zshrc`.
+- **Windows:** пользовательские переменные среды.
+
+Подробнее — [SECURITY.md](SECURITY.md).
 
 ## Требования
 
-### Обязательные
-- **Windows 10/11** или **Linux** (Ubuntu 20+, Fedora, Arch и т.д.)
-- **Git**
-- **Node.js** LTS (18+)
-- **npm**
-
-### Опциональные (Linux)
-- **jq** — для OpenClaude launcher (работа с `~/.openclaude.json`)
-- **uv** — для free-claude-code proxy (автоустановка)
-
----
+- Windows 10/11, Linux или macOS
+- git, Node.js ≥ 20 (ставятся инсталлятором автоматически)
+- Python 3 — только для Claude Code с провайдерами без Anthropic API; uv ставится автоматически для Aider, Mistral Vibe и OpenHands
 
 ## Устранение проблем
 
-### Windows: «Политика выполнения скриптов»
+| Проблема | Решение |
+|----------|---------|
+| Windows: «выполнение сценариев отключено» | `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` |
+| `cli-codes: command not found` | откройте новый терминал (PATH обновлён) или `~/CLI-CODES/scripts/run-agent.sh` |
+| Список моделей не загружается | проверьте ключ (`cli-codes keys`); при недоступном API используется статический каталог |
+| Claude Code через прокси не отвечает | лог: `~/.cache/cli-codes/anthropic-proxy.log` (Windows: `%LOCALAPPDATA%\cli-codes\`) |
+| Агент «только Linux/macOS» на Windows | Goose и Kiro ставятся через WSL |
 
-```powershell
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-```
-
-### Linux: «Permission denied»
-
-```bash
-chmod +x ~/CLI-CODES/scripts/*.sh
-chmod +x ~/CLI-CODES/install.sh
-```
-
-### Linux: «jq не установлен» (OpenClaude)
+## Тесты
 
 ```bash
-sudo apt install jq
+python -m unittest discover -s tests -v
 ```
-
-### Ключи не подхватываются
-
-**Windows**: Перезапустите терминал или компьютер.
-
-**Linux**: Выполните `source ~/.bashrc` или перезапустите терминал.
-
----
 
 ## Лицензия
 

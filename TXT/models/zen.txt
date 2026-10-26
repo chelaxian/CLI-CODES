@@ -1,0 +1,14 @@
+# zen.txt -- статический каталог (fallback + «рекомендуемые» вверху списка).
+# Формат: model-id|label. Полный список подгружается динамически через API провайдера.
+
+big-pickle|Big Pickle (free)
+glm-5.3-flash-free|GLM-5.3 Flash (free)
+deepseek-v4.1-flash-free|DeepSeek V4.1 Flash (free)
+mimo-v2.6-flash-free|MiMo V2.6 Flash (free)
+nemotron-3.5-lightning-free|Nemotron 3.5 Lightning (free)
+jev-1.13-free|Jev 1.13 (free)
+claude-sonnet-5-5|Claude Sonnet 5.5
+claude-opus-5-5|Claude Opus 5.5
+gpt-6.1-sol|GPT-6.1 Sol
+kimi-k3|Kimi K3
+glm-5.3|GLM-5.3

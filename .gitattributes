@@ -1,4 +1,9 @@
 # PowerShell 5.1: keep UTF-8 BOM for non-bootstrap scripts.
 # (Scripts without BOM may be interpreted as ANSI, corrupting Unicode.)
 *.ps1 text eol=lf
-*.sh text eol=lf
+*.sh  text eol=lf
+*.py  text eol=lf
+*.txt text eol=lf
+*.md  text eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf

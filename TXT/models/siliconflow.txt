@@ -1,0 +1,7 @@
+# siliconflow.txt -- статический каталог (fallback + «рекомендуемые» вверху списка).
+# Формат: model-id|label. Полный список подгружается динамически через API провайдера.
+
+zai-org/GLM-5.2|GLM-5.2
+deepseek-ai/DeepSeek-V4.1-Flash|DeepSeek V4.1 Flash
+moonshotai/Kimi-K2.6|Kimi K2.6
+Qwen/Qwen3.8-27B|Qwen 3.8 27B

@@ -1,0 +1,14 @@
+# nim.txt -- статический каталог (fallback + «рекомендуемые» вверху списка).
+# Формат: model-id|label. Полный список подгружается динамически через API провайдера.
+
+z-ai/glm-5.3|GLM-5.3 (free)
+moonshotai/kimi-k2.6|Kimi K2.6 (free)
+deepseek-ai/deepseek-v4.1-flash|DeepSeek V4.1 Flash (free)
+minimaxai/minimax-m3.1-flash|MiniMax M3.1 Flash (free)
+nvidia/nemotron-3-ultra-550b-a55b|Nemotron 3 Ultra 550B (free)
+nvidia/nemotron-3-super-120b-a12b|Nemotron 3 Super 120B (free)
+stepfun-ai/step-5-preview|Step 5 Preview (free)
+z-ai/glm-5.3-flash|GLM-5.3 Flash (free)
+poolside/laguna-xs-2.1|Poolside Laguna XS 2.1 (free)
+google/gemma-4-31b-it|Gemma 4 31B (free)
+openai/gpt-oss-20b|gpt-oss 20B (free)
