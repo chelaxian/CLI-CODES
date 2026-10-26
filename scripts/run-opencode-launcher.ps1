@@ -232,7 +232,9 @@ function Write-OpenCodeConfig {
     }
 
     if (-not [string]::IsNullOrWhiteSpace($ApiKey)) {
-      $providerConf.options["apiKey"] = $ApiKey
+      # Ключ НЕ пишем в файл (раньше он попадал в git): opencode сам подставляет {env:VAR}
+      $env:CC_OPENCODE_API_KEY = $ApiKey
+      $providerConf.options["apiKey"] = "{env:CC_OPENCODE_API_KEY}"
     }
 
     $providerConf.models[$Model] = [ordered]@{

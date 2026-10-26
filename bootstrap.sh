@@ -74,6 +74,9 @@ REPO_URL="${REPO_URL:-https://github.com/chelaxian/CLI-CODES.git}"
 
 if [ -d "$INSTALL_DIR/.git" ]; then
     echo -e "${CYAN}Обновление локального репозитория…${RESET}"
+    if [ -n "$(git -C "$INSTALL_DIR" status --porcelain --untracked-files=no 2>/dev/null)" ]; then
+        git -C "$INSTALL_DIR" stash push -q -m "cli-codes autostash $(date '+%F %R')"             && echo -e "${YELLOW}Локальные изменения отложены: git -C $INSTALL_DIR stash list${RESET}"
+    fi
     (cd "$INSTALL_DIR" && git fetch origin main && git reset --hard origin/main) || {
         echo -e "${RED}Не удалось обновить $INSTALL_DIR${RESET}"
         exit 1

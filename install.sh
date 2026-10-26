@@ -105,6 +105,10 @@ sync_repo() {
     if [ -d "$INSTALL_DIR/.git" ]; then
         local before after
         before="$(git -C "$INSTALL_DIR" rev-parse --short HEAD 2>/dev/null)"
+        # локальные правки (например, в TXT/) не теряем: откладываем в stash, их можно вернуть
+        if [ -n "$(git -C "$INSTALL_DIR" status --porcelain --untracked-files=no 2>/dev/null)" ]; then
+            git -C "$INSTALL_DIR" stash push -q -m "cli-codes autostash $(date '+%F %R')" 2>/dev/null                 && echo -e "${GRAY}  [INFO] Локальные изменения отложены: git -C $INSTALL_DIR stash list${RESET}"
+        fi
         git -C "$INSTALL_DIR" fetch -q origin main 2>/dev/null && git -C "$INSTALL_DIR" reset -q --hard origin/main 2>/dev/null \
             || warn "Не удалось обновить репозиторий, работаю с локальной копией"
         after="$(git -C "$INSTALL_DIR" rev-parse --short HEAD 2>/dev/null)"

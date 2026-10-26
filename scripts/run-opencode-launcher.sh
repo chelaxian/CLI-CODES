@@ -215,6 +215,8 @@ write_opencode_config() {
     mkdir -p "$CONFIG_DIR"
     
     local config_path="$CONFIG_DIR/opencode.json"
+    # Ключ НЕ пишем в файл (раньше он мог попасть в git): opencode подставляет {env:CC_OPENCODE_API_KEY},
+    # саму переменную экспортирует вызывающий код рядом с OPENCODE_CONFIG (здесь мы в подоболочке $(...))
     
     cat > "$config_path" << EOFJSON
 {
@@ -225,7 +227,7 @@ write_opencode_config() {
       "name": "$provider",
       "options": {
         "baseURL": "$base_url",
-        "apiKey": "$api_key"
+        "apiKey": "{env:CC_OPENCODE_API_KEY}"
       },
       "models": {
         "$model": {
@@ -370,7 +372,7 @@ invoke_opencode_profile() {
             api_key=$(get_zai_api_key) || true
             local config_path
             config_path=$(write_opencode_config "zai" "glm-4.7" "https://api.z.ai/api/coding/paas/v4" "$api_key")
-            export OPENCODE_CONFIG="$config_path"
+            export OPENCODE_CONFIG="$config_path" CC_OPENCODE_API_KEY="$api_key"
             echo -e "${CYAN}Запуск OpenCode (Z.AI GLM-4.7)…${RESET}"
             "$opencode_exe"
             ;;
@@ -379,7 +381,7 @@ invoke_opencode_profile() {
             api_key=$(get_zai_api_key) || true
             local config_path
             config_path=$(write_opencode_config "zai" "glm-5.1" "https://api.z.ai/api/coding/paas/v4" "$api_key")
-            export OPENCODE_CONFIG="$config_path"
+            export OPENCODE_CONFIG="$config_path" CC_OPENCODE_API_KEY="$api_key"
             echo -e "${CYAN}Запуск OpenCode (Z.AI GLM-5.1)…${RESET}"
             "$opencode_exe"
             ;;
@@ -388,7 +390,7 @@ invoke_opencode_profile() {
             api_key=$(get_zai_api_key) || true
             local config_path
             config_path=$(write_opencode_config "zai" "glm-4.7-flash" "https://api.z.ai/api/coding/paas/v4" "$api_key")
-            export OPENCODE_CONFIG="$config_path"
+            export OPENCODE_CONFIG="$config_path" CC_OPENCODE_API_KEY="$api_key"
             echo -e "${CYAN}Запуск OpenCode (Z.AI GLM-4.7-Flash)…${RESET}"
             "$opencode_exe"
             ;;
@@ -397,7 +399,7 @@ invoke_opencode_profile() {
             api_key=$(get_zai_api_key) || true
             local config_path
             config_path=$(write_opencode_config "zai" "glm-4.5-flash" "https://api.z.ai/api/coding/paas/v4" "$api_key")
-            export OPENCODE_CONFIG="$config_path"
+            export OPENCODE_CONFIG="$config_path" CC_OPENCODE_API_KEY="$api_key"
             echo -e "${CYAN}Запуск OpenCode (Z.AI GLM-4.5-Flash)…${RESET}"
             "$opencode_exe"
             ;;
@@ -406,7 +408,7 @@ invoke_opencode_profile() {
             api_key=$(get_nim_api_key) || true
             local config_path
             config_path=$(write_opencode_config "nvidia-nim" "qwen/qwen3.5-122b-a10b" "https://integrate.api.nvidia.com/v1" "$api_key")
-            export OPENCODE_CONFIG="$config_path"
+            export OPENCODE_CONFIG="$config_path" CC_OPENCODE_API_KEY="$api_key"
             echo -e "${CYAN}Запуск OpenCode (NVIDIA NIM Qwen3.5-122B-A10B)…${RESET}"
             "$opencode_exe"
             ;;
@@ -415,7 +417,7 @@ invoke_opencode_profile() {
             api_key=$(get_nim_api_key) || true
             local config_path
             config_path=$(write_opencode_config "nvidia-nim" "qwen/qwen3.5-122b-a10b" "https://integrate.api.nvidia.com/v1" "$api_key")
-            export OPENCODE_CONFIG="$config_path"
+            export OPENCODE_CONFIG="$config_path" CC_OPENCODE_API_KEY="$api_key"
             echo -e "${CYAN}Запуск OpenCode (NVIDIA NIM Qwen3.5-122B-A10B)…${RESET}"
             "$opencode_exe"
             ;;
@@ -424,7 +426,7 @@ invoke_opencode_profile() {
             api_key=$(get_nim_api_key) || true
             local config_path
             config_path=$(write_opencode_config "nvidia-nim" "mistralai/mistral-medium-3.5-128b" "https://integrate.api.nvidia.com/v1" "$api_key")
-            export OPENCODE_CONFIG="$config_path"
+            export OPENCODE_CONFIG="$config_path" CC_OPENCODE_API_KEY="$api_key"
             echo -e "${CYAN}Запуск OpenCode (NVIDIA NIM Mistral Medium 3.5 128B)…${RESET}"
             "$opencode_exe"
             ;;
@@ -433,7 +435,7 @@ invoke_opencode_profile() {
             api_key=$(get_nim_api_key) || true
             local config_path
             config_path=$(write_opencode_config "nvidia-nim" "z-ai/glm-5.1" "https://integrate.api.nvidia.com/v1" "$api_key")
-            export OPENCODE_CONFIG="$config_path"
+            export OPENCODE_CONFIG="$config_path" CC_OPENCODE_API_KEY="$api_key"
             echo -e "${CYAN}Запуск OpenCode (NVIDIA NIM Z.AI GLM-5.1)…${RESET}"
             "$opencode_exe"
             ;;
@@ -442,7 +444,7 @@ invoke_opencode_profile() {
             api_key=$(get_nim_api_key) || true
             local config_path
             config_path=$(write_opencode_config "nvidia-nim" "stepfun-ai/step-3.5-flash" "https://integrate.api.nvidia.com/v1" "$api_key")
-            export OPENCODE_CONFIG="$config_path"
+            export OPENCODE_CONFIG="$config_path" CC_OPENCODE_API_KEY="$api_key"
             echo -e "${CYAN}Запуск OpenCode (NVIDIA NIM Step 3.5 Flash)…${RESET}"
             "$opencode_exe"
             ;;
@@ -451,7 +453,7 @@ invoke_opencode_profile() {
             api_key=$(get_nim_api_key) || true
             local config_path
             config_path=$(write_opencode_config "nvidia-nim" "mistralai/mistral-large-3-675b-instruct-2512" "https://integrate.api.nvidia.com/v1" "$api_key")
-            export OPENCODE_CONFIG="$config_path"
+            export OPENCODE_CONFIG="$config_path" CC_OPENCODE_API_KEY="$api_key"
             echo -e "${CYAN}Запуск OpenCode (NVIDIA NIM Mistral Large 3 675B)…${RESET}"
             "$opencode_exe"
             ;;
@@ -460,7 +462,7 @@ invoke_opencode_profile() {
             api_key=$(get_nim_api_key) || true
             local config_path
             config_path=$(write_opencode_config "nvidia-nim" "deepseek-ai/deepseek-v4-flash" "https://integrate.api.nvidia.com/v1" "$api_key")
-            export OPENCODE_CONFIG="$config_path"
+            export OPENCODE_CONFIG="$config_path" CC_OPENCODE_API_KEY="$api_key"
             echo -e "${CYAN}Запуск OpenCode (NVIDIA NIM DeepSeek V4 Flash)…${RESET}"
             "$opencode_exe"
             ;;
@@ -469,7 +471,7 @@ invoke_opencode_profile() {
             api_key=$(get_nim_api_key) || true
             local config_path
             config_path=$(write_opencode_config "nvidia-nim" "google/gemma-4-31b-it" "https://integrate.api.nvidia.com/v1" "$api_key")
-            export OPENCODE_CONFIG="$config_path"
+            export OPENCODE_CONFIG="$config_path" CC_OPENCODE_API_KEY="$api_key"
             echo -e "${CYAN}Запуск OpenCode (NVIDIA NIM Gemma-4 31B)…${RESET}"
             "$opencode_exe"
             ;;
@@ -478,7 +480,7 @@ invoke_opencode_profile() {
             api_key=$(get_nim_api_key) || true
             local config_path
             config_path=$(write_opencode_config "nvidia-nim" "qwen/qwen3.5-397b-a17b" "https://integrate.api.nvidia.com/v1" "$api_key")
-            export OPENCODE_CONFIG="$config_path"
+            export OPENCODE_CONFIG="$config_path" CC_OPENCODE_API_KEY="$api_key"
             echo -e "${CYAN}Запуск OpenCode (NVIDIA NIM Qwen 3.5 397B)…${RESET}"
             "$opencode_exe"
             ;;
@@ -487,7 +489,7 @@ invoke_opencode_profile() {
             api_key=$(get_nim_api_key) || true
             local config_path
             config_path=$(write_opencode_config "nvidia-nim" "qwen/qwen3-next-80b-a3b-instruct" "https://integrate.api.nvidia.com/v1" "$api_key")
-            export OPENCODE_CONFIG="$config_path"
+            export OPENCODE_CONFIG="$config_path" CC_OPENCODE_API_KEY="$api_key"
             echo -e "${CYAN}Запуск OpenCode (NVIDIA NIM Qwen 3 Next 80B)…${RESET}"
             "$opencode_exe"
             ;;
@@ -496,7 +498,7 @@ invoke_opencode_profile() {
             api_key=$(get_nim_api_key) || true
             local config_path
             config_path=$(write_opencode_config "nvidia-nim" "qwen/qwen3-coder-480b-a35b-instruct" "https://integrate.api.nvidia.com/v1" "$api_key")
-            export OPENCODE_CONFIG="$config_path"
+            export OPENCODE_CONFIG="$config_path" CC_OPENCODE_API_KEY="$api_key"
             echo -e "${CYAN}Запуск OpenCode (NVIDIA NIM Qwen 3 Coder 480B)…${RESET}"
             "$opencode_exe"
             ;;
@@ -513,7 +515,7 @@ invoke_opencode_profile() {
             api_key=$(get_bai_api_key) || true
             local config_path
             config_path=$(write_opencode_config "bai" "$mid" "https://api.b.ai/v1" "$api_key" "$max" "$ctx")
-            export OPENCODE_CONFIG="$config_path"
+            export OPENCODE_CONFIG="$config_path" CC_OPENCODE_API_KEY="$api_key"
             echo -e "${CYAN}Запуск OpenCode (B.AI $mid)…${RESET}"
             "$opencode_exe"
             ;;
@@ -527,7 +529,7 @@ invoke_opencode_profile() {
             fi
             local config_path
             config_path=$(write_opencode_config "openrouter" "deepseek/deepseek-chat-v3.1:free" "https://openrouter.ai/api/v1" "$api_key" 8192 1048576)
-            export OPENCODE_CONFIG="$config_path"
+            export OPENCODE_CONFIG="$config_path" CC_OPENCODE_API_KEY="$api_key"
             echo -e "${CYAN}Запуск OpenCode (OpenRouter DeepSeek V4 Flash)…${RESET}"
             "$opencode_exe"
             ;;
@@ -541,7 +543,7 @@ invoke_opencode_profile() {
             fi
             local config_path
             config_path=$(write_opencode_config "openrouter" "qwen/qwen3-coder:free" "https://openrouter.ai/api/v1" "$api_key" 8192 262000)
-            export OPENCODE_CONFIG="$config_path"
+            export OPENCODE_CONFIG="$config_path" CC_OPENCODE_API_KEY="$api_key"
             echo -e "${CYAN}Запуск OpenCode (OpenRouter Qwen3 Coder)…${RESET}"
             "$opencode_exe"
             ;;
@@ -555,7 +557,7 @@ invoke_opencode_profile() {
             fi
             local config_path
             config_path=$(write_opencode_config "openrouter" "nvidia/nemotron-3-super-120b-a12b:free" "https://openrouter.ai/api/v1" "$api_key" 8192 262144)
-            export OPENCODE_CONFIG="$config_path"
+            export OPENCODE_CONFIG="$config_path" CC_OPENCODE_API_KEY="$api_key"
             echo -e "${CYAN}Запуск OpenCode (OpenRouter Nemotron 3 Super)…${RESET}"
             "$opencode_exe"
             ;;
@@ -569,7 +571,7 @@ invoke_opencode_profile() {
             fi
             local config_path
             config_path=$(write_opencode_config "openrouter" "poolside/laguna-m.1:free" "https://openrouter.ai/api/v1" "$api_key" 8192 131072)
-            export OPENCODE_CONFIG="$config_path"
+            export OPENCODE_CONFIG="$config_path" CC_OPENCODE_API_KEY="$api_key"
             echo -e "${CYAN}Запуск OpenCode (OpenRouter Poolside Laguna M.1)…${RESET}"
             "$opencode_exe"
             ;;
@@ -587,7 +589,7 @@ invoke_opencode_profile() {
             api_key=$(get_zai_api_key) || true
             local config_path
             config_path=$(write_opencode_config "zai" "$model_id" "https://api.z.ai/api/coding/paas/v4" "$api_key")
-            export OPENCODE_CONFIG="$config_path"
+            export OPENCODE_CONFIG="$config_path" CC_OPENCODE_API_KEY="$api_key"
             echo -e "${CYAN}Запуск OpenCode (Z.AI custom: $model_id)…${RESET}"
             "$opencode_exe"
             ;;
@@ -605,7 +607,7 @@ invoke_opencode_profile() {
             api_key=$(get_nim_api_key) || true
             local config_path
             config_path=$(write_opencode_config "nvidia-nim" "$model_id" "https://integrate.api.nvidia.com/v1" "$api_key")
-            export OPENCODE_CONFIG="$config_path"
+            export OPENCODE_CONFIG="$config_path" CC_OPENCODE_API_KEY="$api_key"
             echo -e "${CYAN}Запуск OpenCode (NVIDIA NIM custom: $model_id)…${RESET}"
             "$opencode_exe"
             ;;
@@ -625,7 +627,7 @@ invoke_opencode_profile() {
             fi
             local config_path
             config_path=$(write_opencode_config "groq" "$model_id" "https://api.groq.com/openai/v1" "$api_key" 8192 131072)
-            export OPENCODE_CONFIG="$config_path"
+            export OPENCODE_CONFIG="$config_path" CC_OPENCODE_API_KEY="$api_key"
             echo -e "${CYAN}Запуск OpenCode (Groq custom: $model_id)…${RESET}"
             "$opencode_exe"
             ;;
@@ -645,7 +647,7 @@ invoke_opencode_profile() {
             fi
             local config_path
             config_path=$(write_opencode_config "openrouter" "$model_id" "https://openrouter.ai/api/v1" "$api_key" 8192 16384)
-            export OPENCODE_CONFIG="$config_path"
+            export OPENCODE_CONFIG="$config_path" CC_OPENCODE_API_KEY="$api_key"
             echo -e "${CYAN}Запуск OpenCode (OpenRouter custom: $model_id)…${RESET}"
             "$opencode_exe"
             ;;
@@ -661,7 +663,7 @@ invoke_opencode_profile() {
             api_key=$(get_bai_api_key) || true
             local config_path
             config_path=$(write_opencode_config "bai" "$model_id" "https://api.b.ai/v1" "$api_key" 8192 131072)
-            export OPENCODE_CONFIG="$config_path"
+            export OPENCODE_CONFIG="$config_path" CC_OPENCODE_API_KEY="$api_key"
             echo -e "${CYAN}Запуск OpenCode (B.AI custom: $model_id)…${RESET}"
             "$opencode_exe"
             ;;
@@ -713,7 +715,7 @@ invoke_opencode_dynamic_fallback() {
 
     local config_path
     config_path=$(write_opencode_config "$provider" "$raw_model" "$base_url" "$api_key")
-    export OPENCODE_CONFIG="$config_path"
+    export OPENCODE_CONFIG="$config_path" CC_OPENCODE_API_KEY="$api_key"
     echo -e "${CYAN}Запуск OpenCode ($provider $raw_model)…${RESET}"
     "$opencode_exe"
 }

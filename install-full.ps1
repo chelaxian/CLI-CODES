@@ -45,18 +45,6 @@ function Get-RealUserProfilePath {
   return $env:USERPROFILE
 }
 
-# PS 5.1 читает .ps1 без BOM как ANSI → кириллица ломается. git clone BOM не сохраняет при autocrlf-конвертации.
-function Repair-ScriptEncoding([string]$Dir) {
-  $bom = New-Object System.Text.UTF8Encoding($true); $n = 0
-  Get-ChildItem -LiteralPath $Dir -Filter "*.ps1" -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne "install.ps1" } | ForEach-Object {
-    $b = [System.IO.File]::ReadAllBytes($_.FullName)
-    if ($b.Length -ge 3 -and $b[0] -eq 0xEF -and $b[1] -eq 0xBB -and $b[2] -eq 0xBF) { return }
-    [System.IO.File]::WriteAllText($_.FullName, [System.IO.File]::ReadAllText($_.FullName, (New-Object System.Text.UTF8Encoding($false))), $bom)
-    $n++
-  }
-  return $n
-}
-
 function Update-SessionPath {
   $env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [Environment]::GetEnvironmentVariable("Path", "User")
 }
@@ -106,11 +94,22 @@ if (-not $InstallDir) {
   else { $InstallDir = Join-Path (Get-RealUserProfilePath) "CLI-CODES" }
 }
 
+# UTF-8 BOM, нужный PS 5.1 для кириллицы, хранится прямо в git (проверяется в CI), поэтому
+# файлы на машине пользователя мы НЕ переписываем: старые версии дописывали BOM сами, рабочая
+# копия становилась «изменённой», и git pull переставал обновлять проект.
 function Sync-Repo {
   $env:GIT_TERMINAL_PROMPT = "0"; $env:GCM_INTERACTIVE = "Never"
   if (Test-Path -LiteralPath (Join-Path $InstallDir ".git")) {
     $before = Invoke-Native { (& git -C $InstallDir rev-parse --short HEAD) }
-    Invoke-Native { & git -C $InstallDir fetch -q origin main; if ($LASTEXITCODE -eq 0) { & git -C $InstallDir reset -q --hard origin/main } }
+    Invoke-Native { & git -C $InstallDir fetch -q origin main }
+    if ($LASTEXITCODE -ne 0) { Write-Status "  [WARN] git fetch не удался, работаю с локальной копией ($before)" "Yellow"; return }
+    # Локальные правки (например, в TXT/) не теряем: откладываем в stash, их можно вернуть
+    $dirty = Invoke-Native { & git -C $InstallDir status --porcelain --untracked-files=no }
+    if ($dirty) {
+      Invoke-Native { & git -C $InstallDir stash push -q -m ("cli-codes autostash " + (Get-Date -Format "yyyy-MM-dd HH:mm")) }
+      Write-Status "  [INFO] Локальные изменения отложены: git -C `"$InstallDir`" stash list" "DarkGray"
+    }
+    Invoke-Native { & git -C $InstallDir reset -q --hard origin/main }
     $after = Invoke-Native { (& git -C $InstallDir rev-parse --short HEAD) }
     if ($before -eq $after) { Write-Status "  [OK] Репозиторий актуален ($after)" "Green" } else { Write-Status "  [OK] Репозиторий обновлён ($before → $after)" "Green" }
   } else {
@@ -118,7 +117,6 @@ function Sync-Repo {
     if (-not (Test-Path -LiteralPath (Join-Path $InstallDir ".git"))) { throw "Ошибка клонирования $RepoUrl" }
     Write-Status "  [OK] Репозиторий клонирован: $InstallDir" "Green"
   }
-  [void](Repair-ScriptEncoding $InstallDir)
 }
 
 # Запуск из временной копии (irm | iex) → готовим репозиторий и перезапускаемся из него,
