@@ -1,0 +1,9 @@
+# modelscope.txt -- статический каталог (fallback + «рекомендуемые» вверху списка).
+# Формат: model-id|label. Полный список подгружается динамически через API провайдера.
+
+ZhipuAI/GLM-5.2|GLM-5.2 (free)
+deepseek-ai/DeepSeek-V4.1-Flash|DeepSeek V4.1 Flash (free)
+deepseek-ai/DeepSeek-V4-Pro|DeepSeek V4 Pro (free)
+MiniMax/MiniMax-M3|MiniMax M3 (free)
+Qwen/Qwen3.8-27B|Qwen 3.8 27B (free)
+stepfun-ai/Step-3.7-Flash|Step 3.7 Flash (free)

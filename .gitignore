@@ -50,3 +50,6 @@ docs/DEPLOY-FROM-SCRATCH.md
 CLI-CODES.code-workspace
 session-ses_152b.md
 .update-cache.json
+
+# cli-codes.cmd генерируется инсталлятором
+bin/

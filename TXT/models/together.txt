@@ -1,0 +1,8 @@
+# together.txt -- статический каталог (fallback + «рекомендуемые» вверху списка).
+# Формат: model-id|label. Полный список подгружается динамически через API провайдера.
+
+moonshotai/Kimi-K3|Kimi K3
+zai-org/GLM-5.3|GLM-5.3
+deepseek-ai/DeepSeek-V4.1-Flash|DeepSeek V4.1 Flash
+Qwen/Qwen3.8-27B|Qwen 3.8 27B
+openai/gpt-oss-120b|gpt-oss 120B

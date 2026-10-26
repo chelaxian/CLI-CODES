@@ -1,0 +1,6 @@
+# mimo.txt -- статический каталог (fallback + «рекомендуемые» вверху списка).
+# Формат: model-id|label. Полный список подгружается динамически через API провайдера.
+
+mimo-v2.6-pro|MiMo V2.6 Pro
+mimo-v2.6-flash|MiMo V2.6 Flash
+mimo-v2.5-pro|MiMo V2.5 Pro

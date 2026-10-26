@@ -1,0 +1,8 @@
+# openai.txt -- статический каталог (fallback + «рекомендуемые» вверху списка).
+# Формат: model-id|label. Полный список подгружается динамически через API провайдера.
+
+gpt-6.1-sol|GPT-6.1 Sol
+gpt-6-luna|GPT-6 Luna
+gpt-6-sol|GPT-6 Sol
+gpt-5.5|GPT-5.5
+o4-mini|o4-mini

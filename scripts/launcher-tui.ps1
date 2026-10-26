@@ -201,9 +201,32 @@ function Write-TuiBannerOpenClaude {
   Render-TuiBannerLines -InnerWidth $InnerWidth -Lines $lines -Fg DarkGreen
 }
 
+# Баннер для произвольного бренда: TXT/logos/<brand>.txt (нижний регистр, пробелы → "-"),
+# иначе — название бренда разреженными заглавными буквами по центру.
+function Write-TuiBannerGeneric {
+  param([string]$Brand, [int]$InnerWidth)
+  $key = ($Brand.ToLowerInvariant() -replace ' ', '-')
+  $lines = $null
+  if ($script:TextRoot) {
+    $f = Join-Path $script:TextRoot ("logos\{0}.txt" -f $key)
+    # «Claude Code» → claude-code.txt, иначе по первому слову → claude.txt
+    if (-not (Test-Path -LiteralPath $f)) { $f = Join-Path $script:TextRoot ("logos\{0}.txt" -f ($key -split '-')[0]) }
+    if (Test-Path -LiteralPath $f) {
+      $lines = @([System.IO.File]::ReadAllLines($f, (New-Object System.Text.UTF8Encoding $false)) | Where-Object { $_.Trim() -ne "" })
+    }
+  }
+  if (-not $lines) { $lines = @((($Brand.ToUpperInvariant().ToCharArray()) -join " ")) }
+  # центрируем блок целиком, иначе строки ASCII-арта разной длины «разъезжаются»
+  $maxLen = ($lines | ForEach-Object { $_.TrimEnd().Length } | Measure-Object -Maximum).Maximum
+  $padL = [int][Math]::Max(0, [Math]::Floor(($InnerWidth - $maxLen) / 2))
+  foreach ($ln in $lines) {
+    Write-TuiRow -Text ((" " * $padL) + $ln.TrimEnd()) -InnerWidth $InnerWidth -Fg Cyan
+  }
+}
+
 function Show-TuiFramedMenu {
   param(
-    [ValidateSet("Qwen", "Claude", "LlamaCpp", "LMStudio", "OpenCode", "Freebuff", "OpenClaude")]
+    # Встроенные баннеры: Qwen/Claude/LlamaCpp/LMStudio/OpenCode/Freebuff/OpenClaude; остальные — Write-TuiBannerGeneric
     [string]$AppBrand,
     [Parameter(Mandatory = $true)][string]$Title,
     [string]$Subtitle = "",
@@ -251,7 +274,7 @@ function Show-TuiFramedMenu {
       "OpenCode" { Write-TuiBannerOpenCode -InnerWidth $inner }
       "Freebuff" { Write-TuiBannerFreebuff -InnerWidth $inner }
       "OpenClaude" { Write-TuiBannerOpenClaude -InnerWidth $inner }
-      default { Write-TuiBannerClaude -InnerWidth $inner }
+      default { Write-TuiBannerGeneric -Brand $AppBrand -InnerWidth $inner }
     }
     Write-TuiRow -Text ("".PadRight($inner)) -InnerWidth $inner
     if (-not [string]::IsNullOrWhiteSpace($UpdateHint)) {
@@ -349,7 +372,7 @@ function Show-TuiFramedMenu {
 
 function Show-TuiWaitFrame {
   param(
-    [ValidateSet("Qwen", "Claude", "LlamaCpp", "LMStudio", "OpenCode", "Freebuff", "OpenClaude")]
+    # Встроенные баннеры: Qwen/Claude/LlamaCpp/LMStudio/OpenCode/Freebuff/OpenClaude; остальные — Write-TuiBannerGeneric
     [string]$AppBrand,
     [Parameter(Mandatory = $true)][string]$Message
   )
@@ -369,7 +392,7 @@ function Show-TuiWaitFrame {
     "OpenCode" { Write-TuiBannerOpenCode -InnerWidth $inner }
     "Freebuff" { Write-TuiBannerFreebuff -InnerWidth $inner }
     "OpenClaude" { Write-TuiBannerOpenClaude -InnerWidth $inner }
-    default { Write-TuiBannerClaude -InnerWidth $inner }
+    default { Write-TuiBannerGeneric -Brand $AppBrand -InnerWidth $inner }
   }
   Write-TuiRow -Text ("".PadRight($inner)) -InnerWidth $inner
   Write-TuiRow -Text ("  " + $Message) -InnerWidth $inner -Fg Yellow

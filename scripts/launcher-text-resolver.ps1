@@ -1,4 +1,4 @@
-# Single source of truth for STATIC UI text. Reads TXT/ first; falls back
+﻿# Single source of truth for STATIC UI text. Reads TXT/ first; falls back
 # to inline defaults only when TXT/missing or file empty.
 #
 # Why this exists:  owners want to edit menu labels, ASCII banners,

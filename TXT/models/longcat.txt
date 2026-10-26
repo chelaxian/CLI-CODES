@@ -1,0 +1,6 @@
+# longcat.txt -- статический каталог (fallback + «рекомендуемые» вверху списка).
+# Формат: model-id|label. Полный список подгружается динамически через API провайдера.
+
+LongCat-2.5-Preview|LongCat 2.5 Preview
+LongCat-2.0|LongCat 2.0
+LongCat-Flash-Lite|LongCat Flash Lite

@@ -1,0 +1,8 @@
+# mistral.txt -- статический каталог (fallback + «рекомендуемые» вверху списка).
+# Формат: model-id|label. Полный список подгружается динамически через API провайдера.
+
+devstral-latest|Devstral (coding agent)
+mistral-large-latest|Mistral Large 4
+mistral-medium-latest|Mistral Medium 3.5
+codestral-latest|Codestral
+mistral-small-latest|Mistral Small

@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Unit tests (proxy, model parser, registries)
+        run: python -m unittest discover -s tests -v
+      - name: Bash syntax
+        run: for f in install.sh bootstrap.sh scripts/*.sh scripts/lib/*.sh; do bash -n "$f" || exit 1; done
+      - name: ShellCheck (new core)
+        run: shellcheck -S error install.sh scripts/run-agent.sh scripts/lib/clicodes.sh
+      - name: CLI smoke test
+        run: |
+          bash scripts/run-agent.sh list
+          bash scripts/run-agent.sh providers
+          bash scripts/run-agent.sh models openrouter | head -5
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: PowerShell 5.1 parse check
+        shell: powershell
+        run: |
+          $bad = 0
+          Get-ChildItem -Recurse -Filter *.ps1 | ForEach-Object {
+            $e = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$null, [ref]$e)
+            if ($e.Count) { $bad++; Write-Host "$($_.FullName): $($e[0].Message)" }
+          }
+          exit $bad
+      - name: CLI smoke test (PowerShell 5.1)
+        shell: powershell
+        run: |
+          .\scripts\run-agent.ps1 list
+          .\scripts\run-agent.ps1 providers
+          .\scripts\run-agent.ps1 models openrouter | Select-Object -First 5

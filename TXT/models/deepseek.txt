@@ -1,0 +1,6 @@
+# deepseek.txt -- статический каталог (fallback + «рекомендуемые» вверху списка).
+# Формат: model-id|label. Полный список подгружается динамически через API провайдера.
+
+deepseek-chat|DeepSeek V4.1 Flash (chat)
+deepseek-reasoner|DeepSeek V4.1 (reasoner)
+deepseek-v4-pro|DeepSeek V4 Pro

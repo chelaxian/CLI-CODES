@@ -195,6 +195,39 @@ draw_tui_banner_openclaude() {
     done
 }
 
+# Баннер для любого бренда: TXT/logos/<brand>.txt (имя в нижнем регистре, пробелы → "-", затем первое слово),
+# иначе — название бренда разреженными заглавными буквами.
+draw_tui_banner_generic() {
+    local brand="$1" inner_width="$2" color="${3:-$CYAN}" line len pad_left pad_right
+    local key logo
+    key="$(printf '%s' "$brand" | tr '[:upper:] ' '[:lower:]-')"
+    logo="$(dirname "${BASH_SOURCE[0]}")/../TXT/logos/${key}.txt"
+    # «Claude Code» → claude-code.txt, иначе по первому слову → claude.txt
+    [ -f "$logo" ] || logo="$(dirname "${BASH_SOURCE[0]}")/../TXT/logos/${key%%-*}.txt"
+    local lines=()
+    if [ -f "$logo" ]; then
+        while IFS= read -r line; do lines+=("$line"); done < <(tr -d '\r' < "$logo" | grep -v '^[[:space:]]*$')
+    else
+        lines=("$(printf '%s' "$brand" | tr '[:lower:]' '[:upper:]' | sed 's/./& /g; s/ $//')")
+    fi
+    # центрируем блок целиком, иначе строки ASCII-арта разной длины «разъезжаются»
+    local max=0
+    for line in "${lines[@]}"; do line="${line%"${line##*[! ]}"}"; [ ${#line} -gt "$max" ] && max=${#line}; done
+    pad_left=$(( max < inner_width ? (inner_width - max) / 2 : 0 ))
+    for line in "${lines[@]}"; do
+        line="$(printf '%*s%s' "$pad_left" '' "${line%"${line##*[! ]}"}")"
+        len=${#line}
+        if [ "$len" -gt "$inner_width" ]; then
+            line="${line:0:$((inner_width-1))}…"
+        else
+            pad_right=$(( inner_width - len ))
+            line="$(printf '%s%*s' "$line" "$pad_right" '')"
+        fi
+        printf "${color}║${line}║${RESET}
+" >&3
+    done
+}
+
 # Main TUI menu with arrow-key navigation
 # Args: app_brand title subtitle [update_hint] item1 item2 item3 ...
 # If 4th arg starts with "UPDATE:" or "ОБНОВЛЕНИЕ:" it is treated as update_hint,
@@ -281,6 +314,7 @@ show_tui_numbered_menu() {
             "OpenCode") draw_tui_banner_opencode "$inner_width" ;;
             "Freebuff") draw_tui_banner_freebuff "$inner_width" ;;
             "OpenClaude") draw_tui_banner_openclaude "$inner_width" ;;
+        *) draw_tui_banner_generic "$app_brand" "$inner_width" "$banner_color" ;;
         esac
 
         printf "${banner_color}║${RESET}" >&3
@@ -473,6 +507,7 @@ show_tui_wait_frame() {
         "OpenCode") draw_tui_banner_opencode "$inner_width" ;;
         "Freebuff") draw_tui_banner_freebuff "$inner_width" ;;
         "OpenClaude") draw_tui_banner_openclaude "$inner_width" ;;
+        *) draw_tui_banner_generic "$app_brand" "$inner_width" "$banner_color" ;;
     esac
 
     printf "${banner_color}║${RESET}" >&3

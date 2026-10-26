@@ -1,0 +1,15 @@
+# openrouter.txt -- статический каталог (fallback + «рекомендуемые» вверху списка).
+# Формат: model-id|label. Полный список подгружается динамически через API провайдера.
+
+openrouter/free|Auto: лучшая бесплатная модель (free)
+nvidia/nemotron-3-ultra-550b-a55b:free|Nemotron 3 Ultra 550B (free)
+nvidia/nemotron-3.5-super-vl:free|Nemotron 3.5 Super VL (free)
+poolside/laguna-s-2.1:free|Poolside Laguna S 2.1 — coding (free)
+cohere/north-mini-code:free|Cohere North Mini Code (free)
+google/gemma-4-31b-it:free|Gemma 4 31B (free)
+thinkingmachines/inkling:free|Thinking Machines Inkling (free)
+anthropic/claude-sonnet-5.5|Claude Sonnet 5.5
+openai/gpt-6.1-sol|GPT-6.1 Sol
+z-ai/glm-5.3|GLM-5.3
+moonshotai/kimi-k3|Kimi K3
+deepseek/deepseek-v4.1-flash|DeepSeek V4.1 Flash

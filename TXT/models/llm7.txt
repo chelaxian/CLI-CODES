@@ -1,0 +1,9 @@
+# llm7.txt -- статический каталог (fallback + «рекомендуемые» вверху списка).
+# Формат: model-id|label. Полный список подгружается динамически через API провайдера.
+
+kimi-k3|Kimi K3 (free)
+glm-5.3|GLM-5.3 (free)
+DeepSeek-V4.1-Flash|DeepSeek V4.1 Flash (free)
+minimax-m3|MiniMax M3 (free)
+kimi-k2.7-code|Kimi K2.7 Code (free)
+codestral-latest|Codestral (free)

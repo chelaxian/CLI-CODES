@@ -1,0 +1,8 @@
+# groq.txt -- статический каталог (fallback + «рекомендуемые» вверху списка).
+# Формат: model-id|label. Полный список подгружается динамически через API провайдера.
+
+openai/gpt-oss-120b|gpt-oss 120B
+moonshotai/kimi-k2.6|Kimi K2.6
+qwen/qwen3.8-27b|Qwen 3.8 27B
+meta-llama/llama-4-maverick|Llama 4 Maverick
+openai/gpt-oss-20b|gpt-oss 20B

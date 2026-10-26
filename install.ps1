@@ -12,8 +12,9 @@ $cacheBust = "?t=$([DateTime]::UtcTicks)"
 
 # Prefer the local install-full.ps1 if the repo is cloned — it's always current
 # and avoids CDN lag entirely. Only download from GitHub if no local copy exists.
-$localRepo = Join-Path $env:USERPROFILE "CLI-CODES"
+$localRepo = if ($PSScriptRoot) { $PSScriptRoot } else { Join-Path $env:USERPROFILE "CLI-CODES" }
 $localInstallFull = Join-Path $localRepo "install-full.ps1"
+if (-not (Test-Path -LiteralPath $localInstallFull)) { $localInstallFull = Join-Path (Join-Path $env:USERPROFILE "CLI-CODES") "install-full.ps1" }
 
 $psExe = if (Get-Command pwsh.exe -ErrorAction SilentlyContinue) {
     (Get-Command pwsh.exe -ErrorAction SilentlyContinue).Source

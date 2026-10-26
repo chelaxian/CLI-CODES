@@ -1,0 +1,7 @@
+# cerebras.txt -- статический каталог (fallback + «рекомендуемые» вверху списка).
+# Формат: model-id|label. Полный список подгружается динамически через API провайдера.
+
+gpt-oss-120b|gpt-oss 120B
+zai-glm-5.2|GLM-5.2
+qwen-3.8-27b|Qwen 3.8 27B
+llama-4-maverick|Llama 4 Maverick

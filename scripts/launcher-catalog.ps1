@@ -1,4 +1,4 @@
-# Single source of truth for model presets used by both Qwen Code and Claude Code launchers.
+﻿# Single source of truth for model presets used by both Qwen Code and Claude Code launchers.
 # Dot-source from run-qwen-code-launcher.ps1 / run-claude-cloud-launcher.ps1.
 #
 # Two-tier source:

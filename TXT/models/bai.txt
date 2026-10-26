@@ -1,0 +1,15 @@
+# bai.txt -- статический каталог (fallback + «рекомендуемые» вверху списка).
+# Формат: model-id|label. Полный список подгружается динамически через API провайдера.
+
+claude-sonnet-5.5|Claude Sonnet 5.5
+claude-opus-5.5|Claude Opus 5.5
+gpt-6.1-sol|GPT-6.1 Sol
+gemini-3.8-flash|Gemini 3.8 Flash
+deepseek-v4.1-flash|DeepSeek V4.1 Flash
+glm-5.3|GLM-5.3
+kimi-k3|Kimi K3
+minimax-m3|MiniMax M3
+gpt-5.5|GPT-5.5
+claude-opus-4.8|Claude Opus 4.8
+deepseek-v4-pro|DeepSeek V4 Pro
+kimi-k2.6|Kimi K2.6
