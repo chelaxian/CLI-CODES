@@ -6,7 +6,13 @@ Claude Code · Codex CLI · Gemini CLI · Qwen Code · OpenCode · Crush · GitH
 
 Работает на Windows, Linux и macOS.
 
-<img width="1600" height="800" alt="CLI-CODES" src="https://github.com/user-attachments/assets/45e2e8f6-040f-49e0-987c-ac0e11b1d9ed" />
+**30 агентов · 36 провайдеров · живые каталоги моделей · Windows / Linux / macOS**
+
+| Главное меню | Выбор провайдера | Живой каталог моделей |
+|---|---|---|
+| ![Главное меню cli-codes](https://github.com/chelaxian/CLI-CODES/releases/download/assets/demo-main.gif) | ![Выбор провайдера](https://github.com/chelaxian/CLI-CODES/releases/download/assets/demo.gif) | ![Каталог моделей из API](https://github.com/chelaxian/CLI-CODES/releases/download/assets/demo-models.gif) |
+
+![Меню API-ключей](https://github.com/chelaxian/CLI-CODES/releases/download/assets/demo-keys.gif)
 
 ---
 
